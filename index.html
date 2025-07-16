@@ -28,7 +28,6 @@
         .content-overlay.active { display: flex; }
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
         .modal-content { animation: fadeIn 0.3s; }
-        #subspecies-modal { z-index: 110; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #d1d5db; }
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
@@ -68,13 +67,37 @@
         <div id="content-overlay-body" class="w-full h-full bg-black/30 rounded-lg p-6 overflow-y-auto custom-scrollbar border border-gray-500/50"></div>
     </div>
 
-    <div id="main-modal" class="modal"><div class="modal-content bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-4xl w-11/12 relative"><button id="main-modal-close-button" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button><div id="main-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div></div></div>
-    <div id="subspecies-modal" class="modal"><div class="modal-content bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-2xl w-10/12 relative"><button id="subspecies-modal-close-button" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button><div id="subspecies-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div></div></div>
+    <div id="main-modal" class="modal"><div class="modal-content bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-4xl w-11/12 relative"><button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button><div id="main-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div></div></div>
+    <div id="subspecies-modal" class="modal"><div class="modal-content bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-2xl w-10/12 relative"><button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button><div id="subspecies-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div></div></div>
+    
+    <div id="thread-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Thread Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://via.placeholder.com/200x200.png?text=Thread+Weaver" alt="Thread Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><p class="flex-1 italic">"The tapestry is vast. My purpose is to access its record. Every thread you see is a fact—a life, a battle, a stone laid in a foundation. They are not to be interpreted, only observed. Specify your query. I will pull the corresponding thread."</p></div><div id="thread-weaver-tool"></div></div></div></div>
+    <div id="ink-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Ink Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://via.placeholder.com/200x200.png?text=Ink+Weaver" alt="Ink Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><p class="flex-1 italic">"A vision! You seek a form, a visage to burn into your mind? My ink holds every color, every shadow, every possible shape. Describe to me what you see in your mind's eye. I will grind the pigment and prepare the words to capture its essence perfectly. But know this: I am no painter. You must take the description I prepare and carry it to an artisan in the world beyond (your image generator of choice). Only they can bring it to life."</p></div><div id="ink-weaver-tool"></div></div></div></div>
+    <div id="whisper-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Whisper Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://via.placeholder.com/200x200.png?text=Whisper+Weaver" alt="Whisper Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><p class="flex-1 italic">"Hush now... listen. Do you hear that? The answers you seek are not always in the loud, bright threads of history. The best secrets are in the silence between them. Ask me... but do not expect a map. Expect a signpost. A riddle. A half-forgotten sound. What is it you truly wish to know?"</p></div><div id="whisper-weaver-tool"></div></div></div></div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
+    // =================================================================================
+    // 1. DATA STORE
+    // =================================================================================
     const DATA = {
+        classData: {
+            "Artificer": ["Alchemist", "Armorer", "Artillerist", "Battle Smith"],
+            "Barbarian": ["Path of the Berserker", "Path of the Wild Heart", "Path of the World Tree", "Path of the Zealot"],
+            "Bard": ["College of Dance", "College of Glamour", "College of Lore", "College of Valor"],
+            "Cleric": ["Life Domain", "Light Domain", "Trickery Domain", "War Domain"],
+            "Druid": ["Circle of the Land", "Circle of the Moon", "Circle of the Sea", "Circle of the Stars"],
+            "Fighter": ["Battle Master", "Champion", "Eldritch Knight", "Psi Warrior"],
+            "Monk": ["Way of the Four Elements", "Way of Mercy", "Way of the Open Hand", "Way of Shadow"],
+            "Paladin": ["Oath of Devotion", "Oath of Glory", "Oath of Redemption", "Oath of Vengeance"],
+            "Ranger": ["Beast Master", "Gloom Stalker", "Hunter", "Fey Wanderer"],
+            "Rogue": ["Arcane Trickster", "Assassin", "Mastermind", "Thief"],
+            "Sorcerer": ["Aberrant Mind", "Clockwork Soul", "Draconic Bloodline", "Wild Magic"],
+            "Warlock": ["The Archfey", "The Celestial", "The Fiend", "The Great Old One"],
+            "Wizard": ["School of Abjuration", "School of Evocation", "School of Illusion", "School of Necromancy"]
+        },
+        backgrounds: ["Acolyte", "Artisan", "Charlatan", "Criminal", "Entertainer", "Farmer", "Folk Hero", "Gladiator", "Guard", "Guide", "Hermit", "Knight", "Laborer", "Noble", "Outlander", "Pilgrim", "Pirate", "Sage", "Sailor", "Scholar", "Scion", "Soldier", "Urchin"],
         peoplesData: [ { name: 'Elves', image: 'https://i.imgur.com/70O2190.jpeg', lore: `<h4 class='text-xl font-bold text-amber-300 mb-2'>Overview</h4><p class='mb-3'>Elves on Yurei-tu-Shima are not a separate race but a sacred transformation—humans reshaped by the breath of elder spirits. Known as the spirit-marked, they are born to Nisaki parents but arrive in the world with a glowing Oaka Mark, a radiant sigil somewhere upon their body. These marks shimmer with a soft, ethereal light—shifting in hue, shape, and pulse depending on the elf's lineage and bond. Living bridges between mortal realms and spirit domains, elves are often seen as destined, gifted, or cursed.</p><h4 class='text-xl font-bold text-amber-300 mb-2'>Origins and Transformation</h4><p class='mb-3'>The birth of an elf is never random. It is whispered that the elder spirits themselves choose which children will bear their sigils. Some are born during storms, eclipses, or sacred festivals. Others are said to be touched in the womb by dreams or omens—cranes landing near the home, flames that do not burn, songs sung in voices not of this world.</p><h4 class='text-xl font-bold text-amber-300 mb-2'>Culture and Society</h4><p class='mb-3'>Elves gather in Circles—small, sacred communities united by lineage or purpose. They serve as mediators, spirit-guardians, and dream-speakers rather than rulers. Revered by some, others view them with mistrust.</p><blockquote>“It’s not that we’re holier. We just listen louder.”<br>—Rin, Eladrin of the Hollow Shrine</blockquote>`, subspecies: [ { name: 'Sea Elves', image: 'https://i.imgur.com/v61pvTf.jpeg', lore: 'Salt-blooded and tide-marked, they dwell in coral sanctuaries and guide seafarers, hearing the dreams of tides and coral.' }, { name: 'Wood Elves', image: 'https://i.imgur.com/AWNAuQA.jpeg', lore: 'Bark-veined and root-sensed, they are guardians of ancient groves and beasts, speaking with bark and breeze.' }, { name: 'High Elves', image: 'https://i.imgur.com/5rMdIbe.jpeg', lore: 'Star-bound and arcane, they embody astral knowledge and ancient patterns, studying spirit magic and prophecy.' }, { name: 'Eladrin', image: 'https://i.imgur.com/kpuc9PG.jpeg', lore: 'Season-walkers whose moods and forms shift with the seasons of the Spirit Realm.' }, { name: 'Dark Elves', image: 'https://i.imgur.com/1CuPIn1.jpeg', lore: 'Shadow-touched, born under eclipses, they dwell in shadowed places and wield memory, concealment, and hidden truths.' }, { name: 'Dusk Elves', image: 'https://i.imgur.com/9fhW1wG.jpeg', lore: 'Twilight-walkers and keepers of twilight, they guide funerals and forgotten dreams, serving as guardians of memory.' }, { name: 'Astral Elves', image: 'https://i.imgur.com/CADDLE0.jpeg', lore: 'Rare and celestial, marked by spirits beyond time, they dream of stars never seen from the island sky.' } ]},
         { name: 'Nakudama', image: 'https://i.imgur.com/ZL1DRcd.jpeg', lore: `<h4 class='text-xl font-bold text-amber-300 mb-2'>Overview</h4><p class='mb-3'>The Nakudama are Yurei-tu-Shima’s beastfolk—an ancient collective of animal-shaped mortals bound by spirit and instinct. They do not share a single form, but rather a shared ancestry born from the union of early mortals and elder beast-spirits. Some are feline and sleek, others avian and graceful, or vulpine and sly, or amphibious and strange. Yet despite their diversity in appearance, they are united by one truth: they remember what it is to be wild.</p><h4 class='text-xl font-bold text-amber-300 mb-2'>Ancestral Origins</h4><p class='mb-3'>Long ago, in the early Age of Breath, it is said that the boundary between mortal and spirit was thin as paper. In those days, some humans made pacts with powerful beast-spirits—not out of hunger for magic, but out of mutual respect. Over time, their children were born not quite animal, not quite human, but something in between. These were the first Nakudama.</p><h4 class='text-xl font-bold text-amber-300 mb-2'>Culture and Society</h4><p class='mb-3'>Nakudama society is decentralized but tightly bonded. Each clan follows The Wild Accord, an ancient, unwritten pact between beastfolk and the spirit world. It dictates balance, honor, and respect for the land. Elders and spirit-seers lead through dream-hunts and festivals. Currency is less important than trade, favor, and story.</p><blockquote>“We don’t have kings anymore. We have kitchens, and whoever’s cooking is in charge.”<br>—Gribba, Spirit-Tail Historian</blockquote>`,
             subspecies: [ { name: 'Feline', image: 'https://i.imgur.com/mPiBeYa.jpeg', lore: 'Agile and loyal, fiercely protective of their prides and communities.' }, { name: 'Avian', image: 'https://i.imgur.com/5gI6Ygu.jpeg', lore: 'Feathered and graceful, they are lovers of the sky, stories, and song.' }, { name: 'Ursine', image: 'https://i.imgur.com/pZsqjh2.jpeg', lore: 'Broad and strong, these Nakudama are steadfast guardians of glades and family.' }, { name: 'Vulpine', image: 'https://i.imgur.com/5seBHa3.jpeg', lore: 'Cunning and mysterious, often serving as tricksters, lore-keepers, or guides.' }, { name: 'Amphibious', image: 'https://i.imgur.com/zTUZFjn.jpeg', lore: 'Adapted to water, they ferry spirits and mortals across swamp and sea.' }, { name: 'Lupine/Canine', image: 'https://i.imgur.com/KN2dVtV.jpeg', lore: 'Pack-oriented and loyal, they are trackers, warriors, and community protectors.' }, { name: 'Simian', image: 'https://i.imgur.com/uav189P.jpeg', lore: 'Clever and agile, often found as inventors, acrobats, or playful thieves.' }, { name: 'Reptilian', image: 'https://i.imgur.com/5FtNM6C.jpeg', lore: 'Patient and ancient, with a deep connection to the sun and stone.' }, { name: 'Leporine', image: 'https://i.imgur.com/BalITnF.jpeg', lore: 'Quick-witted and swift, leporine Nakudama are often messengers or scouts with an uncanny sense of their surroundings.' } ]},
@@ -125,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const navigationItems = [
-        { id: 'peoples', label: 'The Peoples' }, { id: 'pantheon', label: 'The Pantheon' }, { id: 'history', label: 'History' }, { id: 'regions', label: 'Regions' }, { id: 'factions', label: 'Factions' }, { id: 'travel-tech', 'label': 'Travel & Tech' }, { id: 'gameplay', label: 'Gameplay' }, { id: 'gemini-tools', label: 'Commune' }, { id: 'view-banner', label: 'The Island' },
+        { id: 'peoples', label: 'The Peoples' }, { id: 'pantheon', label: 'The Pantheon' }, { id: 'history', label: 'History' }, { id: 'regions', label: 'Regions' }, { id: 'factions', label: 'Factions' }, { id: 'travel-tech', 'label': 'Travel & Tech' }, { id: 'gameplay', label: 'Gameplay' }, { id: 'weavers-loom', label: "The Weaver's Loom" }, { id: 'view-banner', label: 'The Island' },
     ];
 
     // =================================================================================
@@ -204,168 +227,293 @@ document.addEventListener('DOMContentLoaded', function() {
             container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">Gameplay</h2></div>`;
             createGrid(container.querySelector('.content-panel-inner'), data.accordionData.gameplay, 'https://i.imgur.com/BDdr3qu.jpeg');
         },
-        'gemini-tools': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner">
-                <h2 class="text-3xl font-bold text-amber-400 mb-4">Commune with the Spirits</h2>
-                <p class="mb-6 text-lg text-gray-300">Use these tools to channel the creative energy of the island through Gemini.</p>
-                <div class="space-y-8">
-                    <div class="bg-black/20 p-6 rounded-lg shadow-inner">
-                        <h3 class="text-2xl font-bold text-amber-300 mb-4">Character Concept Generator</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div>
-                                <label for="char-kinship" class="block mb-2 text-sm font-medium text-gray-300">Kinship</label>
-                                <select id="char-kinship" class="char-select bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"></select>
-                                <div id="char-kinship-custom-wrapper" class="mt-2"></div>
-                            </div>
-                            <div>
-                                <label for="char-class" class="block mb-2 text-sm font-medium text-gray-300">Class</label>
-                                <select id="char-class" class="char-select bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
-                                    <option>None</option><option>Custom</option><option>Barbarian</option><option>Bard</option><option>Cleric</option><option>Druid</option><option>Fighter</option><option>Monk</option><option>Paladin</option><option>Ranger</option><option>Rogue</option><option>Sorcerer</option><option>Warlock</option><option>Wizard</option>
-                                </select>
-                                <div id="char-class-custom-wrapper" class="mt-2"></div>
-                            </div>
-                            <div>
-                                <label for="char-background" class="block mb-2 text-sm font-medium text-gray-300">Background</label>
-                                <select id="char-background" class="char-select bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
-                                    <option>None</option><option>Custom</option><option>Acolyte</option><option>Artisan</option><option>Charlatan</option><option>Criminal</option><option>Entertainer</option><option>Farmer</option><option>Folk Hero</option><option>Gladiator</option><option>Guard</option><option>Guide</option><option>Hermit</option><option>Knight</option><option>Laborer</option><option>Noble</option><option>Outlander</option><option>Pilgrim</option><option>Pirate</option><option>Sage</option><option>Sailor</option><option>Scholar</option><option>Scion</option><option>Soldier</option><option>Urchin</option>
-                                </select>
-                                <div id="char-background-custom-wrapper" class="mt-2"></div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
-                            <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-600 rounded-lg border border-gray-500 focus:ring-amber-500 focus:border-amber-500" placeholder="e.g., 'Wears a broken mask'..."></textarea>
-                        </div>
-                        <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition duration-300">Generate Concept</button>
-                        <div id="char-result" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"></div>
-                    </div>
-                    <div class="bg-black/20 p-6 rounded-lg shadow-inner">
-                        <h3 class="text-2xl font-bold text-amber-300 mb-4">Spirit Whisperer</h3>
-                        <p class="mb-4 text-gray-300">Ask a question of the island's lesser spirits.</p>
-                        <div class="flex space-x-2">
-                            <input type="text" id="whisper-input" class="block w-full p-2.5 text-sm text-white bg-gray-600 rounded-lg border border-gray-500 focus:ring-amber-500 focus:border-amber-500" placeholder="Where do forgotten things go?">
-                            <button id="whisper-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded transition duration-300">Whisper</button>
-                        </div>
-                        <div id="whisper-result" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"></div>
-                    </div>
-                    <div class="bg-black/20 p-6 rounded-lg shadow-inner">
-                        <h3 class="text-2xl font-bold text-amber-300 mb-4">Scene Weaver</h3>
-                        <p class="mb-4 text-gray-300">Describe a scene, a feeling, or a moment to visualize.</p>
-                        <textarea id="scene-input" rows="3" class="block p-2.5 w-full text-sm text-white bg-gray-600 rounded-lg border border-gray-500 focus:ring-amber-500 focus:border-amber-500" placeholder="A quiet village street at dusk..."></textarea>
-                        <button id="weave-button" class="mt-4 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded transition duration-300">Weave Scene</button>
-                        <div id="scene-result" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"></div>
+        'weavers-loom': (container, data) => {
+            // Main container for all Weaver tools
+            const loomContainer = document.createElement('div');
+            loomContainer.className = 'content-panel-inner';
+            container.appendChild(loomContainer);
+
+            // --- 1. Thematic Intro ---
+            loomContainer.innerHTML = `
+                <div class="text-center mb-8">
+                    <h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2>
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-6 max-w-4xl mx-auto text-left bg-black/20 p-4 rounded-lg">
+                        <img src="https://via.placeholder.com/150x150.png?text=Loom" alt="The Weaver's Loom" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0">
+                        <p class="text-lg text-gray-300 italic">"Welcome, Traveler, to my workshop. This is the Loom where stories are born and destinies are shaped. The air here hums with potential, and the threads of what could be drift like dust in the moonlight. I am The Weaver of this world, but these tools are now yours to use. My attendants, the weavers of thread, breath, ink, and whisper, will help you shape the fabric of reality. Tell them what you seek."</p>
                     </div>
                 </div>
-            </div>`;
 
-            // Populate Kinship dropdown
-            const kinshipSelect = container.querySelector('#char-kinship');
-            kinshipSelect.add(new Option('None', 'None'));
-            kinshipSelect.add(new Option('Custom', 'Custom'));
-            data.peoplesData.forEach(p => kinshipSelect.add(new Option(p.name, p.name)));
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="thread-weaver-modal">
+                        <h3 class="text-2xl font-serif text-amber-400">Thread Weaver</h3>
+                        <p class="text-sm text-gray-400 italic">Ask questions of the lore.</p>
+                    </div>
+                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="ink-weaver-modal">
+                         <h3 class="text-2xl font-serif text-amber-400">Ink Weaver</h3>
+                        <p class="text-sm text-gray-400 italic">Create prompts for images.</p>
+                    </div>
+                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="whisper-weaver-modal">
+                         <h3 class="text-2xl font-serif text-amber-400">Whisper Weaver</h3>
+                        <p class="text-sm text-gray-400 italic">Receive cryptic clues.</p>
+                    </div>
+                </div>
 
-            // Add event listeners for custom fields
-            container.querySelectorAll('.char-select').forEach(select => {
-                select.addEventListener('change', (e) => {
-                    const customWrapperId = `${e.target.id}-custom-wrapper`;
-                    const customWrapper = document.getElementById(customWrapperId);
-                    customWrapper.innerHTML = ''; // Clear previous custom input
-                    if (e.target.value === 'Custom') {
-                        const customInput = document.createElement('input');
-                        customInput.type = 'text';
-                        customInput.id = `${e.target.id}-custom`;
-                        customInput.className = 'block w-full p-2.5 text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500';
-                        customInput.placeholder = `Enter Custom ${e.target.labels[0].textContent}...`;
-                        customWrapper.appendChild(customInput);
-                    }
-                });
+                <div id="breath-weaver-section" class="bg-black/20 p-6 rounded-lg shadow-inner border border-gray-700/50">
+                    <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
+                        <img src="https://via.placeholder.com/150x150.png?text=Breath+Weaver" alt="Breath Weaver" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0">
+                        <div>
+                            <h3 class="text-3xl font-serif text-amber-300 mb-2">The Breath Weaver</h3>
+                            <p class="text-gray-300 italic">"Ah, a new story seeks to be told! Welcome, welcome. Every life begins with a single spark, a simple breath. Give me the vessel you have in mind—the kinship, the calling, the heart's allegiances—and I shall weave its very soul. Let us begin a new journey together."</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
+                        <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Kinship</button>
+                        <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Class</button>
+                        <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Spirit</button>
+                        <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Background</button>
+                    </div>
+
+                    <div id="kinship-container" class="space-y-3 mb-4"></div>
+                    <div id="class-container" class="space-y-3 mb-4"></div>
+                    <div id="spirit-container" class="space-y-3 mb-4"></div>
+                    <div id="background-container" class="space-y-3 mb-4"></div>
+
+                    <div class="mb-4">
+                        <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
+                        <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
+                    </div>
+                    
+                    <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition duration-300">Weave the Breath</button>
+                    <div id="char-result" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"></div>
+                </div>
+            `;
+
+            // --- DYNAMIC TOOL INITIALIZATION ---
+            
+            // Populate simple weaver tools
+            document.getElementById('thread-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="thread-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask about a person, place, or event..."></textarea><button id="thread-weave-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Weave Thread</button></div><div id="thread-result" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"></div>`;
+            document.getElementById('ink-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="ink-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Describe a character or scene to visualize..."></textarea><button id="ink-weave-btn" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">Weave Ink</button></div><div id="ink-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative"><div id="ink-result"></div><button class="copy-btn text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500 absolute top-2 right-2">Copy</button></div>`;
+            document.getElementById('whisper-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="whisper-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask a question for which you seek not an answer, but a sign..."></textarea><button id="whisper-weave-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">Weave Whisper</button></div><div id="whisper-result" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"></div>`;
+
+            // --- HELPER FUNCTIONS ---
+            const populateSelect = (select, options) => {
+                select.innerHTML = '';
+                select.add(new Option('(Random)', 'RANDOM'));
+                select.add(new Option('Custom...', 'CUSTOM'));
+                const separator = new Option('──────────', 'DISABLED');
+                separator.disabled = true;
+                select.add(separator);
+                options.forEach(opt => select.add(new Option(opt, opt)));
+            };
+
+            const handleCustomInput = (e) => {
+                const select = e.target;
+                const wrapper = select.parentElement.querySelector('.custom-input-wrapper');
+                wrapper.innerHTML = '';
+                if (select.value === 'CUSTOM') {
+                    const customInput = document.createElement('input');
+                    customInput.type = 'text';
+                    customInput.className = 'custom-input mt-2 block w-full p-2.5 text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500';
+                    customInput.placeholder = `Enter Custom ${select.dataset.label}...`;
+                    wrapper.appendChild(customInput);
+                }
+            };
+            
+            // --- DYNAMIC ROW CREATION LOGIC ---
+            const addKinshipRow = () => {
+                const container = document.getElementById('kinship-container');
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+                row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Kinship</label><select data-label="Kinship" class="kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-Kinship</label><select data-label="Sub-Kinship" class="sub-kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+                container.appendChild(row);
+                const kinshipSelect = row.querySelector('.kinship-select');
+                const subKinshipSelect = row.querySelector('.sub-kinship-select');
+                populateSelect(kinshipSelect, data.peoplesData.map(p => p.name));
+                kinshipSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubKinshipDropdown(kinshipSelect, subKinshipSelect); });
+                subKinshipSelect.addEventListener('change', handleCustomInput);
+                updateSubKinshipDropdown(kinshipSelect, subKinshipSelect);
+            };
+
+            const updateSubKinshipDropdown = (kinshipSelect, subKinshipSelect) => {
+                const kinship = data.peoplesData.find(p => p.name === kinshipSelect.value);
+                const subKinships = kinship && kinship.subspecies.length > 0 ? kinship.subspecies.map(s => s.name) : [];
+                populateSelect(subKinshipSelect, subKinships);
+                subKinshipSelect.disabled = subKinships.length === 0 && kinshipSelect.value !== 'CUSTOM' && kinshipSelect.value !== 'RANDOM';
+            };
+
+            const addClassRow = () => {
+                const container = document.getElementById('class-container');
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+                row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Class</label><select data-label="Class" class="class-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Subclass</label><select data-label="Subclass" class="subclass-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+                container.appendChild(row);
+                const classSelect = row.querySelector('.class-select');
+                const subclassSelect = row.querySelector('.subclass-select');
+                populateSelect(classSelect, Object.keys(data.classData));
+                classSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubclassDropdown(classSelect, subclassSelect); });
+                subclassSelect.addEventListener('change', handleCustomInput);
+                updateSubclassDropdown(classSelect, subclassSelect);
+            };
+
+            const updateSubclassDropdown = (classSelect, subclassSelect) => {
+                const subclasses = data.classData[classSelect.value] || [];
+                populateSelect(subclassSelect, subclasses);
+                subclassSelect.disabled = subclasses.length === 0 && classSelect.value !== 'CUSTOM' && classSelect.value !== 'RANDOM';
+            };
+            
+            const addSpiritRow = () => {
+                const container = document.getElementById('spirit-container');
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+                row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Spirit</label><select data-label="Spirit" class="spirit-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+                container.appendChild(row);
+                const spiritSelect = row.querySelector('.spirit-select');
+                populateSelect(spiritSelect, data.pantheonData.map(p => p.name));
+                spiritSelect.addEventListener('change', handleCustomInput);
+            };
+
+            const addBackgroundRow = () => {
+                 const container = document.getElementById('background-container');
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+                row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Background</label><select data-label="Background" class="background-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+                container.appendChild(row);
+                const backgroundSelect = row.querySelector('.background-select');
+                populateSelect(backgroundSelect, data.backgrounds);
+                backgroundSelect.addEventListener('change', handleCustomInput);
+            }
+
+            // --- EVENT LISTENERS ---
+            document.getElementById('add-kinship-btn').addEventListener('click', addKinshipRow);
+            document.getElementById('add-class-btn').addEventListener('click', addClassRow);
+            document.getElementById('add-spirit-btn').addEventListener('click', addSpiritRow);
+            document.getElementById('add-background-btn').addEventListener('click', addBackgroundRow);
+
+            loomContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-btn')) {
+                    e.target.parentElement.remove();
+                }
+                if (e.target.closest('.weaver-card')) {
+                    const modalId = e.target.closest('.weaver-card').dataset.modalTarget;
+                    document.getElementById(modalId).style.display = 'flex';
+                }
             });
-
-            // Helper function to call the Gemini API via the Netlify function
+            
+            // --- PROMPT GENERATION LOGIC ---
             const callGeminiAPI = async (prompt, resultDiv, button) => {
-                resultDiv.classList.remove('hidden');
-                resultDiv.innerHTML = `<p class="text-amber-300 italic">Communicating with the spirits...</p>`;
+                const resultWrapper = resultDiv.parentElement;
+                resultWrapper.classList.remove('hidden');
+                resultDiv.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
                 button.disabled = true;
 
                 try {
-                    // This endpoint '/api/gemini' works because of the redirect rule in netlify.toml
-                    const response = await fetch('/api/gemini', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ prompt }),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`HTTP error! status: ${response.status} - ${errorData.error}`);
+                    // This is where you would make the real API call to your backend
+                    // For now, we simulate a response
+                    await new Promise(res => setTimeout(res, 1500));
+                    
+                    let fakeResponse = `This is a simulated response for the prompt:\n\n${prompt.replace(/\n/g, '<br>')}`;
+                    if(button.id === 'ink-weave-btn'){
+                        fakeResponse = `cinematic portrait of your concept, fantasy, Studio Ghibli inspired, vibrant colors, detailed illustration, epic lighting, highly detailed, trending on artstation`;
+                    } else if (button.id === 'whisper-weave-btn'){
+                         fakeResponse = `<p class="text-lg text-teal-300 italic font-serif">"The answer you seek is not in the destination, but in the color of the sky on the day you decide to leave."</p>`;
+                    } else if (button.id === 'thread-weave-btn'){
+                        fakeResponse = `Based on the threads of history, the answer to your query is as follows... [detailed, factual answer here].`
+                    } else if (button.id === 'generate-char-button') {
+                        fakeResponse = `<b class="text-amber-300">Name:</b> Kaelen<br><b class="text-amber-300">Concept:</b> A concept based on your selections...<br><b class="text-amber-300">Plot Hook:</b> A hook related to the character...`;
                     }
-
-                    const data = await response.json();
-                    // Simple markdown replacement. For a more robust app, use a library like 'marked'.
-                    resultDiv.innerHTML = data.text.replace(/\n/g, '<br>');
+                    resultDiv.innerHTML = fakeResponse;
 
                 } catch (error) {
                     console.error('Error:', error);
-                    resultDiv.innerHTML = `<p class="text-red-400">The spirits are silent... (Error: ${error.message}).</p>`;
+                    resultDiv.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
                 } finally {
                     button.disabled = false;
                 }
             };
             
-            // Event listener for Character Concept Generator
-            container.querySelector('#generate-char-button').addEventListener('click', () => {
-                const getSelectValue = (id) => {
-                    const select = document.getElementById(id);
-                    if (select.value === 'Custom') {
-                        const customInput = document.getElementById(`${id}-custom`);
-                        return customInput ? customInput.value : 'Custom';
-                    }
-                    return select.value;
+            document.getElementById('generate-char-button').addEventListener('click', () => {
+                const getRandomOption = (select) => {
+                    const options = Array.from(select.options).map(opt => opt.value).filter(val => !['RANDOM', 'CUSTOM', 'DISABLED', ''].includes(val));
+                    return options.length > 0 ? options[Math.floor(Math.random() * options.length)] : null;
                 };
 
-                const kinship = getSelectValue('char-kinship');
-                const pClass = getSelectValue('char-class');
-                const background = getSelectValue('char-background');
+                const getSelection = (row, primaryClass, secondaryClass = null) => {
+                    let primaryValue = row.querySelector(primaryClass).value;
+                    if (primaryValue === 'CUSTOM') primaryValue = row.querySelector('.custom-input')?.value || 'a custom value';
+                    else if (primaryValue === 'RANDOM') primaryValue = getRandomOption(row.querySelector(primaryClass));
+                    
+                    if (!secondaryClass) return primaryValue;
+
+                    const primarySelect = document.createElement('select');
+                    primarySelect.innerHTML = row.querySelector(primaryClass).innerHTML;
+                    primarySelect.value = primaryValue;
+
+                    const secondarySelect = row.querySelector(secondaryClass);
+                    let secondaryValue = secondarySelect.value;
+                    
+                    if (secondaryValue === 'CUSTOM') secondaryValue = secondarySelect.parentElement.querySelector('.custom-input')?.value || 'a custom value';
+                    else if (secondaryValue === 'RANDOM') {
+                       const tempSecondary = document.createElement('select');
+                       if(secondaryClass.includes('sub-kinship')) updateSubKinshipDropdown(primarySelect, tempSecondary);
+                       else updateSubclassDropdown(primarySelect, tempSecondary);
+                       secondaryValue = getRandomOption(tempSecondary);
+                    }
+                    
+                    return (secondaryValue && secondaryValue !== 'DISABLED') ? `${primaryValue} (${secondaryValue})` : primaryValue;
+                };
+
+                const kinships = Array.from(document.querySelectorAll('#kinship-container > div')).map(row => getSelection(row, '.kinship-select', '.sub-kinship-select'));
+                const classes = Array.from(document.querySelectorAll('#class-container > div')).map(row => getSelection(row, '.class-select', '.subclass-select'));
+                const spirits = Array.from(document.querySelectorAll('#spirit-container > div')).map(row => getSelection(row, '.spirit-select'));
+                const backgrounds = Array.from(document.querySelectorAll('#background-container > div')).map(row => getSelection(row, '.background-select'));
+                
+                let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima, a world inspired by Japanese folklore and Studio Ghibli. The concept should be evocative and fit a whimsical, sometimes melancholic tone.`;
+
+                if (kinships.length > 0) prompt += `\n- **Heritage:** ${kinships.join(' and ')}.`;
+                if (classes.length > 0) prompt += `\n- **Class(es):** ${classes.join(' / ')}.`;
+                if (backgrounds.length > 0) prompt += `\n- **Background:** ${backgrounds.join(', ')}.`;
+                if (spirits.length > 0) prompt += `\n- **Spiritual Allegiance:** Connected to ${spirits.join(' and ')}.`;
+
                 const notes = document.getElementById('char-notes').value;
-                const resultDiv = document.getElementById('char-result');
-                const button = document.getElementById('generate-char-button');
+                if (notes) prompt += `\n- **Notes:** "${notes}".`;
+                
+                prompt += `\n\nProvide a short concept including a potential name, a personality description, and a plot hook. Format the response in HTML with bolded headers for 'Name', 'Concept', and 'Plot Hook'.`;
 
-                let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima, a world inspired by Japanese folklore and Studio Ghibli.
-                The character should be a ${kinship !== 'None' ? kinship : 'randomly chosen kinship'}, working as a ${pClass !== 'None' ? pClass : 'randomly chosen class'}, with a background as a ${background !== 'None' ? background : 'randomly chosen background'}.
-                ${notes ? `Incorporate the following notes: "${notes}".` : ''}
-                Provide a short, evocative concept including a name, a brief personality description, and a plot hook fitting the whimsical, sometimes melancholic tone of the world.
-                Format the response in HTML with bolded headers for 'Name', 'Concept', and 'Plot Hook'.`;
-
-                callGeminiAPI(prompt, resultDiv, button);
+                callGeminiAPI(prompt, document.getElementById('char-result'), document.getElementById('generate-char-button'));
             });
-            
-            // Event listener for Spirit Whisperer
-            container.querySelector('#whisper-button').addEventListener('click', () => {
+
+            document.getElementById('thread-weave-btn').addEventListener('click', () => {
+                const input = document.getElementById('thread-input').value;
+                if (!input) return;
+                const prompt = `You are the Thread Weaver, an archivist of the mystical Weaver's Loom. A user asks you a question about the world of Yurei-tu-Shima. Based on your knowledge of the lore, provide a clear, factual answer, but in your distinct, formal voice.\n\nUser Question: "${input}"`;
+                callGeminiAPI(prompt, document.getElementById('thread-result'), document.getElementById('thread-weave-btn'));
+            });
+
+            document.getElementById('ink-weave-btn').addEventListener('click', () => {
+                const input = document.getElementById('ink-input').value;
+                if (!input) return;
+                const prompt = `You are the Ink Weaver. A user wants to visualize something from the world of Yurei-tu-Shima. Take their concept and translate it into a detailed, descriptive prompt suitable for a generic AI image generator (like Midjourney or Stable Diffusion). The prompt should be a comma-separated list of keywords and phrases, replacing any specific lore terms with generic descriptions. The style should be 'Studio Ghibli inspired, fantasy, anime concept art'.\n\nUser Concept: "${input}"`;
+                callGeminiAPI(prompt, document.getElementById('ink-result'), document.getElementById('ink-weave-btn'));
+            });
+
+            document.getElementById('whisper-weave-btn').addEventListener('click', () => {
                 const input = document.getElementById('whisper-input').value;
-                const resultDiv = document.getElementById('whisper-result');
-                const button = document.getElementById('whisper-button');
                 if (!input) return;
-
-                let prompt = `In the world of Yurei-tu-Shima, a user asks a lesser spirit the following question: "${input}".
-                Answer as a whimsical, slightly cryptic, and wise lesser spirit of the island. The answer should be short and poetic. Format it as an italicized quote in a paragraph tag with the class 'text-lg text-teal-300 italic font-serif'.`;
-                
-                callGeminiAPI(prompt, resultDiv, button);
+                const prompt = `You are the Whisper Weaver. A user asks you a question seeking inspiration. Provide a short, poetic, and cryptic response in your distinct voice. The answer should be a riddle, omen, or a mysterious fragment, not a direct fact.\n\nUser Question: "${input}"`;
+                callGeminiAPI(prompt, document.getElementById('whisper-result'), document.getElementById('whisper-weave-btn'));
             });
 
-            // Event listener for Scene Weaver
-            container.querySelector('#weave-button').addEventListener('click', () => {
-                const input = document.getElementById('scene-input').value;
-                const resultDiv = document.getElementById('scene-result');
-                const button = document.getElementById('weave-button');
-                if (!input) return;
-
-                let prompt = `You are a creative writer for the Yurei-tu-Shima campaign setting. A user wants to visualize a scene based on this description: "${input}".
-                Write a short, evocative, and sensory-rich paragraph describing this scene. Focus on sights, sounds, and feelings to bring the moment to life in the style of Studio Ghibli or a beautiful piece of folklore. Format the response as a simple paragraph in a div tag.`;
-                
-                callGeminiAPI(prompt, resultDiv, button);
+            document.getElementById('ink-result-wrapper').addEventListener('click', e => {
+                if(e.target.classList.contains('copy-btn')) {
+                    const textToCopy = e.target.parentElement.querySelector('#ink-result').textContent;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        e.target.textContent = 'Copied!';
+                        setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
+                    });
+                }
             });
+
         },
         'view-banner': (container, data) => {
             container.innerHTML = `<div class="content-panel-inner flex items-center justify-center h-full"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"></div>`;
@@ -381,41 +529,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const contentOverlay = document.getElementById('content-overlay');
         const contentOverlayBody = document.getElementById('content-overlay-body');
 
-        // 1. Populate the static welcome area
-        welcomeArea.innerHTML = `
-            <div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
-                <div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">
-                    <h2 class="text-3xl lg:text-4xl font-serif text-gray-900">The Weaver's Welcome</h2>
-                    <div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4">
-                        <p>Welcome, Traveler, to the shores of the forgotten. Breathe deep, for the air here is woven with quiet magic and the whispers of spirits. You hold no map to this place—Yurei-tu-Shima is not found, but remembered.</p>
-                        <p class="mt-3">It is a land of slow wonder and strange, beautiful moments, a story that does not need saving, but simply a witness. So listen to the rustle of the leaves, the hum of the ancient stones, and let the island breathe with you. Your adventure begins now.</p>
-                        <p class="text-3xl mt-4 text-right">— The Weaver</p>
-                    </div>
-                    <hr class="border-stone-400/50 my-4">
-                    <div class="text-gray-700">
-                        <h3 class="text-xl font-bold text-gray-800 font-serif mb-2">Where the Mists Part</h3>
-                        <p class="mb-3">Most tales told within Yurei-tu-Shima are generally going to be pleasant and relaxing experiences — a journey into a realm of leisure fantasy where time slows down and descriptions delight in the small details: how the warm breeze blowing across the Gale Fields dances on the skin, or the cozy comfort of sipping from a hot cup of soup on a cool evening around a campfire with companions. These small, sensory vignettes are important.</p>
-                        <p>But that isn’t to say that everything on the island is pastoral and easy going. There are monsters and plenty of peril here that can turn a delightful stroll through the countryside into a harrowing situation where blades, bloodshed, and arcane magics are required. These contrasting facets of Yurei-tu-Shima make for compelling storytelling as your moments of danger will feel that much more dangerous and your moments of tranquility will feel that much more earned.</p>
-                    </div>
-                </div>
-                <div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0">
-                    <img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto">
-                </div>
-            </div>
-        `;
+        welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">The Weaver's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Welcome, Traveler, to the shores of the forgotten. Breathe deep, for the air here is woven with quiet magic and the whispers of spirits. You hold no map to this place—Yurei-tu-Shima is not found, but remembered.</p><p class="mt-3">It is a land of slow wonder and strange, beautiful moments, a story that does not need saving, but simply a witness. So listen to the rustle of the leaves, the hum of the ancient stones, and let the island breathe with you. Your adventure begins now.</p><p class="text-3xl mt-4 text-right">— The Weaver</p></div><hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">Where the Mists Part</h3><p class="mb-3">Most tales told within Yurei-tu-Shima are generally going to be pleasant and relaxing experiences — a journey into a realm of leisure fantasy where time slows down and descriptions delight in the small details: how the warm breeze blowing across the Gale Fields dances on the skin, or the cozy comfort of sipping from a hot cup of soup on a cool evening around a campfire with companions. These small, sensory vignettes are important.</p><p>But that isn’t to say that everything on the island is pastoral and easy going. There are monsters and plenty of peril here that can turn a delightful stroll through the countryside into a harrowing situation where blades, bloodshed, and arcane magics are required. These contrasting facets of Yurei-tu-Shima make for compelling storytelling as your moments of danger will feel that much more dangerous and your moments of tranquility will feel that much more earned.</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
 
-        // 2. Create the navigation portals
         navigationItems.forEach(item => {
             const portal = document.createElement('div');
             portal.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-            portal.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2 text-amber-300/70 group-hover:text-amber-200 transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                </svg>
-                <h4 class="font-serif text-amber-200 group-hover:text-white transition-colors">${item.label}</h4>
-            `;
+            portal.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2 text-amber-300/70 group-hover:text-amber-200 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg><h4 class="font-serif text-amber-200 group-hover:text-white transition-colors">${item.label}</h4>`;
             portal.addEventListener('click', () => {
-                contentOverlayBody.innerHTML = ''; // Clear previous content
+                contentOverlayBody.innerHTML = ''; 
                 if (panelGeneratorMap[item.id]) {
                     panelGeneratorMap[item.id](contentOverlayBody, DATA);
                 }
@@ -424,14 +545,16 @@ document.addEventListener('DOMContentLoaded', function() {
             portalGrid.appendChild(portal);
         });
 
-        // 3. Setup Modal and Overlay Listeners
         document.getElementById('content-overlay-close-button').addEventListener('click', () => contentOverlay.classList.remove('active'));
-        document.getElementById('main-modal-close-button').addEventListener('click', () => mainModal.style.display = 'none');
-        document.getElementById('subspecies-modal-close-button').addEventListener('click', () => subspeciesModal.style.display = 'none');
+        
+        // Modal closing logic
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
+        });
+
         window.addEventListener('click', (e) => {
-            if (e.target == mainModal) mainModal.style.display = 'none';
-            if (e.target == subspeciesModal) subspeciesModal.style.display = 'none';
-            if (e.target == contentOverlay) contentOverlay.classList.remove('active');
+            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+            if (e.target.id === 'content-overlay') contentOverlay.classList.remove('active');
         });
     }
 
