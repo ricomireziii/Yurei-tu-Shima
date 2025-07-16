@@ -25,7 +25,7 @@ exports.handler = async function (event, context) {
 
         // 3. Initialize the Google AI client
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-latest' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
         // 4. Make the actual API call
         const result = await model.generateContent(prompt);
         const response = await result.response;
