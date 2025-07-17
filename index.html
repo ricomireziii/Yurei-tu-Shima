@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { name: "Queen Okumi", image: 'https://i.imgur.com/CaCftes.jpeg', content: `<p><b>Domain:</b> Joy, Origins, Rebirth, Wonder</p><p><b>Kinships Revering:</b> Nakudama, Kojin, Gnomes</p><p><b>Symbols:</b> Speckled egg, giggling tadpole, star blossom</p><p><b>Shrines:</b> Lotus ponds, cliff nests, spring groves</p><p class='my-2'>Okumi is laughter given shape, the spirit who laid the first Nakudama eggs atop a mossy crater. She brought delight to the stars and joy to the soil. Her Cosmic Egg, it’s said, still floats in the Spirit Realm, giggling in eternal play.</p><blockquote>“She cracked the sky with her laugh and filled the pond with stars.”<br>—Gribba, Spirit-Tail Historian</blockquote>`},
         { name: "Hoshira", image: 'https://i.imgur.com/BDdr3qu.jpeg', content: `<p><b>Domain:</b> Dreams, Childhood, Lost Things</p><p><b>Kinships Revering:</b> Kojin, Astral Elves</p><p><b>Symbols:</b> Cradle constellation, feathered eye, star in leaf</p><p><b>Shrines:</b> Tree hollows, dreamcatcher groves, ceiling murals</p><p class='my-2'>The gentle hum that soothes sleepers and cradles the forgotten. Kojin believe she carries dreams up to the stars and gently returns them in morning dew. Her followers speak in lullabies and comfort ghosts too gentle to pass on.</p><blockquote>“She never speaks, only hums. But when she hums, the stars listen.”<br>—Koya, Skykeeper of Blue Tree Hollow</blockquote>`},
         { name: "Morrowel", image: 'https://i.imgur.com/CaCftes.jpeg', content: `<p><b>Domain:</b> Choice, Thresholds, Change</p><p><b>Kinships Revering:</b> Tenkara, Kurokara, Courier Brigade</p><p><b>Symbols:</b> Spiral key, veiled eye, old arch</p><p><b>Shrines:</b> Bridges, crossroads, train stops</p><p class='my-2'>Morrowel is neither future nor past—she is the door between. No one knows what she looks like, but every threshold bears her presence. Her followers speak of choices not made and lives that might have been.</p><blockquote>“She never walks with you. But every path has her footprints.”<br>—Silhae, Ink-Mender of the Loom’s Edge</blockquote>`},
-        { name: "Noroku", image: 'https://i.imgur.com/XR7NZsF.jpeg', content: `<p><b>Domain:</b> Time, Memory, Lost Futures</p><p><b>Kinships Revering:</b> Gnomes, Dara, Seers</p><p><b>Symbols:</b> Cracked clock, spiral shell, melting wax</p><p><b>Shrines:</b> Abandoned towers, forgotten bookshelves, river cairns</p><p class='my-2'>Noroku is the sorrow of potential undone. He watches what might have been: loves unsaid, paths unfollowed, worlds unlived. He whispers to inventors and dreamers, not to spur them forward—but to honor what was nearly real.</p><blockquote>“He doesn’t mourn what was. He mourns what never could be.”<br>—Minto Sparkhat, Coralveil Inventor</blockquote>`},
+        { name: "Noroku", image: 'https://i.imgur.com/XR7NZsF.jpeg', content: `<p><b>Domain:</b> Time, Memory, Lost Futures</p><p><b>Kinships Revering:</b> Gnomes, Dara, Seers</p><p><b>Symbols:</b> Cracked clock, spiral shell, melting wax</p><p><b>Shrines:</b> Abandoned towers, forgotten bookshelves, river cairns</p><p class='my-2'>Noroku is the sorrow of potential undone. He watches what might have been: loves unsaid, paths unfollowed, worlds unlived. He whispers to inventors and dreamers, not to spur them forward—but to honor what was nearly real.</p><blockquote>“He doesn’t mourn what was. He mourns what never could be.”<br>—Minto Sparkhat, Coralveil inventor</blockquote>`},
         { name: "Shi-Naga", image: 'https://i.imgur.com/BDdr3qu.jpeg', content: `<p><b>Domain:</b> Madness, Corruption, Broken Insight</p><p><b>Kinships Affected:</b> Elves, the Cursed, Witches</p><p><b>Symbols:</b> Cracked mask, dripping ink, spiraling eye</p><p><b>Shrines:</b> Cursed caves, mirror-ponds, ruined sanctuaries</p><p class='my-2'>She who sees all and sees too much. The Corruption is her breath, her madness a dream unending. Those who hear her voice in still water or black ink often cannot forget what they were—nor what she shows them.</p><blockquote>“She sings in the cracks between dreams. Her lullaby is teeth.”<br>—Nokuri, Witch of the Fifth Reflection</blockquote>`},
         { name: "Malgrotha", image: 'https://i.imgur.com/CaCftes.jpeg', content: `<p><b>Domain:</b> Rage, Binding, Shadowed Duality</p><p><b>Kinships Affected:</b> Dark Elves, Beastfolk, Exorcists</p><p><b>Symbols:</b> Broken wings, thorny cage, twisted roots</p><p><b>Shrines:</b> None active—his prison is his shrine</p><p class='my-2'>Once a twin spirit of light and dark—a rabbit and crow—Malgrotha became wrath incarnate when his light half was wounded. The First Dara caged him in the Crawling Canopy, a forest that follows him endlessly.</p><blockquote>“He is pain without language. He does not seek escape. He seeks silence.”<br>—Dara Yushi of the Crawling Watch</blockquote>`},
         { name: "Oghmai", image: 'https://i.imgur.com/XR7NZsF.jpeg', content: `<p><b>Domain:</b> Deception, Tyranny, Fallen Grace</p><p><b>Kinships Haunted:</b> Nakudama (historical), Ambitious Spirits</p><p><b>Symbols:</b> Mask with many eyes, coiled tongue, inked chains</p><p><b>Shrines:</b> Ruins, war-banners buried in ash</p><p class='my-2'>Oghmai was once spirit-flesh—a king of ambition who tore the unity of the Nakudama with whispered lies. Though overthrown, it is said his spirit was never fully banished, only broken into fragments. His masks still whisper in forgotten places.</p><blockquote>“He is not gone. Only broken into questions.”<br>—Omu of the Twelve Rains</blockquote>`},
@@ -408,9 +408,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.disabled = true;
 
                 try {
-                    // ===============================================================
-                    // REAL API CALL - Use this for the live, functional version.
-                    // ===============================================================
                     const response = await fetch('/api/gemini', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -424,32 +421,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // The .replace() is a simple way to handle line breaks from the AI
                     resultDiv.innerHTML = data.text.replace(/\n/g, '<br>');
-
-
-                    /*
-                    // ===============================================================
-                    // FAKE API RESPONSE - Use this for testing without an API key.
-                    // To use this, comment out the "REAL API CALL" block above
-                    // and uncomment this block below.
-                    // ===============================================================
-                    await new Promise(res => setTimeout(res, 1500));
-                    
-                    let fakeResponse;
-                    if(button.id === 'ink-weave-btn'){
-                        fakeResponse = `cinematic portrait of your concept, fantasy, Studio Ghibli inspired, vibrant colors, detailed illustration, epic lighting, highly detailed, trending on artstation`;
-                    } else if (button.id === 'whisper-weave-btn'){
-                         fakeResponse = `<p class="text-lg text-teal-300 italic font-serif">"The answer you seek is not in the destination, but in the color of the sky on the day you decide to leave."</p>`;
-                    } else if (button.id === 'thread-weave-btn'){
-                        fakeResponse = `Based on the threads of history, the answer to your query is as follows... [detailed, factual answer about: ${prompt}]`
-                    } else if (button.id === 'generate-char-button') {
-                        fakeResponse = `<b class="text-amber-300">Name:</b> Kaelen<br><b class="text-amber-300">Concept:</b> A concept based on your detailed selections...<br><b class="text-amber-300">Plot Hook:</b> A hook related to the character...`;
-                    } else {
-                        fakeResponse = `This is a simulated response for the prompt:\n\n${prompt.replace(/\n/g, '<br>')}`;
-                    }
-                    resultDiv.innerHTML = fakeResponse;
-                    */
-
-
                 } catch (error) {
                     console.error('Error:', error);
                     resultDiv.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
