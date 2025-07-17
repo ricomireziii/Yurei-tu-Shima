@@ -24,7 +24,7 @@ async function retrieveRelevantLore(query) {
         // Query Supabase to find the most similar chunks
         const { data: documents, error } = await supabase.rpc('match_lore_documents', {
             query_embedding: queryEmbedding,
-            match_threshold: 0.70, // Adjust this threshold as needed (0.7 is a good starting point)
+            match_threshold: 0.5, // Adjust this threshold as needed (0.7 is a good starting point)
             match_count: 5,       // Get the top 5 most relevant chunks
         });
 
