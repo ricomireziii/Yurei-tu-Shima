@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const notes = document.getElementById('char-notes').value;
                 if (notes) prompt += `\n- **Notes:** "${notes}".`;
                 
-                prompt += `\n\nProvide a short concept including a potential name, a personality description, and a plot hook. Format the response in HTML with bolded headers for 'Name', 'Concept', and 'Plot Hook'.`;
+                prompt += `\n\nProvide a short concept including a potential name, a personality description, and a plot hook. Use <b> tags for the 'Name', 'Concept', and 'Plot Hook' headers.`;
 
                 callGeminiAPI(prompt, document.getElementById('char-result'), document.getElementById('generate-char-button'));
             });
