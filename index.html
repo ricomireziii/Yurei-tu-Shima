@@ -259,263 +259,251 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         'weavers-loom': (container, data) => {
             const loomContainer = document.createElement('div');
-            loomContainer.className = 'content-panel-inner';
-            container.appendChild(loomContainer);
+    loomContainer.className = 'content-panel-inner';
+    container.appendChild(loomContainer);
 
-            loomContainer.innerHTML = `
-                <div class="text-center mb-8">
-                    <h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2>
-                    <div class="flex flex-col md:flex-row items-center justify-center gap-6 max-w-4xl mx-auto text-left bg-black/20 p-4 rounded-lg">
-                        <img src="https://i.imgur.com/cyVlJBD.jpeg" alt="The Weaver's Loom" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
-                        <p class="text-lg text-gray-300 italic">"Welcome, Traveler, to my workshop. This is the Loom where stories are born. The air here hums with potential, and the threads of what could be drift like dust in the moonlight. My attendants, the weavers of thread, ink, and whisper, will help you shape the fabric of reality. Or, speak with the Breath Weaver, and begin a new story of your own."</p>
-                    </div>
+    loomContainer.innerHTML = `
+        <div class="text-center mb-8">
+            <h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-6 max-w-4xl mx-auto text-left bg-black/20 p-4 rounded-lg">
+                <img src="https://i.imgur.com/cyVlJBD.jpeg" alt="The Weaver's Loom" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
+                <p class="text-lg text-gray-300 italic">"Welcome, Traveler, to my workshop. This is the Loom where stories are born. The air here hums with potential, and the threads of what could be drift like dust in the moonlight. My attendants, the weavers of thread, ink, and whisper, will help you shape the fabric of reality. Or, speak with the Breath Weaver, and begin a new story of your own."</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="thread-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Thread Weaver</h3><p class="text-sm text-gray-400 italic">Ask questions of the lore.</p></div>
+            <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="ink-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Ink Weaver</h3><p class="text-sm text-gray-400 italic">Create prompts for images.</p></div>
+            <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="whisper-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Whisper Weaver</h3><p class="text-sm text-gray-400 italic">Receive cryptic clues.</p></div>
+        </div>
+        <div id="breath-weaver-section" class="bg-black/20 p-6 rounded-lg shadow-inner border border-gray-700/50">
+            <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
+                <img src="https://i.imgur.com/UkGtkvp.jpeg" alt="Breath Weaver" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
+                <div>
+                    <h3 class="text-3xl font-serif text-amber-300 mb-2">The Breath Weaver</h3>
+                    <p class="text-gray-300 italic">"Ah, a new story seeks to be told! Welcome, welcome. Every life begins with a single spark, a simple breath. Give me the vessel you have in mind—the kinship, the calling, the heart's allegiances—and I shall weave its very soul. Let us begin a new journey together."</p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="thread-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Thread Weaver</h3><p class="text-sm text-gray-400 italic">Ask questions of the lore.</p></div>
-                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="ink-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Ink Weaver</h3><p class="text-sm text-gray-400 italic">Create prompts for images.</p></div>
-                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="whisper-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Whisper Weaver</h3><p class="text-sm text-gray-400 italic">Receive cryptic clues.</p></div>
-                </div>
-                <div id="breath-weaver-section" class="bg-black/20 p-6 rounded-lg shadow-inner border border-gray-700/50">
-                    <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
-                        <img src="https://i.imgur.com/UkGtkvp.jpeg" alt="Breath Weaver" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
-                        <div>
-                            <h3 class="text-3xl font-serif text-amber-300 mb-2">The Breath Weaver</h3>
-                            <p class="text-gray-300 italic">"Ah, a new story seeks to be told! Welcome, welcome. Every life begins with a single spark, a simple breath. Give me the vessel you have in mind—the kinship, the calling, the heart's allegiances—and I shall weave its very soul. Let us begin a new journey together."</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
-                        <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Kinship</button>
-                        <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Class</button>
-                        <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Spirit</button>
-                        <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Background</button>
-                    </div>
-                    <div id="kinship-container" class="space-y-3 mb-4"></div>
-                    <div id="class-container" class="space-y-3 mb-4"></div>
-                    <div id="spirit-container" class="space-y-3 mb-4"></div>
-                    <div id="background-container" class="space-y-3 mb-4"></div>
-                    <div class="mb-4">
-                        <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
-                        <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
-                    </div>
-                    <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition duration-300">Weave the Breath</button>
-                    <div id="char-result-wrapper" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"><div id="char-result"></div></div>
-                </div>`;
+            </div>
+            <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
+                <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Kinship</button>
+                <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Class</button>
+                <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Spirit</button>
+                <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Background</button>
+            </div>
+            <div id="kinship-container" class="space-y-3 mb-4"></div>
+            <div id="class-container" class="space-y-3 mb-4"></div>
+            <div id="spirit-container" class="space-y-3 mb-4"></div>
+            <div id="background-container" class="space-y-3 mb-4"></div>
+            <div class="mb-4">
+                <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
+                <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
+            </div>
+            <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition duration-300">Weave the Breath</button>
+            <div id="char-result-wrapper" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"><div id="char-result"></div></div>
+        </div>`;
 
-            document.getElementById('thread-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="thread-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask about a person, place, or event..."></textarea><button id="thread-weave-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Consult the Archives</button></div><div id="thread-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="thread-result"></div></div>`;
-            document.getElementById('ink-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="ink-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Describe a character or scene to visualize..."></textarea><button id="ink-weave-btn" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">Weave Ink</button></div><div id="ink-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative"><div id="ink-result"></div><button class="copy-btn text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500 absolute top-2 right-2">Copy</button></div>`;
-            document.getElementById('whisper-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="whisper-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask a question for which you seek not an answer, but a sign..."></textarea><button id="whisper-weave-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">Listen for a Whisper</button></div><div id="whisper-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="whisper-result"></div></div>`;
+    document.getElementById('thread-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="thread-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask about a person, place, or event..."></textarea><button id="thread-weave-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Consult the Archives</button></div><div id="thread-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="thread-result"></div></div>`;
+    document.getElementById('ink-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="ink-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Describe a character or scene to visualize..."></textarea><button id="ink-weave-btn" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">Weave Ink</button></div><div id="ink-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative"><div id="ink-result"></div><button class="copy-btn text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500 absolute top-2 right-2">Copy</button></div>`;
+    document.getElementById('whisper-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="whisper-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask a question for which you seek not an answer, but a sign..."></textarea><button id="whisper-weave-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">Listen for a Whisper</button></div><div id="whisper-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="whisper-result"></div></div>`;
 
-            const populateSelect = (select, options) => {
-                select.innerHTML = '';
-                select.add(new Option('(Random)', 'RANDOM'));
-                select.add(new Option('Custom...', 'CUSTOM'));
-                const separator = new Option('──────────', 'DISABLED');
-                separator.disabled = true;
-                select.add(separator);
-                options.forEach(opt => select.add(new Option(opt, opt)));
-            };
+    const populateSelect = (select, options) => {
+        select.innerHTML = '';
+        select.add(new Option('(Random)', 'RANDOM'));
+        select.add(new Option('Custom...', 'CUSTOM'));
+        const separator = new Option('──────────', 'DISABLED');
+        separator.disabled = true;
+        select.add(separator);
+        options.forEach(opt => select.add(new Option(opt, opt)));
+    };
 
-            const handleCustomInput = (e) => {
-                const select = e.target;
-                const wrapper = select.parentElement.querySelector('.custom-input-wrapper');
-                wrapper.innerHTML = '';
-                if (select.value === 'CUSTOM') {
-                    const customInput = document.createElement('input');
-                    customInput.type = 'text';
-                    customInput.className = 'custom-input mt-2 block w-full p-2.5 text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500';
-                    customInput.placeholder = `Enter Custom ${select.dataset.label}...`;
-                    wrapper.appendChild(customInput);
-                }
-            };
-            
-            const addKinshipRow = () => {
-                const container = document.getElementById('kinship-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Kinship</label><select data-label="Kinship" class="kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-Kinship</label><select data-label="Sub-Kinship" class="sub-kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const kinshipSelect = row.querySelector('.kinship-select');
-                const subKinshipSelect = row.querySelector('.sub-kinship-select');
-                populateSelect(kinshipSelect, data.peoplesData.map(p => p.name));
-                kinshipSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubKinshipDropdown(kinshipSelect, subKinshipSelect); });
-                subKinshipSelect.addEventListener('change', handleCustomInput);
-                updateSubKinshipDropdown(kinshipSelect, subKinshipSelect);
-            };
+    const handleCustomInput = (e) => {
+        const select = e.target;
+        const wrapper = select.parentElement.querySelector('.custom-input-wrapper');
+        wrapper.innerHTML = '';
+        if (select.value === 'CUSTOM') {
+            const customInput = document.createElement('input');
+            customInput.type = 'text';
+            customInput.className = 'custom-input mt-2 block w-full p-2.5 text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500';
+            customInput.placeholder = `Enter Custom ${select.dataset.label}...`;
+            wrapper.appendChild(customInput);
+        }
+    };
+    
+    const addKinshipRow = () => {
+        const container = document.getElementById('kinship-container');
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Kinship</label><select data-label="Kinship" class="kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-Kinship</label><select data-label="Sub-Kinship" class="sub-kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+        container.appendChild(row);
+        const kinshipSelect = row.querySelector('.kinship-select');
+        const subKinshipSelect = row.querySelector('.sub-kinship-select');
+        populateSelect(kinshipSelect, data.peoplesData.map(p => p.name));
+        kinshipSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubKinshipDropdown(kinshipSelect, subKinshipSelect); });
+        subKinshipSelect.addEventListener('change', handleCustomInput);
+        updateSubKinshipDropdown(kinshipSelect, subKinshipSelect);
+    };
 
-            const updateSubKinshipDropdown = (kinshipSelect, subKinshipSelect) => {
-                const kinship = data.peoplesData.find(p => p.name === kinshipSelect.value);
-                const subKinships = kinship && kinship.subspecies.length > 0 ? kinship.subspecies.map(s => s.name) : [];
-                populateSelect(subKinshipSelect, subKinships);
-                subKinshipSelect.disabled = !subKinships.length > 0;
-            };
+    const updateSubKinshipDropdown = (kinshipSelect, subKinshipSelect) => {
+        const kinship = data.peoplesData.find(p => p.name === kinshipSelect.value);
+        const subKinships = kinship && kinship.subspecies.length > 0 ? kinship.subspecies.map(s => s.name) : [];
+        populateSelect(subKinshipSelect, subKinships);
+        subKinshipSelect.disabled = !subKinships.length > 0;
+    };
 
-            const addClassRow = () => {
-                const container = document.getElementById('class-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Class</label><select data-label="Class" class="class-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Subclass</label><select data-label="Subclass" class="subclass-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const classSelect = row.querySelector('.class-select');
-                const subclassSelect = row.querySelector('.subclass-select');
-                populateSelect(classSelect, Object.keys(data.classData));
-                classSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubclassDropdown(classSelect, subclassSelect); });
-                subclassSelect.addEventListener('change', handleCustomInput);
-                updateSubclassDropdown(classSelect, subclassSelect);
-            };
+    const addClassRow = () => {
+        const container = document.getElementById('class-container');
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Class</label><select data-label="Class" class="class-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Subclass</label><select data-label="Subclass" class="subclass-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+        container.appendChild(row);
+        const classSelect = row.querySelector('.class-select');
+        const subclassSelect = row.querySelector('.subclass-select');
+        populateSelect(classSelect, Object.keys(data.classData));
+        classSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubclassDropdown(classSelect, subclassSelect); });
+        subclassSelect.addEventListener('change', handleCustomInput);
+        updateSubclassDropdown(classSelect, subclassSelect);
+    };
 
-            const updateSubclassDropdown = (classSelect, subclassSelect) => {
-                const subclasses = data.classData[classSelect.value] || [];
-                populateSelect(subclassSelect, subclasses);
-                subclassSelect.disabled = subclasses.length === 0 && classSelect.value !== 'CUSTOM' && classSelect.value !== 'RANDOM';
-            };
-            
-            const addSpiritRow = () => {
-                const container = document.getElementById('spirit-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Spirit</label><select data-label="Spirit" class="spirit-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const spiritSelect = row.querySelector('.spirit-select');
-                populateSelect(spiritSelect, data.pantheonData.map(p => p.name));
-                spiritSelect.addEventListener('change', handleCustomInput);
-            };
+    const updateSubclassDropdown = (classSelect, subclassSelect) => {
+        const subclasses = data.classData[classSelect.value] || [];
+        populateSelect(subclassSelect, subclasses);
+        subclassSelect.disabled = subclasses.length === 0 && classSelect.value !== 'CUSTOM' && classSelect.value !== 'RANDOM';
+    };
+    
+    const addSpiritRow = () => {
+        const container = document.getElementById('spirit-container');
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Spirit</label><select data-label="Spirit" class="spirit-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+        container.appendChild(row);
+        const spiritSelect = row.querySelector('.spirit-select');
+        populateSelect(spiritSelect, data.pantheonData.map(p => p.name));
+        spiritSelect.addEventListener('change', handleCustomInput);
+    };
 
-            const addBackgroundRow = () => {
-                 const container = document.getElementById('background-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Background</label><select data-label="Background" class="background-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const backgroundSelect = row.querySelector('.background-select');
-                populateSelect(backgroundSelect, data.backgrounds);
-                backgroundSelect.addEventListener('change', handleCustomInput);
+    const addBackgroundRow = () => {
+            const container = document.getElementById('background-container');
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Background</label><select data-label="Background" class="background-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
+        container.appendChild(row);
+        const backgroundSelect = row.querySelector('.background-select');
+        populateSelect(backgroundSelect, data.backgrounds);
+        backgroundSelect.addEventListener('change', handleCustomInput);
+    }
+
+    document.getElementById('add-kinship-btn').addEventListener('click', addKinshipRow);
+    document.getElementById('add-class-btn').addEventListener('click', addClassRow);
+    document.getElementById('add-spirit-btn').addEventListener('click', addSpiritRow);
+    document.getElementById('add-background-btn').addEventListener('click', addBackgroundRow);
+
+    loomContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-btn')) {
+            e.target.parentElement.remove();
+        }
+        if (e.target.closest('.weaver-card')) {
+            const modalId = e.target.closest('.weaver-card').dataset.modalTarget;
+            document.getElementById(modalId).style.display = 'flex';
+        }
+    });
+    
+    // --- UPDATED API CALL FUNCTION ---
+    const callGeminiAPI = async (weaver, userInput, resultDiv, button) => {
+        const resultWrapper = resultDiv.parentElement;
+        resultWrapper.classList.remove('hidden');
+        resultDiv.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
+        button.disabled = true;
+
+        try {
+            const response = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ weaver, userInput }),
+            });
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || `HTTP error! status: ${response.status}`);
             }
-
-            document.getElementById('add-kinship-btn').addEventListener('click', addKinshipRow);
-            document.getElementById('add-class-btn').addEventListener('click', addClassRow);
-            document.getElementById('add-spirit-btn').addEventListener('click', addSpiritRow);
-            document.getElementById('add-background-btn').addEventListener('click', addBackgroundRow);
-
-            loomContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('remove-btn')) {
-                    e.target.parentElement.remove();
-                }
-                if (e.target.closest('.weaver-card')) {
-                    const modalId = e.target.closest('.weaver-card').dataset.modalTarget;
-                    document.getElementById(modalId).style.display = 'flex';
-                }
-            });
+            const data = await response.json();
             
-            const callGeminiAPI = async (prompt, resultDiv, button) => {
-                const resultWrapper = resultDiv.parentElement;
-                resultWrapper.classList.remove('hidden');
-                resultDiv.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
-                button.disabled = true;
+            resultDiv.innerHTML = data.text.replace(/\n/g, '<br>');
+        } catch (error) {
+            console.error('Error:', error);
+            resultDiv.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
+        } finally {
+            button.disabled = false;
+        }
+    };
+    
+    document.getElementById('generate-char-button').addEventListener('click', () => {
+        // ... (The logic to get selections remains the same)
+        const getRandomOption = (select) => {
+            const options = Array.from(select.options).map(opt => opt.value).filter(val => !['RANDOM', 'CUSTOM', 'DISABLED', ''].includes(val));
+            return options.length > 0 ? options[Math.floor(Math.random() * options.length)] : null;
+        };
+        const getSelection = (row, primaryClass, secondaryClass = null) => {
+            let primaryValue = row.querySelector(primaryClass).value;
+            if (primaryValue === 'CUSTOM') primaryValue = row.querySelector('.custom-input')?.value || 'a custom value';
+            else if (primaryValue === 'RANDOM') primaryValue = getRandomOption(row.querySelector(primaryClass));
+            if (!secondaryClass) return primaryValue;
+            const primarySelect = document.createElement('select');
+            primarySelect.innerHTML = row.querySelector(primaryClass).innerHTML;
+            primarySelect.value = primaryValue;
+            const secondarySelect = row.querySelector(secondaryClass);
+            let secondaryValue = secondarySelect.value;
+            if (secondaryValue === 'CUSTOM') secondaryValue = secondarySelect.parentElement.querySelector('.custom-input')?.value || 'a custom value';
+            else if (secondaryValue === 'RANDOM') {
+                const tempSecondary = document.createElement('select');
+                if(secondaryClass.includes('sub-kinship')) updateSubKinshipDropdown(primarySelect, tempSecondary);
+                else updateSubclassDropdown(primarySelect, tempSecondary);
+                secondaryValue = getRandomOption(tempSecondary);
+            }
+            return (secondaryValue && secondaryValue !== 'DISABLED') ? `${primaryValue} (${secondaryValue})` : primaryValue;
+        };
 
-                try {
-                    const response = await fetch('/api/gemini', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt }),
-                    });
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.error || `HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    
-                    resultDiv.innerHTML = data.text.replace(/\n/g, '<br>');
-                } catch (error) {
-                    console.error('Error:', error);
-                    resultDiv.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
-                } finally {
-                    button.disabled = false;
-                }
-            };
-            
-            document.getElementById('generate-char-button').addEventListener('click', () => {
-                const getRandomOption = (select) => {
-                    const options = Array.from(select.options).map(opt => opt.value).filter(val => !['RANDOM', 'CUSTOM', 'DISABLED', ''].includes(val));
-                    return options.length > 0 ? options[Math.floor(Math.random() * options.length)] : null;
-                };
+        const kinships = Array.from(document.querySelectorAll('#kinship-container > div')).map(row => getSelection(row, '.kinship-select', '.sub-kinship-select'));
+        const classes = Array.from(document.querySelectorAll('#class-container > div')).map(row => getSelection(row, '.class-select', '.subclass-select'));
+        const spirits = Array.from(document.querySelectorAll('#spirit-container > div')).map(row => getSelection(row, '.spirit-select'));
+        const backgrounds = Array.from(document.querySelectorAll('#background-container > div')).map(row => getSelection(row, '.background-select'));
+        
+        let userInput = `Generate a character concept.`;
+        if (kinships.length > 0) userInput += `\n- Heritage: ${kinships.join(' and ')}.`;
+        if (classes.length > 0) userInput += `\n- Class(es): ${classes.join(' / ')}.`;
+        if (backgrounds.length > 0) userInput += `\n- Background: ${backgrounds.join(', ')}.`;
+        if (spirits.length > 0) userInput += `\n- Spiritual Allegiance: Connected to ${spirits.join(' and ')}.`;
+        const notes = document.getElementById('char-notes').value;
+        if (notes) userInput += `\n- Notes: "${notes}".`;
+        
+        callGeminiAPI('Breath Weaver', userInput, document.getElementById('char-result'), document.getElementById('generate-char-button'));
+    });
 
-                const getSelection = (row, primaryClass, secondaryClass = null) => {
-                    let primaryValue = row.querySelector(primaryClass).value;
-                    if (primaryValue === 'CUSTOM') primaryValue = row.querySelector('.custom-input')?.value || 'a custom value';
-                    else if (primaryValue === 'RANDOM') primaryValue = getRandomOption(row.querySelector(primaryClass));
-                    
-                    if (!secondaryClass) return primaryValue;
+    document.getElementById('thread-weave-btn').addEventListener('click', () => {
+        const userInput = document.getElementById('thread-input').value;
+        if (!userInput) return;
+        callGeminiAPI('Thread Weaver', userInput, document.getElementById('thread-result'), document.getElementById('thread-weave-btn'));
+    });
 
-                    const primarySelect = document.createElement('select');
-                    primarySelect.innerHTML = row.querySelector(primaryClass).innerHTML;
-                    primarySelect.value = primaryValue;
+    document.getElementById('ink-weave-btn').addEventListener('click', () => {
+        const userInput = document.getElementById('ink-input').value;
+        if (!userInput) return;
+        callGeminiAPI('Ink Weaver', userInput, document.getElementById('ink-result'), document.getElementById('ink-weave-btn'));
+    });
 
-                    const secondarySelect = row.querySelector(secondaryClass);
-                    let secondaryValue = secondarySelect.value;
-                    
-                    if (secondaryValue === 'CUSTOM') secondaryValue = secondarySelect.parentElement.querySelector('.custom-input')?.value || 'a custom value';
-                    else if (secondaryValue === 'RANDOM') {
-                       const tempSecondary = document.createElement('select');
-                       if(secondaryClass.includes('sub-kinship')) updateSubKinshipDropdown(primarySelect, tempSecondary);
-                       else updateSubclassDropdown(primarySelect, tempSecondary);
-                       secondaryValue = getRandomOption(tempSecondary);
-                    }
-                    
-                    return (secondaryValue && secondaryValue !== 'DISABLED') ? `${primaryValue} (${secondaryValue})` : primaryValue;
-                };
+    document.getElementById('whisper-weave-btn').addEventListener('click', () => {
+        const userInput = document.getElementById('whisper-input').value;
+        if (!userInput) return;
+        callGeminiAPI('Whisper Weaver', userInput, document.getElementById('whisper-result'), document.getElementById('whisper-weave-btn'));
+    });
 
-                const kinships = Array.from(document.querySelectorAll('#kinship-container > div')).map(row => getSelection(row, '.kinship-select', '.sub-kinship-select'));
-                const classes = Array.from(document.querySelectorAll('#class-container > div')).map(row => getSelection(row, '.class-select', '.subclass-select'));
-                const spirits = Array.from(document.querySelectorAll('#spirit-container > div')).map(row => getSelection(row, '.spirit-select'));
-                const backgrounds = Array.from(document.querySelectorAll('#background-container > div')).map(row => getSelection(row, '.background-select'));
-                
-                let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima, a world inspired by Japanese folklore and Studio Ghibli. The concept should be evocative and fit a whimsical, sometimes melancholic tone.`;
-
-                if (kinships.length > 0) prompt += `\n- **Heritage:** ${kinships.join(' and ')}.`;
-                if (classes.length > 0) prompt += `\n- **Class(es):** ${classes.join(' / ')}.`;
-                if (backgrounds.length > 0) prompt += `\n- **Background:** ${backgrounds.join(', ')}.`;
-                if (spirits.length > 0) prompt += `\n- **Spiritual Allegiance:** Connected to ${spirits.join(' and ')}.`;
-
-                const notes = document.getElementById('char-notes').value;
-                if (notes) prompt += `\n- **Notes:** "${notes}".`;
-                
-                prompt += `\n\nProvide a short concept including a potential name, a personality description, and a plot hook. Use <b> tags for the 'Name', 'Concept', and 'Plot Hook' headers.`;
-
-                callGeminiAPI(prompt, document.getElementById('char-result'), document.getElementById('generate-char-button'));
+    document.getElementById('ink-result-wrapper').addEventListener('click', e => {
+        if(e.target.classList.contains('copy-btn')) {
+            const textToCopy = e.target.parentElement.querySelector('#ink-result').textContent;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                e.target.textContent = 'Copied!';
+                setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
             });
-
-            document.getElementById('thread-weave-btn').addEventListener('click', () => {
-                const input = document.getElementById('thread-input').value;
-                if (!input) return;
-                const prompt = `You are Professor Thistlewhip Widdersnap III, an academic from the Twilight Scriptorium of Coralveil. A user asks you a question about the world of Yurei-tu-Shima. Based on your field notes and scholarly knowledge, provide a clear, factual, and detailed answer, maintaining your distinct, academic voice.\n\nUser Question: "${input}"`;
-                callGeminiAPI(prompt, document.getElementById('thread-result'), document.getElementById('thread-weave-btn'));
-            });
-
-            document.getElementById('ink-weave-btn').addEventListener('click', () => {
-                const input = document.getElementById('ink-input').value;
-                if (!input) return;
-                const prompt = `You are the Ink Weaver. A user wants to visualize something from the world of Yurei-tu-Shima. Take their concept and translate it into a detailed, descriptive prompt suitable for a generic AI image generator (like Midjourney or Stable Diffusion). The prompt should be a comma-separated list of keywords and phrases, replacing any specific lore terms with generic descriptions. The style should be 'Studio Ghibli inspired, fantasy, anime concept art'.\n\nUser Concept: "${input}"`;
-                callGeminiAPI(prompt, document.getElementById('ink-result'), document.getElementById('ink-weave-btn'));
-            });
-
-            document.getElementById('whisper-weave-btn').addEventListener('click', () => {
-                const input = document.getElementById('whisper-input').value;
-                if (!input) return;
-                const prompt = `You are a Whisper-Spirit from the Wandering Veil. A user asks you a question seeking inspiration. Provide a short, poetic, and cryptic response in your distinct voice. The answer should be a riddle, omen, or a mysterious fragment, not a direct fact.\n\nUser Question: "${input}"`;
-                callGeminiAPI(prompt, document.getElementById('whisper-result'), document.getElementById('whisper-weave-btn'));
-            });
-
-            document.getElementById('ink-result-wrapper').addEventListener('click', e => {
-                if(e.target.classList.contains('copy-btn')) {
-                    const textToCopy = e.target.parentElement.querySelector('#ink-result').textContent;
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                        e.target.textContent = 'Copied!';
-                        setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
-                    });
-                }
-            });
-
-        },
+        }
+    });
+},
         'view-banner': (container, data) => {
             container.innerHTML = `<div class="content-panel-inner flex items-center justify-center h-full"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"></div>`;
         },
