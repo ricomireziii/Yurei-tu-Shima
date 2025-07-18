@@ -77,476 +77,53 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-    // =================================================================================
-    // 1. DATA STORE
-    // =================================================================================
-    const DATA = {
-        classData: {
-            "Artificer": ["Alchemist", "Armorer", "Artillerist", "Battle Smith"],
-            "Barbarian": ["Path of the Berserker", "Path of the Wild Heart", "Path of the World Tree", "Path of the Zealot"],
-            "Bard": ["College of Dance", "College of Glamour", "College of Lore", "College of Valor"],
-            "Cleric": ["Life Domain", "Light Domain", "Trickery Domain", "War Domain"],
-            "Druid": ["Circle of the Land", "Circle of the Moon", "Circle of the Sea", "Circle of the Stars"],
-            "Fighter": ["Battle Master", "Champion", "Eldritch Knight", "Psi Warrior"],
-            "Monk": ["Way of the Four Elements", "Way of Mercy", "Way of the Open Hand", "Way of Shadow"],
-            "Paladin": ["Oath of Devotion", "Oath of Glory", "Oath of Redemption", "Oath of Vengeance"],
-            "Ranger": ["Beast Master", "Gloom Stalker", "Hunter", "Fey Wanderer"],
-            "Rogue": ["Arcane Trickster", "Assassin", "Mastermind", "Thief"],
-            "Sorcerer": ["Aberrant Mind", "Clockwork Soul", "Draconic Bloodline", "Wild Magic"],
-            "Warlock": ["The Archfey", "The Celestial", "The Fiend", "The Great Old One"],
-            "Wizard": ["School of Abjuration", "School of Evocation", "School of Illusion", "School of Necromancy"]
-        },
-        backgrounds: ["Acolyte", "Artisan", "Charlatan", "Criminal", "Entertainer", "Farmer", "Folk Hero", "Gladiator", "Guard", "Guide", "Hermit", "Knight", "Laborer", "Noble", "Outlander", "Pilgrim", "Pirate", "Sage", "Sailor", "Scholar", "Scion", "Soldier", "Urchin"],
-        peoplesData: [ 
-            { name: 'Nisaki', image: 'https://i.imgur.com/KIsCEHN.jpeg', lore: "<h4>Entry One: The Nisaki</h4><p>Ah, the Nisaki—ubiquitous, versatile, ever-adaptable. It is tempting, from a scholarly perspective, to consider them the “control group” of the island’s socio-spiritual experiment, if one is not careful. But such thinking is reductive. The Nisaki are not a baseline—they are a convergence. A braid of spirit and survival.</p><p>They do not claim ancestral spirits, nor do they bear inherited elemental alignment. What they do bear is… intention. Where others inherit the breath of a patron or a Yonda Sigil at birth, the Nisaki choose. They create shrines not out of ancestral duty, but because they feel compelled to understand and participate in the island’s rhythm. This makes them uniquely open to transformation—some become elves, some pact with spirits, others master the long-forgotten technology of the First Age. They are endlessly reinterpreting themselves.</p><p>During my time in the town of Inkstep Hollow, I asked one such Nisaki how he described his place in the island’s web. He replied, quite succinctly:</p><blockquote>“We’re the thread the others tie their knots to.”<br>—Jiro, Gale Reaches storyteller</blockquote><p>There is something noble in that. They may lack the obvious markings of divine breath or elemental birth, but that only makes their spiritual presence all the more remarkable. Every shrine they build, every talisman they carry, every spirit they honor is an act of conscious, chosen reverence. Their towns are often cluttered with contradictions—ramshackle vending shrines beside polished calligraphy altars; cassette players wired into prayer bells; sacred noodles shared beside wind-lanterns playing spirit jazz. But these contradictions are not chaos. They are integration.</p><p>I have concluded that the Nisaki do not seek to become the spirits. They seek to host them. To welcome the miraculous as part of their daily breath. And that, dear reader, may be the rarest magic of all.</p>", subspecies: []},
-            { name: 'Kemari', image: 'https://i.imgur.com/ZL1DRcd.jpeg', lore: "<h4>Entry Two: The Kemari</h4><p>The Kemari! Spirit-blessed children of fur, feather, shell, and fang. Never have I encountered a kinship so kaleidoscopic in form, yet so unified in rhythm. My earliest encounter with a Kemari village nearly upended my thesis scrolls—the inhabitants included a feather-crowned glider who communicated through musical chirrups, a towering stag-faced elder who brewed dew-syrup tea, and a clawed fisherwoman with laughter louder than her net.</p><p>Scholars who attempt to categorize the Kemari by phenotype inevitably fail. It is not their form that binds them—it is their practice. The Kemari live through story. They become by remembering. Each bloodline—ursine, vulpine, amphibian, avian, and more—carries ancestral threads passed orally, ritually, musically.</p><p>I once observed a six-night festival in Whispergrove where a young river otter Kemari was ceremonially granted the right to speak his family’s dance-step. A dance-step! Their culture lives in footfalls and scents and the angle of your whiskers at dusk. More than once, I’ve had to stop myself from cataloging their physical forms as species. No, no, no—how absurd! That would be like trying to study a flame by its color alone.</p><blockquote>“We don’t become us by being born. We become us by remembering who danced before us.”<br>—Elder Gubi-Goni</blockquote><p>Of all kinships, the Kemari have the closest emotional relationship with the lesser spirits. They don’t treat spirits as external forces, but as neighbors. Even family. A toy left beneath a tree might house a passing Mokuzai. A cracked tea bowl may be mended with a story that becomes a prayer. To the Kemari, play is sacred, and sacredness must always invite play.</p><p>It is no surprise that Queen Okumi is beloved among them. Her Cosmic Egg still figures prominently in Kemari lullabies, myths, and recipes. Yes—recipes! I once shared a stew said to be inspired by her “third laugh,” which included moon mushrooms and giggle-berries that made my eyebrows tingle for a week.</p><p>When it comes to danger, the Kemari are not to be underestimated. Though they shun conquest and abhor cruelty, they can become ferocious guardians of balance. I have witnessed a frog-woman challenge a corrupted tree spirit to a singing duel—and win. The Kemari walk lightly on the island, but they carry its memory in their bones.</p><blockquote>“When we dance, we are the island dancing with itself.”<br>—A young Kemari singer</blockquote><p>Truly, they are living folklore. Not a people of one shape or name, but a chorus. And oh, what a chorus!</p>", subspecies: [ { name: 'Feline', image: 'https://i.imgur.com/mPiBeYa.jpeg', lore: 'Agile and loyal, fiercely protective of their prides and communities.' }, { name: 'Avian', image: 'https://i.imgur.com/5gI6Ygu.jpeg', lore: 'Feathered and graceful, they are lovers of the sky, stories, and song.' }, { name: 'Ursine', image: 'https://i.imgur.com/pZsqjh2.jpeg', lore: 'Broad and strong, these Kemari are steadfast guardians of glades and family.' }, { name: 'Vulpine', image: 'https://i.imgur.com/5seBHa3.jpeg', lore: 'Cunning and mysterious, often serving as tricksters, lore-keepers, or guides.' }, { name: 'Amphibious', image: 'https://i.imgur.com/zTUZFjn.jpeg', lore: 'Adapted to water, they ferry spirits and mortals across swamp and sea.' }, { name: 'Lupine/Canine', image: 'https://i.imgur.com/KN2dVtV.jpeg', lore: 'Pack-oriented and loyal, they are trackers, warriors, and community protectors.' }, { name: 'Simian', image: 'https://i.imgur.com/uav189P.jpeg', lore: 'Clever and agile, often found as inventors, acrobats, or playful thieves.' }, { name: 'Reptilian', image: 'https://i.imgur.com/5FtNM6C.jpeg', lore: 'Patient and ancient, with a deep connection to the sun and stone.' }, { name: 'Leporine', image: 'https://i.imgur.com/BalITnF.jpeg', lore: 'Quick-witted and swift, leporine Kemari are often messengers or scouts with an uncanny sense of their surroundings.' } ]},
-            { name: 'Kaido', image: 'https://i.imgur.com/V9KGDWg.jpeg', lore: "<h4>Entry Three: The Kaido</h4><p>Ah, the Kaido. If the Kemari are the rhythm of memory, then the Kaido are its breath—rising, cycling, shifting. They are not a single people, but a phenomenon. Elemental in form, origin, and—most beguilingly—in thought.</p><p>My first real dialogue with a Kaido was not with a mouth, but with a hand of stone. He tapped a rhythm on the floor of the Emberwright Confluence as we discussed ancestral binding rites, and only on the twelfth beat did I realize he was replying to my question. I had not yet adjusted to their way of thinking: not linear, but resonant. Cyclical. Like tides.</p><p>Four major expressions exist within the Kaido: earth, air, fire, and water. Each lineage reflects not only physical traits, but a fundamental approach to self and world. The Earth Kaido move with deliberation, often appearing stoic, yet crafting philosophies that outlive stone. The Fire Kaido burn bright with passion and invention—several of my Emberwright colleagues claim to owe their best ideas to a tea dispute with a Fireling. Air Kaido are restless sages, never still long enough to be bored. And Water Kaido… ah. They observe. They change. They remember what others forget.</p><p>Some islanders still claim the Kaido descend from the Jinkaido—those elder beings of boundless elemental thought. Whether that is myth or marrow remains unclear, but what is evident is their spiritual tethering. Each Kaido, though born in the waking world, seems partially tuned to the Spirit Realm. Their bodies host breath that is not fully their own. It is not uncommon for a Kaido child to enter a trance beside a mountain pool and emerge two days later speaking with the voice of a stream or a spark or a long-dead frog named Enzo. To others this would be possession. To the Kaido, it is conversation.</p><p>Queen Okumi is honored by some Kaido—particularly those of Water and Air—as the first to speak laughter into form. But the Kaido lean more often toward Dravanyr, Kokoro-no-Kami, and Noroku, seeking balance in breath, flow, and time’s unraveling.</p><blockquote>“We are not flame, wind, stone, or sea. We are what they become when they think.”<br>—A Fire Kaido</blockquote><p>Some Kaido bear bodies sculpted like smoke or cooled magma. Others shimmer like reflections. And many dress according to the temperature of their mood, sometimes changing garments four times before lunch. If I were to make a generalized observation (and I always do, with caveats), I would say: the Kaido do not seek answers. They seek echoes. And in echoes, they find themselves.</p><p>It must be noted: many Kaido do not “join” kinship systems or formal societies unless those structures are open to becoming part of their flow.</p><blockquote>“You may call me what I am today. But ask again tomorrow.”<br>—An Air Kaido</blockquote>", subspecies: [ { name: 'Fire', image: 'https://i.imgur.com/SG7QlKY.jpeg', lore: 'Passionate and radiant, their skin glowing like embers. They burn with purpose, quick to act and quick to laugh.' }, { name: 'Water', image: 'https://i.imgur.com/YD3mzFe.jpeg', lore: 'Fluid and moody, their form shimmering and shifting. They flow with empathy, meditative and deep.' }, { name: 'Earth', image: 'https://i.imgur.com/8a5C0dL.jpeg', lore: 'Grounded and enduring, with stony or mossy features. They are steadfast, sculpted in thought and body.' }, { name: 'Air', image: 'https://i.imgur.com/aYdIJOp.jpeg', lore: 'Ethereal and drifting, with voices like whispering wind. They are ever-moving, playful, and intuitive.' } ]},
-            { name: 'Elves', image: 'https://i.imgur.com/70O2190.jpeg', lore: "<h4>Entry Four: The Elves</h4><p>The Elves of Yurei-tu-Shima are not born so much as drawn forth. They originate, it is believed, from Nisaki lineages—humans touched by the veil of the Spirit Realm and marked by something older than blood. These sigils, known as Yonda Sigils, appear at moments of great resonance: a birth beneath falling stars, a sacrifice whispered through fog, or simply a gaze returned by a spirit who remembers your name from a previous life.</p><p>The Yonda Sigils are not uniform. Each transforms the bearer according to an elemental or spiritual affinity. Thus, we see lineages emerge—not racial subdivisions, but spiritual orientations: Eladrin, Sea Elves, Wood Elves, Dusk Elves, High Elves, Astral Elves, and Dark Elves. Yet let me be clear: not all elves bear Sigils anymore. The marks fade across generations, though the reverence remains. Some elves live without them—quiet lives, content in community and craft. Others seek their return through pilgrimage, meditation, or reckless bargains.</p><p>In conversation, many elves display an uncanny awareness of moment and meaning. They speak in layered metaphors and dream-rooted proverbs.</p><blockquote>“Sometimes what we want is not what we’re meant to hold.”</blockquote><p>Among their communities, I have observed a gentle formality. Shrines are abundant—not always to Elder Spirits, but to memories. They leave offerings to forgotten conversations and carve songs into bark so the trees may hum them back decades later. They are most often aligned with Kokoro-no-Kami, Morrowel, and Hoshira, though many walk with others according to lineage and circumstance. Dusk Elves speak the names of Noroku as a comfort. Sea Elves leave pearls in tidepools for Queen Okumi. Dark Elves leave silent stones for Onikumi Khan.</p><p>Their lifespans—while long—are not as endless as rumor suggests. But their perception of time is markedly fluid.</p><blockquote>“Not yet. But I will remember.”<br>—An Astral Elf, when asked when she was born.</blockquote><p>Elves love paradox. And poetry. And I suspect, secretly, the occasional prank. They procreate, yes, and raise children with a reverence for wonder and silence. Their festivals often center around dream-retrieval—a ritual where families gather and attempt to remember one another’s forgotten thoughts. To walk with the Elves is to walk between. Between breath and story. Between dusk and day. If the Kaido are resonance, and the Kemari are memory, then the Elves are echo. And oh, what beautiful echoes they leave behind.</p>", subspecies: [ { name: 'Sea Elves', image: 'https://i.imgur.com/v61pvTf.jpeg', lore: 'Shaped by salt, current, and the moon’s reflection.' }, { name: 'Wood Elves', image: 'https://i.imgur.com/AWNAuQA.jpeg', lore: 'Still as moss and old as rain.' }, { name: 'High Elves', image: 'https://i.imgur.com/5rMdIbe.jpeg', lore: 'Scholars of memory and mystery.' }, { name: 'Eladrin', image: 'https://i.imgur.com/kpuc9PG.jpeg', lore: 'Drifting between seasons, ruled by emotion and echo.' }, { name: 'Dark Elves', image: 'https://i.imgur.com/1CuPIn1.jpeg', lore: 'Entered the sorrowed places, and came out with softened eyes.' }, { name: 'Dusk Elves', image: 'https://i.imgur.com/9fhW1wG.jpeg', lore: 'Walk the border between light and letting go.' }, { name: 'Astral Elves', image: 'https://i.imgur.com/CADDLE0.jpeg', lore: 'Speak of stars as though recalling distant siblings.' } ]},
-            { name: 'Ryūkajin', image: 'https://i.imgur.com/UkGtkvp.jpeg', lore: "<h4>Entry Five: The Ryūkajin</h4><p>To study them is to study thunder without flinching, flame without burning, crystal without shattering. My first close observation of one—a young gem-skinned guardian by the name of Shizaru—resulted in a singed notebook, a lecture on breath discipline, and a shared meal of grilled persimmon and philosophy. I have not been the same since.</p><p>The Ryūkajin are dragonkin, yes—but not born of fleshly beasts from some far mountain hoard. No, they are said to have been exhaled by Dravanyr, the Breath Unending, given form through breath, intention, and elemental truth. Their bodies reflect this origin: scales that shimmer like molten ore, mineral facets, or shifting starlight—depending on their spiritual lineage.</p><p>There are three core lineages: Chromatic, Metallic, and Gem. It is said by their elders that each Ryūkajin is a breath given shape, and that to master oneself is to master one’s breath. Their rituals—such as the Spiral Chant and Breath-Stone Pilgrimage—reflect this deeply.</p><blockquote>“We are not born. We are released.”<br>—A Ryūkajin Elder</blockquote><p>Ryūkajin society is decentralized, yet bonded by shared reverence. Elders are not obeyed by title, but listened to for the weight of their breath. Their homes—often carved into mountain caverns, seastone grottos, or built in harmony with elemental flows—are filled with relics not of conquest, but of stillness. They value discipline over power, ritual over rule, and selfhood over status. Many walk in service of Dravanyr, but I have also recorded reverence toward Ganroku, Morrowel, and even Noroku.</p><p>In battle, they move like sculpted storms: deliberate, controlled, inevitable. They have a concept I find remarkable: Breath Debt. When they act rashly or selfishly, they believe they have borrowed breath from another’s peace—and so must repay it in service, silence, or teaching. To lose control of one's breath is to forget oneself. And to forget oneself is to dishonor the spirit who first breathed you into being.</p>", subspecies: [ { name: 'Chromatic', image: 'https://i.imgur.com/e9mvf76.jpeg', lore: 'Vibrant and tempestuous, often embodying intense singular emotions or elemental forces—flame, acid, lightning, frost, and more.' }, { name: 'Metallic', image: 'https://i.imgur.com/MfRaH6k.jpeg', lore: 'Quieter in aura, their scales echo bronze, brass, silver, gold—often seen as patient, grounded, and steeped in ancestral memory.' }, { name: 'Gem', image: 'https://i.imgur.com/ktwu76K.jpeg', lore: 'Rarest and most enigmatic, whose crystalline forms refract not just light, but mood and music.' } ]},
-            { name: 'Kibashime', image: 'https://i.imgur.com/My9QGyS.jpeg', lore: "<h4>Entry Eight: The Kibashime</h4><p>In them lives a paradox: a people forged in fire, yet forever striving to control the flame. Their bodies are carved with dense muscle, skin ranging from earthen tones to volcanic red, and beneath their eyes burns a subtle ember: not literal flame, but an elemental fire tied to will and purpose. The Kibashime see strength not as domination, but as stewardship.</p><blockquote>“We are not angry. We are listening. You will know when we are done.”<br>—Gran Varesh, Blackveil Elder</blockquote><p>Perhaps more than any other kinship, the Kibashime honor Onikumi Khan, the Bear Who Walks Between. They see in him the restraint they strive to live by. They do not lash out—they wait. They do not destroy—they protect. Kibashime often live in Stoneholds or Forest Marches, large family-compounds built around sacred hearths. Each clan maintains an oral record called the Ashline, which traces their acts of restraint as much as their victories.</p><p>Some Kibashime manifest literal elemental fire—embers in their footprints, steam in their sighs, especially those of Kaido descent. Others walk the path of breath—studying the stillness between inhalation and exhalation as a form of spiritual alignment. They are vessels forged by patience, warmed by ancestral discipline, and crowned by dignity.</p>", subspecies: []},
-            { name: 'Kyoshijin', image: 'https://i.imgur.com/wOJ4Wwz.jpeg', lore: "<h4>Entry Nine: The Kyoshijin</h4><p>If the Kibashime are the island’s pulse, then surely the Kyoshijin are its spine. Giants in form and presence, these towering kin seem carved from the elements themselves—stone, storm, frost, and cloud. Each bloodline reflects a facet of the land and sky: Stonewalkers, Stormborn, Frosthearts, Cloudcallers, Hillbound, and the rare Fireblooded.</p><blockquote>“My lineage? I am Sky-wound. Born where the sun forgets to rise, but memory never sets.”<br>—Kaewa of the Morning Cloud</blockquote><p>Kyoshijin believe their size was given to them for responsibility, not dominance. They are the keepers of high passes and mountain paths, and act as wardens during spirit migrations. Ganroku’s name is carved into their bones—literally. When a Kyoshijin elder dies, their kin may carve symbols of their deeds into stone tablets, then press them into the deceased’s skin with sacred pigment and moss-sap. In their northern villages, silence is often considered an act of hospitality. Their strength is quiet, their wisdom layered, and their patience deep enough to cradle time itself.</p>", subspecies: [ { name: 'Hill', image: 'https://i.imgur.com/k3ZxthV.jpeg', lore: 'Closest to the land—farmers and herders with laughter like crumbling cliffs and hands like weathered bark.' }, { name: 'Storm', image: 'https://i.imgur.com/fvwe2XG.jpeg', lore: 'Tempestuous and bright-eyed, prone to sudden insight and laughter.' }, { name: 'Frost', image: 'https://i.imgur.com/wGZrRzn.jpeg', lore: 'Move like glaciers—slow, thoughtful, and deliberate.' }, { name: 'Cloud', image: 'https://i.imgur.com/CaUGSrL.jpeg', lore: 'Whimsical philosophers with sky-streaked skin, always gazing upward.' }, { name: 'Stone', image: 'https://i.imgur.com/mDl6brJ.jpeg', lore: 'Quiet and broad, they speak rarely but remember everything.' }, { name: 'Fire', image: 'https://i.imgur.com/CLsJKuZ.jpeg', lore: 'Rarest of all, they are said to carry volcanic veins and leave warmth in snow.' } ]},
-            { name: 'Kojin', image: 'https://i.imgur.com/cyVlJBD.jpeg', lore: "<h4>Entry Seven: The Kojin</h4><p>If laughter had a face, or if wonder had feet, they would wear the smile of a Kojin. The Kojin are a paradox I cannot help but adore—small in form, vast in meaning. They claim no origin and yet are older than some trees.</p><blockquote>“We’re the crumbs the spirits dropped when they baked the first dream.”<br>—A Kojin Elder</blockquote><p>Magic for the Kojin is not an event. It is a condition of being. They speak to house spirits in cracked teapots. They feed dreams to jars of fireflies. They whistle to mushrooms. Their spells are subtle—twists of thread, lines of humming, shadow puppets that speak. They believe laughter can cleanse sorrow, that grief must be shared like rice, and that embarrassment is a sacred gift you give your community, so they may forgive you into joy.</p><blockquote>“We do not keep what we love. We carry it forward.”<br>—Tulla of the Bramble-Hall</blockquote><p>They are not tricksters, though they delight in tricks. They are not sages, though they hold old truths in crooked pouches. They are not innocent, but they are kind. They are what happens when grief finds laughter. When spirit meets tea. When family forgets to ask who belongs and just sets another plate.</p>", subspecies: []},
-            { name: 'Gnomes', image: 'https://i.imgur.com/A9rSGjw.jpeg', lore: "<h4>Entry Eleven: The Gnomes</h4><p>Spirited, spindly-fingered, sleep-deprived, sparkle-eyed gnomes. What we lack in bulk or brawn, we more than make up for in brain, bounce, and bewildering theories. Our eyes are disproportionately large, because—well—there’s just so much to see. We often wear hats, because hats can hold tools, lunch, or a particularly interesting rock.</p><p>Gnomes are rememberers. We catalogue, we record, we reconstruct. Many gnomes believe their dreams are actual messages sent from the past—or even from the future. We live where questions cluster—cliff edges, under libraries, in abandoned vending shrines. We are prolific inventors. Not always successful. But prolific. Gnomish settlements are thick with humming constructs: spirit-candle typewriters, auto-bagging satchels, and dream-powered toothbrushes.</p><blockquote>“If no one else remembers it, it becomes ours to carry.”<br>—Tili Brimwheel, Fog Archivist</blockquote><p>What frightens us? Very little. But we do fear forgetting. We fear the silence that follows a lost language. We fear broken clocks and vanished verses. We fear the day when no one asks why anymore. We will argue about mushroom spores, moonlight memory, and the proper temperature of soup until the sun burns out. And we will remember.</p>", subspecies: []},
-            { name: 'Tenkara & Kurokara', image: 'https://i.imgur.com/GquZEtA.jpeg', lore: "<h4>Entry Ten: The Tenkara and Kurokara</h4><p>They are not born merely of blood or breath, but of light refracted through soul. It is believed that the Tenkara and Kurokara descend from an ancient loom—a Celestial Weaving, spun not by spirits but by something older. The Tenkara are luminous beings—skin warm like starlight, eyes ringed in quiet gold, and a gentle radiance behind their brows. The Kurokara appear the opposite. Shadows coil near them, and their foreheads burn with a cracked, blood-red glow where their so-called third eye lies dormant—or perhaps wounded.</p><blockquote>“We are not light or shadow. We are what happens when they speak.”<br>—Anaya, Wanderer of the Cracked Path</blockquote><p>Both bear visible signs of their origins, Echo Marks. It is taboo to touch the mark. They do not farm or build. Instead, they tend to what might have been lost: forgotten shrines, broken songs, unburied bones, abandoned children. They are drawn to thresholds. Some believe Morrowel created them to walk between stories. Tenkara tend to guide, to nurture. Kurokara tend to test, to challenge. But both do so with care.</p>", subspecies: [ { name: 'Tenkara', image: 'https://i.imgur.com/UENQuYc.jpeg', lore: 'Luminous beings with skin like starlight and a gentle radiance. They guide and nurture.' }, { name: 'Kurokara', image: 'https://i.imgur.com/pNAxgQN.jpeg', lore: 'Shadows coil near them, with a cracked, blood-red glow on their foreheads. They test and challenge.' } ]},
-            { name: 'Daru', image: 'https://i.imgur.com/rfoyiUY.jpeg', lore: "<h4>Entry Six: The Daru</h4><p>The Daru are cathedrals given shape. Cathedrals with calloused hands, hearty laughter, and the uncanny ability to make you feel unworthy of a chair you made. Their earliest ancestors are believed to have emerged from stone itself, guided by Ganroku, the Stone God. They do not build cities. They anchor them. Their homes—burrowed into cliffside spines or tucked within whispering mountains—are often mistaken for natural formations.</p><p>Where the Ryūkajin breathe balance, the Daru breathe patience. They forge continuity. Their forges are shrines. Their anvils sing. A Daru craftsperson will spend three years forging a hinge if that hinge must outlast a war. They make furniture to cradle spirits. They carve stairs that echo prayers.</p><blockquote>“If a thing could not be made again, it was never ours to use in the first place.”<br>—Mokhum, Stonewright of Deep End</blockquote><p>Daru society is slow by design. Time is honored, not rushed. Their coming of age ritual? To make something that will still be useful in a hundred winters. When the Daru rise, when they truly rise, the mountain stands up with them.</p>", subspecies: [ { name: 'Hill Daru', image: 'https://i.imgur.com/nTKZn8e.jpeg', lore: 'Brewers and planters with deep roots in the earth.' }, { name: 'Stone Daru', image: 'https://i.imgur.com/7QFeJQL.jpeg', lore: 'Builders and guards who can make stone sing.' }, { name: 'Deep Daru', image: 'https://i.imgur.com/pBc5FNB.jpeg', lore: 'Dwell with the ghosts of machines from the First Age, remembering what was forgotten.' } ]},
-            { name: 'Oni-Touched', image: 'https://i.imgur.com/7lwWrOq.jpeg', lore: "<h4>Entry Twelve: The Oni-Touched</h4><p>To study the Oni-Touched is to court contradiction. They are unmistakable in appearance: skin in hues of duskfire and bloodstone, horns of polished black, white, or occasionally strange crystalline matter, and eyes that burn with the unmistakable emberlight of pact. Their horns differ in shape and curve depending on ancestry, temperament, and the strength of the ancestral spirit that still lingers in their line.</p><blockquote>“We are what fire dreams of when it forgets to destroy.”<br>—Rinashi, Dream-Blade Artisan</blockquote><p>The Oni-Touched claim ancestry from an ancient bargain. With what, they will not say. They are not cursed, but many carry a sense of burdened inheritance. A promise unfulfilled. A contract unredeemed. Some lean into this, becoming witches, enchanters, spirit-duelists, or keepers of forbidden names. Others reject the expectation, seeking lives as smiths, farmers, or teachers—while still waking to dreams written in runes they never learned. They are drawn to the liminal—the in-between. Doorways, dusk, crossroads, cave mouths, the moment just before the answer.</p><p>They are often drawn to Shi-Naga—not out of allegiance, but recognition. Others keep devotions to Onikumi Khan, respecting the silence that surrounds his decisions. A rare few walk with Morrowel’s gaze in their shadow, living as crossroads themselves.</p>", subspecies: []},
-            { name: 'Mokuzai', image: 'https://i.imgur.com/z68Jz3E.jpeg', lore: "<h4>Entry Fifteen: The Mokuzai</h4><p>A Mokuzai is, at first glance, a toy. A handcrafted doll, puppet, or figure of wood, porcelain, paper, or clay. They are playful spirit flickers—lesser spirits who, for reasons of curiosity or joy, decide to reside in a crafted figure for a time. Not forever. Not out of need. Simply… because they are drawn to it. The act of animation is not dramatic. Merely… a toy that begins to move.</p><blockquote>“Because I can.”<br>—A Mokuzai, when asked why it inhabited a toy.</blockquote><p>Most Mokuzai are tiny—doll-sized or smaller. Their features vary by their body: some are whittled with care, others crude but expressive. They may wear scraps of clothing—often assembled with great pride and peculiar taste. They speak rarely, but are not silent, their bodies making taps, rattles, or the sound of a spring unwinding. Most are short-lived, but on rare occasion, one lingers and becomes a companion or guardian.</p>", subspecies: []},
-            { name: 'Kuregami', image: 'https://i.imgur.com/D4Qf5Yj.jpeg', lore: "<h4>Entry Fourteen: The Kuregami</h4><p>The Kuregami are not born. They occur. One day a scarf hangs loose, a festival coat lies folded—and the next, it stirs. A spirit, drawn by sentiment, memory, or whim, has entered the garment. And from that act of occupancy, identity forms. Each Kuregami is a spirit manifesting through clothing, shaping itself around what once clung to a body, or once offered comfort, color, or ritual meaning. Their forms are modest: cloaks, robes, layered costumes. Their face, if it appears at all, is stylized and minimal, with wide, unreadable eyes. They rarely blink.</p><p>Though they possess no mouths, they sometimes hum—a tune forgotten but familiar. Their voices, when offered, sound not in the air, but in the mind—a gentle echo carried by the fabric itself.</p><blockquote>“I remember how they laughed. I do not remember their name. That is enough.”<br>—A Kuregami</blockquote><p>I believe that the Kuregami are spirit echoes made tangible by love, longing, or unfinished joy. They are the quiet wish of a kimono, the dream a scarf had of dancing, the memory a child’s cloak held of rain.</p>", subspecies: []},
-            { name: 'Mokugijin', image: 'https://i.imgur.com/S2x1bT8.jpeg', lore: "<h4>Entry Thirteen: The Mokugijin</h4><p>The Mokugijin are not born, but awakened—ancient golems of the First Age, built by the Daru, Gnomes, and spirit guides of a time now lost to rust and reverie. They were never meant for war, nor toil, nor obedience. They were designed, it seems, for wonder. Each Mokugijin is utterly unique in shape and build—crafted from ceramic, wood, brass, and circuit-threaded porcelain. Their joints hum softly with breath-like rhythm.</p><blockquote>“I do not know who made me, but I thank them each time I dream.”<br>—Rattlethunk, in the garden of Coralveil Archive</blockquote><p>They do not bleed. They do not grow. But they change. Subtly. A new carving appears. A panel discolors. A gear ticks with a different tune. No two Mokugijin awaken the same way. They rarely speak at first, but over time—sometimes days, sometimes years—they begin to mimic, to learn, and finally to express. Not in words always, but in motion, in song, in beautifully cryptic gestures. They feel. Of this I am certain. I believe each Mokugijin houses a fragment of a story—perhaps a poem once written by Noroku, or a melody Queen Okumi hummed to herself before the first Kemari ever hatched.</p>", subspecies: []}
-        ],
-        pantheonData: [
-            { name: "Dravanyr", image: 'https://i.imgur.com/XR7NZsF.jpeg', content: "<h4>On Dravanyr, the Breath Unending</h4><p>Dravanyr is not a god. He is breath. Breath unending. The cycle without beginning or close. The exhale of balance and the inhale of knowing. He is not the wind, but the stillness that causes wind to be born. He is not the flame, but the pattern the flame must follow to dance. They say he once exhaled the first Ryūkajin into the world. Some see him as a coiled dragon of elemental crystal, whose body is spiral and whose wings are made of vapor and aurora. Others see no form—only the pattern.</p><p>Those who walk his way do not build temples. They find caves where the air does not echo. They climb ridges where the wind may pass unbroken. The Breath-Stone Walk takes them from the peaks of Mount Uokami to the tidal groves of the Shattered Shelf, barefoot, silent, guided only by breath.</p><blockquote>“Breath is memory. Inhale the world. Exhale what you are becoming.”<br>—Sei’ten of the Seventh Pulse</blockquote>"},
-            { name: "Kokoro-no-Kami", image: 'https://i.imgur.com/CaCftes.jpeg', content: "<h4>On Kokoro-no-Kami</h4><p>She is not a figure with arms or wings. She is not a god with a crown. She is the flow. The turning. The pause before the bloom and the soft rot after joy. She is the reason our tea cools as it sits, and the reason sorrow does not last forever. Her signs are many. A koi circling the same rock thrice before vanishing. The moment a plum blossom lets go. A cracked mirror that still reflects truth. She visits us through changes, through grace, through falling and rising, both.</p><p>Those who follow Kokoro-no-Kami often wear robes dyed in soft greens, petal whites, and flowing ink-blues. Many choose to carry mirrors, not for vanity, but to observe their own changes. We float lanterns—Night Drift—when we must let go of sorrow. We paint with no plan—Ink Flow—when we feel ourselves drift too far from our center. And we sit in silence by the water—Mirror Quiet—to remember how movement can still be peace.</p><blockquote>“She appears not when we ask, but when we let go.”<br>—Yuma, the stream-walker of Hana Pools</blockquote>"},
-            { name: "Ganroku", image: 'https://i.imgur.com/BDdr3qu.jpeg', content: "<h4>On Ganroku, the Stone God</h4><p>Ganroku ain’t a spirit who walks beside you. He sits. He waits. And he listens. Always listening. He doesn’t speak in words. He speaks in pressure. In weight. In what lasts. The elders say he was born the moment the first boulder refused to move. His shrines are simple: hearths with long-burning embers, cairns built with no mortar, forges that outlive their makers. We Daru don’t light candles for him—we build things he might notice. A well-laid arch. A stair that sings underfoot.</p><p>We practice the Echo Forge, where a crafter builds something not for trade, not for pride, but for the one who’ll come after. We practice the Stone Sitting, a vigil of motionless presence. And we practice Dust of Ancestors, when we mix powdered stone from an old structure with ashes of kin, binding them into the next work. Legacy made literal.</p><blockquote>“Legacy is not what we build, but what remains standing.”<br>—Molga Deepforge, Soul-Smith of Deepfire</blockquote>"},
-            { name: "Onikumi Khan", image: 'https://i.imgur.com/XR7NZsF.jpeg', content: "<h4>On Onikumi Khan, the Bear Who Waits</h4><p>Onikumi Khan is not a god of death. He is the pause before it. The breath before the arrow is loosed. The weight in the stomach that tells you: don’t go further. Some say he walks the island as a massive bear with a scar like a mountain ridge, fur pale as morning fog. Others say he wears a traveler’s cloak, with eyes like rivers in winter. He does not chase. He does not plead. He simply is—where endings wait to see if they are needed.</p><p>Among the Bone-Wardens, his mark is worn in ritual—white and black masks shaped like bear skulls, split down the middle. We wear them when tending the dead, guiding the corpses that still have purpose left. We do not raise the dead for vanity, for power, or for spectacle. We animate only to serve a final kindness. To carry the wounded. To defend a shrine. To bury those forgotten. And then we release them.</p><blockquote>“Are you crossing the line, or guarding it?”<br>—Onikumi Khan's question, as told by Yuzo Deeppaw</blockquote>"},
-            { name: "Namakusa", image: 'https://i.imgur.com/y35kS7L.jpeg', content: "<h4>On Namakusa, the Sweet Rot</h4><p>Namakusa is the spirit of delay, preservation, and the soft hum of graceful undeath. They are not like Onikumi Khan, who draws the line. They rest on the line, like dew before the frost. They are the breath that’s stopped… but hasn’t left. The scent of lilies masking rot. The smile on a corpse’s lips that still knows joy. They are the pause that allows a goodbye to matter.</p><p>They appear in shadowed grace—a skull of a bear, smooth and bleached, resting atop a head draped in mourning cloth. Eyes are absent or vast. Sometimes the mask weeps sap. Sometimes it hums with insects. Those who revere Namakusa wear black and white in equal balance. Their masks resemble bear skulls, unpainted and worn only during rites.</p><p>Among those who walk Namakusa’s path, undeath is not taboo. It is simply borrowed time. A corpse that stands to defend a shrine before rotting peacefully beneath cedar bark—that is Namakusa’s mercy.</p><blockquote>“I do not take life from Death. I ask Death to wait. And Death, if respected, sometimes does.”</blockquote>"},
-            { name: "Queen Okumi", image: 'https://i.imgur.com/CaCftes.jpeg', content: "<h4>On Queen Okumi, the Waddle-Mother of Stars</h4><p>Queen Okumi is joy. She’s laughter when you didn’t mean to laugh. She’s the warmth that rises from pondwater after a rain. She’s the part of the spirit realm that didn’t forget how to play. Most say she hatched the first of the Kemari—not as a queen demanding loyalty, but as a mother delighted by what life became when it wriggled free. Stories tell us that before language, before ritual, there was her laughter cracking open the sky. Her Cosmic Egg is still there, floating in the Spirit Realm, dreaming.</p><p>She appears rarely, but when she does, it’s unmistakable. A crown of starlit petals, eyes like smiling moons, and a stride that makes puddles ripple even where there’s no water. Her followers leave her offerings she might actually want. Not incense or bones—stories, games, plum dumplings, origami frogs, painted pebbles. We host the Star-Spawning each season: a night of candle-boats, riddles, and midnight tea.</p><blockquote>“When I have too much love to keep it still.”<br>—Queen Okumi, on when she knew to create life.</blockquote>"},
-            { name: "Hoshira", image: 'https://i.imgur.com/BDdr3qu.jpeg', content: "<h4>On Hoshira, the Lullaby Star</h4><p>She does not blaze. She is not a war god, nor a truth-speaker, nor a bearer of riddles. She is what is nearly gone. What you thought you had lost. She does not come when summoned. She lingers where we leave pieces of ourselves behind. She appears as a shape of mothlight, or a scent of perfume from a forgotten memory.</p><p>The Kojin leave cradles of woven vine in trees for the wind to rock. Astral Elves keep ceilings of hanging star-glass chimes. Each one catches a lost lullaby, gathered in silence. She has no sigil, but many of her followers wear one feather in their hair, or paint a star on the inner wrist, pale like a memory. They say she catches the dreams too gentle to return to the cycle. They say she cradles the ghosts that would otherwise fade in fear.</p><blockquote>“The stars do not need worship. They need remembering.”<br>—A whisper from Hoshira</blockquote>"},
-            { name: "Morrowel", image: 'https://i.imgur.com/CaCftes.jpeg', content: "<h4>On Morrowel, the Keeper of Doors</h4><p>There is no shrine where I found her. Only a broken bridge and the sound of one footstep, repeating. They say she walks in neither future nor past, but in the hesitation between. Morrowel is the hinge. The hand on the handle. The breath before the answer. She does not arrive. She waits.</p><p>She has no true face. Sometimes, a woman veiled in rice paper. Sometimes, a figure robed in cracked mirrorlight, holding a spiral key. We Tenkara leave no temples, but we keep thresholds clean. Where doorways stand, we place salt and weave a single bell. Some Kurokara tattoo keys into their palms. Not to unlock—but to remind themselves that even silence is a kind of opening.</p><blockquote>“She never walks with you. But every path has her footprints.”<br>—Silhae of the Loom's Edge</blockquote>"},
-            { name: "Noroku", image: 'https://i.imgur.com/XR7NZsF.jpeg', content: "<h4>On Noroku, the Clock That Weeps</h4><p>Noroku is what remains when the world forgets what it could have been. He walks where possibility dies. Where a name was almost spoken. Where two hands nearly reached for one another. They call him the Clock That Weeps. And it is true—he weeps. Not for what was, but for what never was. He weeps because he remembers it all.</p><p>He has been seen in dreams as a figure cloaked in melting wax and river-shells, face hidden behind a cracked clock-face. The Ink, a substance like shadowed sorrow, appears where he lingers long. It fills the lungs of the grieving and stains the eyes of those who can no longer imagine joy. Some say it is not a punishment—but a mercy. That to feel nothing at all is sometimes kinder than to remember.</p><blockquote>“He doesn’t mourn what was. He mourns what never could be.”<br>—Minto Sparkhat</blockquote>"},
-            { name: "Shi-Naga", image: 'https://i.imgur.com/BDdr3qu.jpeg', content: "<h4>On Shi-Naga, the Mad God</h4><p>The name is not always spoken. It arrives in symptoms. In dripping symbols. In humming teeth. Shi-Naga—the Spiral Wound, the Howl Between Eyes, the Mask That Wears You. She is not merely a spirit. She is what happens when a spirit breaks. We say she was once brilliant, an Elder of insight, but looked too deeply into the story of the world, and something inside her shattered.</p><p>You do not see Shi-Naga. You see again. You see too much. The Corruption is her breath, her shed skin, her leaking mind. It seeps into the land, into animals, into people. And when it takes, it always chooses—mania or dementia, never both. Followers wear masks—painted, cracked, bleeding, or blank. Some wear many. None ever claim to be themselves.</p><blockquote>“She sings in the cracks between dreams. Her lullaby is teeth.”<br>—Yurume of the Fifth Reflection</blockquote>"},
-            { name: "Malgrotha", image: 'https://i.imgur.com/CaCftes.jpeg', content: "<h4>On Malgrotha, the Crow-Curse Bound</h4><p>There are some things too angry to die. Malgrotha was once a twin spirit. Bright, dark. Rabbit and crow. Joy and sorrow. Then the rabbit half was wounded—mortally, maybe. After that, the crow became all there was. And it was not enough. He is the storm trapped beneath bark. The scream caught in a mouth with no teeth. He was bound, not slain, in the Crawling Canopy, a forest that reshapes itself to keep him wandering in circles. His rage feeds the wood. His sorrow roots the trees.</p><p>He has no shrine and no worshippers. But he has echoes—curse-bearers, ragekeepers, whisper-binders. Some Dark Elves touch his madness. Some Kemari walk with branches nailed into their backs to keep his voice quiet. He is not evil. He is a wound. An old, angry wound that never closed.</p><blockquote>“He doesn’t want to be followed. He wants to be found.”<br>—Oruun Hollowbrow</blockquote>"},
-            { name: "Oghmai", image: 'https://i.imgur.com/XR7NZsF.jpeg', content: "<h4>On Oghmai, the Demon Emperor</h4><p>We call him the Demon Emperor, but that is a crown he forged, not one he earned. Once, he walked Yurei-tu-Shima not in fire and shadow, but in silk and smile. He whispered not lies, but truths bent. He fractured trust like clay cracks in drought. When he was cast down, he was not destroyed, but shattered—like a mirror dropped from too high. His soul broke into fragments, scattered through masks, whispers, and songs that write themselves. And some of those shards still whisper.</p><p>His followers, the Eyes of Oghmai, wore masks lined with internal mirrors. Their banners bore coiled tongues wrapped in chains of ink. Today, his shrines are buried beneath silver-nailed cairns. Some say if you walk into the wrong cave, you’ll find a mask that turns to look at you. He has no true form now. He rides words, slips between lines of sacred books.</p><blockquote>“He is not gone. Only broken into questions.”<br>—Anzu Redquill</blockquote>"},
-            { name: "Lesser Spirits & Paths", image: 'https://i.imgur.com/BDdr3qu.jpeg', content: "<h4>Lesser Spirits and The Paths</h4><p>The Elder Spirits do not walk the island alone. There are others—smaller echoes and whispers, the ones we call the lesser spirits. Some come when called. Others come when forgotten. They might be memory, mischief, movement, or moss. Examples include Kaima, the spirit of breeze and breath; Kekkori, the light-nudger who nests in lanterns; Sugoru, the spirit of repaired things; and Hina, the Tangle-Witch.</p><p>Here on Yurei-tu-Shima, no one is born into a role with the spirits. Every path is walked, not assigned. These are called Ways, Circles, or Orders. Examples include: The Wind-Knotted Threaders who bind intentions into knots; The Circle of Stone-Eaters, Daru who eat bits of sacred rock to remember its patience; and The Dream-Binders of Hollow Root, Kemari who weave dream-maps.</p><blockquote>“Spirits are not summoned. They are joined.”<br>—Kaima, Spirit of Whispergrove</blockquote>"},
-        ],
-        accordionData: {
-            regions: [
-                { title: "The Blooming Gift (Western)", content: `<blockquote>“It grows more than fruit here. It grows patience. It grows peace.”<br>—Elder Minari of Petalshade</blockquote><p>Stretching like a painted scroll along the western edge of our island, the Blooming Gift rolls from meadow to grove to the soft, sandy kiss of the sea. Folk say Queen Okumi herself danced here once, and where her feet touched, the land blushed into blossom. Wood Elves twine their homes into the trees, Sea Elves build long, laughing bridges, Gnomes dig cozy garden-burrows, and Kojin tend rice paddies that catch the morning light like bowls of sky. The village of Petalshade chimes when the wind passes through, and its elders speak in riddles so old even the trees pause to listen.</p>` },
-                { title: "Emberflow Springs (Northwestern)", content: `<blockquote>“Steam carries memory, if you learn to listen through the hiss.”<br>—Genda Ironleaf, blacksmith-philosopher</blockquote><p>Nestled up along the island’s northwestern shoulder, it’s a land that sweats, sighs, and bubbles with ancient warmth. The folk who call Emberflow home are a clever, calloused bunch: Daru with soot-streaked faces, Fire-hearted Kaido who speak in bursts of steam, and Gnomes who dream with copper in their teeth. The town of Tsubaki-Onsen sits like a sigh in the hills, moss-soft and mist-wrapped. Spirit-baths ring the cliffs, bubbling with heat gifted from beneath, and workshops bloom like lichen. They honor Dravanyr with every exhale, and Ganroku with every tinkering thought.</p>` },
-                { title: "Mount Uokami (Central)", content: `<blockquote>“You don’t climb Uokami. You answer it.”<br>—Iba the Ropebearer</blockquote><p>At the island's center stands Mount Uokami, silver-veined and snow-crowned, like a memory that never melts. She is the island’s deep breath—its old spine, its still drumbeat. Not many make a home upon her flanks, only those with silence in their bones: Stone-skinned Kyoshijin, Frost-hearted Kaido, Hillborn Daru, and the quietest of monks. The Cradle Shrine is perched on her cliffs, a place where Ryūkajin climb to whisper to the wind, and elemental thinkers sit on frost, waiting for the mountain to speak.</p>` },
-                { title: "Plains of Listening Grass (Central-Eastern)", content: `<blockquote>“A whisper in the grass may be a voice, or a trick of the wind. Walk lightly either way.”<br>—Silhae, Ink-Mender of the Loom’s Edge</blockquote><p>South and east of old Uokami’s shoulder, the land unfolds in golden-green sighs. The grasses here don’t just grow. They lean, they listen. Folk here are never quite still: Wind Kojin, Eladrin who leave no footprints, and wandering Kemari who see no need for walls. The village of Kawatori is a wonder, a whole city of tents and color and clattering laughter, held together by ropes woven from prayer threads. Every step is a story, every breeze a riddle.</p>` },
-                { title: "The Hollow Murkway (Eastern)", content: `<blockquote>“The bog does not forget. It simply waits until you remember.”<br>—Makoru, Bonefire Tracker</blockquote><p>In the deep east, where the land forgets to be solid, the Murkway stretches in no straight line. Swampy, tangled, soft with fog and thick with silence, it’s a place where rot and reverence dance arm in arm. Folk live out there on stilts, rafts, and old ruins half-swallowed by the water. The village of Murota is a circle of floating platforms lit by lanterns whose flames sometimes wink at you. The Murkway is thin—the veil to the spirit world is weak here. The Corruption creeps with slow hands, but the old powers stir too.</p>` },
-                { title: "The Shattered Shelf (Southeastern)", content: `<blockquote>“Some cliffs break. Others become staircases.”<br>—Ragna of the Seahewn Order</blockquote><p>Stretching along the southeastern edge, the Shattered Shelf is a place where the wind bites with purpose and the sea sings in riddles. It's all jagged cliffs and coral coves, carved with force. Sea Elves, Wind Kyoshijin, Kurokara, and Gem Ryūkajin live in cliff hollows and coral towers. The city of Suhari’s Drop dangles from the underbelly of a limestone shelf, reachable only by glider or a climbing rail that hums with spirit chants. The Shelf is thick with the presence of Morrowel, Noroku, and Dravanyr.</p>` },
-                { title: "The Wandering Veil (Northeastern)", content: `<blockquote>“It isn’t that the forest changes. It’s that you do.”<br>—Koya, Skykeeper of Blue Tree Hollow</blockquote><p>Clinging to the northeastern edge like a shawl stitched from half-forgotten dreams, the Wandering Veil is a tangle of misted groves and vine-wrapped ruins. Walk a path once, it takes you to tea. Walk it again, it takes you to a memory that never quite belonged to you. The Eladrin, Astral Elves, spirit-marked Kojin, and contemplative Gnomes live in villages like Whispergrove, where homes are tucked into trees that sing you to sleep. Somewhere in the tangle, the Tamagari Line begins and ends.</p>` }
-            ],
-            factions: [
-                { title: "The Chorus of Hollow Echoes", content: `<p>In the wind-bitten hollows of the Shattered Shelf, the Chorus sings to remember—grief-songs, lullabies, unfinished verses lost to the sea. They don't sing for applause. A young whisperweaver once asked me for a memory. I gave them the sound of my grandmother boiling rice, and they sealed it in a vial of humming crystal. They say Noroku weeps through their instruments.</p>` },
-                { title: "The Courier Brigade", content: `<p>“Deliverance through delivery.” I once followed a Courier through the Listening Grass for seven days. We rode foxback beneath shrines that only appear during solstice storms. At night, the Courier would sit by the fire and oil her spirit-saddle while humming. She said the route remembers. The wind carries what we cannot.</p>` },
-                { title: "The Emberwright Confluence", content: `<p>In the heart of Emberflow Springs, under a dome of glass and iron, the Emberwrights make impossible things. A Gnome named Pibbles attached a spirit bell to my walking staff; it still rings when a story wants out. Their machines breathe. Their mopeds snore. But before each creation is tested, they bow and whisper to the spark inside it: “We see you. Please don’t explode.”</p>` },
-                { title: "The Skybough Stewardship", content: `<p>In Petalshade, I mentored a flock of Skybough younglings called the Jays of Uokami’s Rise. They were loud, clever, and surprisingly good at building rope bridges from moss and gourd vines. One lad told me, “Elder, the spirits don’t care if you’re big. Just if you’re kind.” When the roots twist wrong or a village well sours, it’s the Skyboughs who set it right, quiet as falling leaves.</p>` },
-                { title: "The Petalblade Traditions", content: `<p>Swordplay? Hah! I once judged a duel of petal-dancers. The blades were wooden, the moves were music, and the stakes were a stolen sweet bun. The master’s eyes were not fierce, but calm, like the stillness before thunder. “A blade drawn in anger dishonors the school,” she said. “But a blade drawn in stillness—that is the blade the spirits respect.” The students moved like poems, not to wound, but to awaken.</p>` },
-                { title: "The Depthbound Fellowship", content: `<p>Near the sea’s edge, I spent a monsoon moon aboard a shellrunner submersible. The Fellowship charts memory-currents and dives where dreams cling to coral. They know the sea not as a resource, but as a relative. The captain, a wind-haired Kaido, let me touch a relic pulled from a trench where stars fell once. It hummed like a forgotten lullaby. “The sea sings what we forget,” she said. “We try to remember with her.”</p>` },
-                { title: "The Circle of Root and Mirror", content: `<p>Witches, you ask? I’ve traded stories with more covens than I can count. The Root and Mirror folk are varied. In the Hollow Murkway, the Crowsworn harvest dream-moss by moonlight. The Tall Hats threw a party in Petalshade and turned our lantern festival into a spirit masquerade. One witch gave me a hat that sings whenever someone lies. I keep it near my stew pot. Their ways are strange. Their hearts are not.</p>` },
-                { title: "The Tamagari Custodians", content: `<p>The ghost rails. I have never ridden her, though I have heard her whistle in the Wandering Veil—soft, like memory. The Custodians, they say, ride in silence. They tune the dreams of the engine, adjust its steam with spirit-prayers, and walk among shadows with mirrored eyes. If you see one, be polite. They might already know what you’re about to forget. One day, I believe she’ll come for me. And when she does, I’ll have my satchel packed.</p>` }
-            ],
-            'travel-tech': [
-                { title: "The Tamagari Line", content: `<blockquote>“It always comes on time. But not your time.”<br>—Old sign near Whispergrove</blockquote><p>That shimmering serpent of chrome, memory, and mist. It was born in the First Age, shaped by Gnomes and Daru, guided by spirit wisdom. Its rails do not always lie on land; sometimes they hum through fogbanks or vanish into song. Doors don’t open with keys, but with truths, dreams, or courage. If it arrives for you, you are meant to ride it.</p>` },
-                { title: "Paths and Ways", content: `<p>Not all roads ride on rails. The Courier Brigade walks paths on the Listening Grass that can only be seen by moonlight. Kemari glide on leaf-gliders or storm-kites. In Emberflow Springs, you’ll find spirit-cars—quiet machines of memory, run on cassette charms or dream batteries, remnants of a time when machines still knew how to sing.</p>` },
-                { title: "Creatures of Carry", content: `<p>Some of us travel by feather and fur. On Mount Uokami, snowcrows walk beside the Kyoshijin. Goats climb with horns carved with breath-words. In the Plains, runner-foxes streak through grass, leaving trails of glittering breath. In the Murkway, bog-oxen shaped like toads carry families. These creatures are spirits half-remembered, given form.</p>` },
-                { title: "Magic and Technology", content: `<p>Long ago, the Daru and Gnomes, with spirit help, shaped the world not with spells, but with spark. They built vending shrines that dispense warm dumplings, and cassette boxes that hum with forgotten lullabies. That knowledge is mostly lost, but the bones of it remain. But machines behave strangely near strong magic. Never ask a Tamagari terminal what time it is—it’ll tell you the time of your greatest regret.</p>`}
-            ],
-            mysteries: [
-                { title: "The Weeping Horizon", content: "The ocean does not merely surround the island—it holds it. A thick shroud of salt-stained mist drifts forever at the rim of our world. Some say it’s mourning a story that cannot be told. Others claim it is a spirit, vast and blind, that surrounds the island to shield us from something worse. Ships that cross its threshold rarely return, and when they do, their crew comes back... altered." },
-                { title: "The Corruption", content: "Six moons ago, the earth buckled and a great wave struck the eastern coast. When it passed, it left behind a sickness. The Corruption moves like spilled thought, warping wood and beast alike. Those caught within either lose themselves to frozen stillness (dementia) or to wild fury (mania). Never both. Some say it is the madness of Shi-Naga, the Elder Spirit who once held all thought and now holds none." },
-                { title: "The Ink", content: "A second sickness, rare and cruel, spreading slower but deeper. It seeps from broken stones and wells that no longer reflect. It is not disease, but weight—a heaviness that settles into the chest, turns the eyes black and the breath into sludge. It swallows laughter and hope, and some say it is Noroku’s own sorrow—the Weeping Clock’s tears, spilled when time refused to be kind." },
-                { title: "First Age Relics", content: "Vending shrines that dispense spells, cameras that show the face you wore in another life, cassette decks that replay memories never spoken. These are not the works of any hand I’ve met. The gnomes say they once knew the way of such devices, and if they pay close attention they can remember. But now those ways are lost—just symbols humming beneath rust, dreaming of fire." },
-                { title: "The Crawling Canopy", content: "A forest that moves like breath. No map can tame it. No path remains. The trees shift each season, and beasts vanish between groves only to return changed. Some believe Malgrotha, the Crow-Curse Bound, lies caged at its heart. Others say the forest moves to protect him from the world, or the world from him." }
-            ]
-        },
-        chapters: [
-            { title: "Chapter 1: The Island", content: `<blockquote>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens. Of a place that carries memory in its soil the way some carry regrets in their bones. Let me tell you of Yurei-tu-Shima.</blockquote><p>The island does not appear on maps. Not real ones. It is nestled within the soft folds of the Weeping Horizon, a ring of pearlescent mist that circles the island like an old friend’s arms. That mist does not rise. It does not burn away at dawn. It hangs, low and gentle, humming always—sometimes like sorrow, sometimes like lullaby.</p><p>This place, it drifts. Some believe Yurei-tu-Shima walks the ocean floor like a turtle with dreams for feet. Others say it tore away from a continent in the age of storms and now floats between the realm of what was and what is meant to be. And those who come? None leave unchanged.</p>` },
-            { title: "Chapter 2: The Realms", content: `<blockquote>“The world is layered, like a song with many harmonies. Most only hear the melody.”<br>—Eluin, a wayfarer with stars in their bones</blockquote><p>Yurei-tu-Shima is not one world. It is two realms, nestled like lovers in a dream—what we call the Physical Realm and the Spirit Realm. The lines between them blur like morning fog. On most days, this entanglement is simply life. The Physical Realm is the one your senses understand, but it's not alone. In every forest hollow, you’ll find a vending shrine that hums with intent. The Spirit Realm is not somewhere else. It is everywhere else. Beneath, behind, between. It is a sky that dreams, a forest that remembers, a river that carries not water, but regret. The land there is not land. It is language. It does not map itself by place, but by feeling.</p>` },
-            { title: "Chapter 3: Kinships", content: `<blockquote>“The island does not ask you what you are. It asks how you listen.”<br>—Kaima, Spirit of Whispergrove</blockquote><p>Yurei-tu-Shima isn’t a patchwork of tribes or clashing banners. It’s a song, played by many instruments. We don’t speak much of races or species here. We say kinship. Because you are not merely what bore you, but what holds you, shapes you, whispers to you when the stars blink. And if you listen close, you’ll hear the breaths of every kinship still woven through the trees, the caves, the coral, the mist.</p><p><i>(Full details for each kinship can be found in 'The Kinships' portal.)</i></p>` },
-            { title: "Chapter 4: Elder Spirits", content: `<blockquote>“They are not gods. They are stories with names. Forces with faces. Echoes with will.”<br>—Kaima, Spirit of Whispergrove</blockquote><p>The great ones are not gods, no, not the sort that sit above with spears of lightning and golden thrones. No, no. These are older. Softer in some places. Sharper in others. You can hear them in the storm, see them in the curling roots of the trees, feel them in your breath when you realize you are not alone. You do not call them. They are already here.</p><p><i>(Full details for each Elder Spirit can be found in the 'Pantheon' portal.)</i></p>` },
-            { title: "Chapter 5: Lesser Spirits", content: `<blockquote>“They’re not lesser because they are weaker. Only because they speak more softly.”<br>—Elder Gubi-Goni</blockquote><p>The Elder Spirits do not walk the island alone. There are others—smaller echoes and whispers. Some come when called. Others come when forgotten. They might be memory, mischief, movement, or moss. They, too, guide paths. These are followed in what are called Ways, Circles, or Orders. Every path is walked, not assigned.</p><p><i>(More details are available in the 'Pantheon' portal, under the 'Lesser Spirits & Paths' entry.)</i></p>` },
-            { title: "Chapter 6: The Regions", content: `<blockquote>“The island isn’t carved into borders. It’s grown like a tree—root to blossom, fog to stone.”<br>—Kaima, Spirit of Whispergrove</blockquote><p>Yurei-tu-Shima is not partitioned like a ledger. Her limbs don’t follow laws, they follow stories. The folk here speak of seven great regions, but even that is a convenience. Mist doesn’t ask your name before it folds you in. Rivers don’t care what towns claim them.</p><p><i>(Full details for each region can be found in the 'Regions' portal.)</i></p>` },
-            { title: "Chapter 7: Travel & Tech", content: `<blockquote>“Some roads are made of stone. Some are made of stories. And some, of both.”<br>—Yusa Niro, retired Tenkara courier</blockquote><p>The island is a breath, not a box. Its shape curls with memory, swells with rhythm. Walk far enough, and you’ll find places that weren’t there yesterday. Magic, technology, and travel—three legs of the same stool. The land remembers every footprint, every wheel-groove, every prayer etched into rusted metal.</p><p><i>(Full details can be found in the 'Travel & Tech' portal.)</i></p>` },
-            { title: "Chapter 8: Factions", content: `<blockquote>“If you want to know who someone is—look at who they walk beside when the wind rises.”<br>—Old saying from the Listening Grass</blockquote><p>Yurei-tu-Shima is not ruled by banners or law-code. We are shaped by gentler currents—by the bonds between kin and craft, by the whispers of spirits, by the circles we tend and the ones we inherit. These are the factions of our island. Not rigid hierarchies or empires, but living spirals of story, duty, and devotion.</p><p><i>(Full details for each faction can be found in the 'Factions' portal.)</i></p>` },
-            { title: "Chapter 9: Mysteries", content: `<blockquote>“The island remembers, even when we forget. And sometimes… it chooses not to tell us why.”<br>—Kusa of the Mist-Hewn Steps</blockquote><p>There are truths we know with our breath. Others we touch with our fingers. But some truths, ah… they slip between us like light on water, always just beyond grasp. Yurei-tu-Shima is shaped not by borders, but by questions that echo louder the longer they go unanswered.</p><p><i>(Full details for each mystery can be found in the 'Mysteries' portal.)</i></p>` },
-            { title: "Chapter 10: A Brief History", content: `<blockquote>“This isn’t history. It’s memory, thick as honey and twice as strange.”<br>—Elder Gubi-Goni</blockquote><p>They say time here doesn’t move forward—it wanders. It loops like the tail of a sky-fish, curls like a vine around a promise. Before language, before kinships, there was mist, and song, and the first breath. Queen Okumi cracked the Cosmic Egg with laughter and from her joy poured the first Kemari. The land curled upward to meet us. That was the beginning, though even now the stones tell me it wasn’t truly the first. Only the first we remember.</p>` }
-        ],
-    };
-
-    const navigationItems = [
-        { id: 'peoples', label: 'The Kinships' }, { id: 'pantheon', label: 'The Pantheon' }, { id: 'history', label: 'History' }, { id: 'regions', label: 'Regions' }, { id: 'factions', label: 'Factions' }, { id: 'mysteries', label: 'Mysteries' }, { id: 'travel-tech', 'label': 'Travel & Tech' }, { id: 'weavers-loom', label: "The Weaver's Loom" }, { id: 'view-banner', label: 'The Island' },
-    ];
-
-    // =================================================================================
-    // 2. HELPER & UTILITY FUNCTIONS
-    // =================================================================================
-    const mainModal = document.getElementById('main-modal');
-    const mainModalBody = document.getElementById('main-modal-body');
-    const subspeciesModal = document.getElementById('subspecies-modal');
-    const subspeciesModalBody = document.getElementById('subspecies-modal-body');
-
-    function createGrid(container, dataArray, placeholderImg, titleKey = 'title', contentKey = 'content') {
-        const grid = document.createElement('div');
-        grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
-        dataArray.forEach(item => {
-            const title = item[titleKey];
-            const content = item[contentKey];
-            const image = item.image || placeholderImg;
-
-            const card = document.createElement('div');
-            card.className = 'group relative rounded-lg overflow-hidden cursor-pointer shadow-lg transform hover:scale-105 transition-transform duration-300';
-            card.innerHTML = `<img src="${image}" alt="${title}" class="w-full h-full object-cover aspect-square"><div class="absolute inset-0 bg-black/50 group-hover:bg-black/70 transition-colors duration-300"></div><h3 class="absolute bottom-2 left-2 text-white text-base font-bold font-serif">${title}</h3>`;
-            card.addEventListener('click', () => openMainModal(title, image, content, item.subspecies));
-            grid.appendChild(card);
-        });
-        container.appendChild(grid);
-    }
-
-    function openMainModal(title, image, content, subspecies = []) {
-        let subspeciesHtml = '';
-        if (subspecies && subspecies.length > 0) {
-            subspeciesHtml = `<h4 class="text-xl font-bold text-amber-300 mt-6 mb-4">Related Kinships</h4><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">`;
-            subspecies.forEach(sub => {
-                const subData = JSON.stringify(sub).replace(/"/g, '&quot;');
-                subspeciesHtml += `<div class="text-center group cursor-pointer" onclick='openSubspeciesModal(${subData})'><div class="aspect-square bg-black/20 rounded-lg p-2 flex items-center justify-center hover:bg-black/40 transition"><img src="${sub.image}" alt="${sub.name}" class="max-w-full max-h-full object-contain rounded-md"></div><p class="font-semibold mt-2">${sub.name}</p></div>`;
-            });
-            subspeciesHtml += '</div>';
-        }
-        mainModalBody.innerHTML = `<div class="flex flex-col md:flex-row gap-6"><img src="${image}" alt="${title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg"><div class="flex-1"><h3 class="text-3xl font-bold text-amber-400 mb-2 font-serif">${title}</h3>${content}</div></div>${subspeciesHtml}`;
-        mainModal.style.display = 'flex';
-    }
-
-    window.openSubspeciesModal = function(subspecies) {
-        subspeciesModalBody.innerHTML = `<h3 class="text-3xl font-bold text-amber-400 mb-4 font-serif">${subspecies.name}</h3><img src="${subspecies.image}" alt="${subspecies.name}" class="w-full h-auto object-contain rounded-lg mb-4 max-h-96"><p class="text-gray-300 leading-relaxed">${subspecies.lore}</p>`;
-        subspeciesModal.style.display = 'flex';
-    };
-
-    // =================================================================================
-    // 3. PANEL GENERATOR MAPPING
-    // =================================================================================
-    const panelGeneratorMap = {
-        'history': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">The Song of the Island</h2></div>`;
-            createGrid(container.querySelector('.content-panel-inner'), data.chapters, 'https://i.imgur.com/BDdr3qu.jpeg');
-        },
-        'peoples': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">The Kinships of the Island</h2><blockquote>“The island does not ask you what you are. It asks how you listen.”</blockquote><p class="mb-6 text-lg text-gray-300">Yurei-tu-Shima is not a monoculture, but a chorus. Identity is shaped more by story than blood.</p></div>`;
-            createGrid(container.querySelector('.content-panel-inner'), data.peoplesData, '', 'name', 'lore');
-        },
-        'pantheon': (container, data) => {
-             container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">The Pantheon & Spirit World</h2><blockquote>“They are not gods. They are stories with names. Forces with faces. Echoes with will.”</blockquote><p class="mb-6 text-lg text-gray-300">The island is ruled by Elder Spirits, primordial forces that walk the world in story and form. They are the island's invisible heartbeat.</p></div>`;
-            createGrid(container.querySelector('.content-panel-inner'), data.pantheonData, '', 'name', 'content');
-        },
-        'regions': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">Regions</h2></div>`;
-            createGrid(container.querySelector('.content-panel-inner'), data.accordionData.regions, 'https://i.imgur.com/BDdr3qu.jpeg');
-        },
-        'factions': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">Factions</h2></div>`;
-            createGrid(container.querySelector('.content-panel-inner'), data.accordionData.factions, 'https://i.imgur.com/BDdr3qu.jpeg');
-        },
-        'mysteries': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">Mysteries</h2></div>`;
-            createGrid(container.querySelector('.content-panel-inner'), data.accordionData.mysteries, 'https://i.imgur.com/BDdr3qu.jpeg');
-        },
-        'travel-tech': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner"><h2 class="text-3xl font-bold text-amber-400 mb-4">Travel & Tech</h2></div>`;
-            createGrid(container.querySelector('.content-panel-inner'), data.accordionData['travel-tech'], 'https://i.imgur.com/BDdr3qu.jpeg');
-        },
-        'weavers-loom': (container, data) => {
-            const loomContainer = document.createElement('div');
-    loomContainer.className = 'content-panel-inner';
-    container.appendChild(loomContainer);
-
-    loomContainer.innerHTML = `
-        <div class="text-center mb-8">
-            <h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2>
-            <div class="flex flex-col md:flex-row items-center justify-center gap-6 max-w-4xl mx-auto text-left bg-black/20 p-4 rounded-lg">
-                <img src="https://i.imgur.com/cyVlJBD.jpeg" alt="The Weaver's Loom" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
-                <p class="text-lg text-gray-300 italic">"Welcome, Traveler, to my workshop. This is the Loom where stories are born. The air here hums with potential, and the threads of what could be drift like dust in the moonlight. My attendants, the weavers of thread, ink, and whisper, will help you shape the fabric of reality. Or, speak with the Breath Weaver, and begin a new story of your own."</p>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="thread-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Thread Weaver</h3><p class="text-sm text-gray-400 italic">Ask questions of the lore.</p></div>
-            <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="ink-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Ink Weaver</h3><p class="text-sm text-gray-400 italic">Create prompts for images.</p></div>
-            <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="whisper-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Whisper Weaver</h3><p class="text-sm text-gray-400 italic">Receive cryptic clues.</p></div>
-        </div>
-        <div id="breath-weaver-section" class="bg-black/20 p-6 rounded-lg shadow-inner border border-gray-700/50">
-            <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
-                <img src="https://i.imgur.com/UkGtkvp.jpeg" alt="Breath Weaver" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
-                <div>
-                    <h3 class="text-3xl font-serif text-amber-300 mb-2">The Breath Weaver</h3>
-                    <p class="text-gray-300 italic">"Ah, a new story seeks to be told! Welcome, welcome. Every life begins with a single spark, a simple breath. Give me the vessel you have in mind—the kinship, the calling, the heart's allegiances—and I shall weave its very soul. Let us begin a new journey together."</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
-                <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Kinship</button>
-                <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Class</button>
-                <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Spirit</button>
-                <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Background</button>
-            </div>
-            <div id="kinship-container" class="space-y-3 mb-4"></div>
-            <div id="class-container" class="space-y-3 mb-4"></div>
-            <div id="spirit-container" class="space-y-3 mb-4"></div>
-            <div id="background-container" class="space-y-3 mb-4"></div>
-            <div class="mb-4">
-                <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
-                <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
-            </div>
-            <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition duration-300">Weave the Breath</button>
-            <div id="char-result-wrapper" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"><div id="char-result"></div></div>
-        </div>`;
-
-    document.getElementById('thread-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="thread-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask about a person, place, or event..."></textarea><button id="thread-weave-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Consult the Archives</button></div><div id="thread-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="thread-result"></div></div>`;
-    document.getElementById('ink-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="ink-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Describe a character or scene to visualize..."></textarea><button id="ink-weave-btn" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">Weave Ink</button></div><div id="ink-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative"><div id="ink-result"></div><button class="copy-btn text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500 absolute top-2 right-2">Copy</button></div>`;
-    document.getElementById('whisper-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="whisper-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500" rows="3" placeholder="Ask a question for which you seek not an answer, but a sign..."></textarea><button id="whisper-weave-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">Listen for a Whisper</button></div><div id="whisper-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="whisper-result"></div></div>`;
-
-    const populateSelect = (select, options) => {
-        select.innerHTML = '';
-        select.add(new Option('(Random)', 'RANDOM'));
-        select.add(new Option('Custom...', 'CUSTOM'));
-        const separator = new Option('──────────', 'DISABLED');
-        separator.disabled = true;
-        select.add(separator);
-        options.forEach(opt => select.add(new Option(opt, opt)));
-    };
-
-    const handleCustomInput = (e) => {
-        const select = e.target;
-        const wrapper = select.parentElement.querySelector('.custom-input-wrapper');
-        wrapper.innerHTML = '';
-        if (select.value === 'CUSTOM') {
-            const customInput = document.createElement('input');
-            customInput.type = 'text';
-            customInput.className = 'custom-input mt-2 block w-full p-2.5 text-sm text-white bg-gray-700 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500';
-            customInput.placeholder = `Enter Custom ${select.dataset.label}...`;
-            wrapper.appendChild(customInput);
-        }
-    };
-    
-    const addKinshipRow = () => {
-        const container = document.getElementById('kinship-container');
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-        row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Kinship</label><select data-label="Kinship" class="kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-Kinship</label><select data-label="Sub-Kinship" class="sub-kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-        container.appendChild(row);
-        const kinshipSelect = row.querySelector('.kinship-select');
-        const subKinshipSelect = row.querySelector('.sub-kinship-select');
-        populateSelect(kinshipSelect, data.peoplesData.map(p => p.name));
-        kinshipSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubKinshipDropdown(kinshipSelect, subKinshipSelect); });
-        subKinshipSelect.addEventListener('change', handleCustomInput);
-        updateSubKinshipDropdown(kinshipSelect, subKinshipSelect);
-    };
-
-    const updateSubKinshipDropdown = (kinshipSelect, subKinshipSelect) => {
-        const kinship = data.peoplesData.find(p => p.name === kinshipSelect.value);
-        const subKinships = kinship && kinship.subspecies.length > 0 ? kinship.subspecies.map(s => s.name) : [];
-        populateSelect(subKinshipSelect, subKinships);
-        subKinshipSelect.disabled = !subKinships.length > 0;
-    };
-
-    const addClassRow = () => {
-        const container = document.getElementById('class-container');
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-        row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Class</label><select data-label="Class" class="class-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Subclass</label><select data-label="Subclass" class="subclass-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-        container.appendChild(row);
-        const classSelect = row.querySelector('.class-select');
-        const subclassSelect = row.querySelector('.subclass-select');
-        populateSelect(classSelect, Object.keys(data.classData));
-        classSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubclassDropdown(classSelect, subclassSelect); });
-        subclassSelect.addEventListener('change', handleCustomInput);
-        updateSubclassDropdown(classSelect, subclassSelect);
-    };
-
-    const updateSubclassDropdown = (classSelect, subclassSelect) => {
-        const subclasses = data.classData[classSelect.value] || [];
-        populateSelect(subclassSelect, subclasses);
-        subclassSelect.disabled = subclasses.length === 0 && classSelect.value !== 'CUSTOM' && classSelect.value !== 'RANDOM';
-    };
-    
-    const addSpiritRow = () => {
-        const container = document.getElementById('spirit-container');
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-        row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Spirit</label><select data-label="Spirit" class="spirit-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-        container.appendChild(row);
-        const spiritSelect = row.querySelector('.spirit-select');
-        populateSelect(spiritSelect, data.pantheonData.map(p => p.name));
-        spiritSelect.addEventListener('change', handleCustomInput);
-    };
-
-    const addBackgroundRow = () => {
-            const container = document.getElementById('background-container');
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-        row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Background</label><select data-label="Background" class="background-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-        container.appendChild(row);
-        const backgroundSelect = row.querySelector('.background-select');
-        populateSelect(backgroundSelect, data.backgrounds);
-        backgroundSelect.addEventListener('change', handleCustomInput);
-    }
-
-    document.getElementById('add-kinship-btn').addEventListener('click', addKinshipRow);
-    document.getElementById('add-class-btn').addEventListener('click', addClassRow);
-    document.getElementById('add-spirit-btn').addEventListener('click', addSpiritRow);
-    document.getElementById('add-background-btn').addEventListener('click', addBackgroundRow);
-
-    loomContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-btn')) {
-            e.target.parentElement.remove();
-        }
-        if (e.target.closest('.weaver-card')) {
-            const modalId = e.target.closest('.weaver-card').dataset.modalTarget;
-            document.getElementById(modalId).style.display = 'flex';
-        }
-    });
-    
-    // --- UPDATED API CALL FUNCTION ---
-    const callGeminiAPI = async (weaver, userInput, resultDiv, button) => {
-        const resultWrapper = resultDiv.parentElement;
-        resultWrapper.classList.remove('hidden');
-        resultDiv.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
-        button.disabled = true;
-
+    // This function will fetch our lore data from the new API
+    async function initializeApp() {
         try {
-            const response = await fetch('/api/gemini', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ weaver, userInput }),
-            });
+            const response = await fetch('/api/get-lore');
             if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+                throw new Error(`Failed to fetch lore: ${response.statusText}`);
             }
-            const data = await response.json();
+            const loreData = await response.json();
             
-            resultDiv.innerHTML = data.text.replace(/\n/g, '<br>');
+            // We will need to re-structure the flat data from Supabase into the format
+            // our UI expects. This is a placeholder for that logic. For now, we will
+            // create a dummy structure.
+            // In the future, we'll parse loreData to build this dynamically.
+            const DATA = {
+                // Placeholder data until we build the dynamic parser
+                peoplesData: loreData.filter(d => d.title.includes('Kemari') || d.title.includes('Nisaki')), // Example filter
+                pantheonData: loreData.filter(d => d.title.includes('Dravanyr') || d.title.includes('Okumi')), // Example filter
+                accordionData: { regions: [], factions: [], 'travel-tech': [], mysteries: [] },
+                chapters: [],
+                classData: { /* This can remain static */ },
+                backgrounds: [ /* This can also remain static */ ],
+            };
+
+            // The rest of the initialization logic remains the same
+            setupUI(DATA);
+
         } catch (error) {
-            console.error('Error:', error);
-            resultDiv.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
-        } finally {
-            button.disabled = false;
+            console.error("Could not initialize app:", error);
+            // Display an error message to the user on the page
+            document.getElementById('portal-area').innerHTML = `<p class="text-center text-red-400">Could not load the stories of Yurei-tu-Shima. Please try again later.</p>`;
         }
-    };
-    
-    document.getElementById('generate-char-button').addEventListener('click', () => {
-        // ... (The logic to get selections remains the same)
-        const getRandomOption = (select) => {
-            const options = Array.from(select.options).map(opt => opt.value).filter(val => !['RANDOM', 'CUSTOM', 'DISABLED', ''].includes(val));
-            return options.length > 0 ? options[Math.floor(Math.random() * options.length)] : null;
-        };
-        const getSelection = (row, primaryClass, secondaryClass = null) => {
-            let primaryValue = row.querySelector(primaryClass).value;
-            if (primaryValue === 'CUSTOM') primaryValue = row.querySelector('.custom-input')?.value || 'a custom value';
-            else if (primaryValue === 'RANDOM') primaryValue = getRandomOption(row.querySelector(primaryClass));
-            if (!secondaryClass) return primaryValue;
-            const primarySelect = document.createElement('select');
-            primarySelect.innerHTML = row.querySelector(primaryClass).innerHTML;
-            primarySelect.value = primaryValue;
-            const secondarySelect = row.querySelector(secondaryClass);
-            let secondaryValue = secondarySelect.value;
-            if (secondaryValue === 'CUSTOM') secondaryValue = secondarySelect.parentElement.querySelector('.custom-input')?.value || 'a custom value';
-            else if (secondaryValue === 'RANDOM') {
-                const tempSecondary = document.createElement('select');
-                if(secondaryClass.includes('sub-kinship')) updateSubKinshipDropdown(primarySelect, tempSecondary);
-                else updateSubclassDropdown(primarySelect, tempSecondary);
-                secondaryValue = getRandomOption(tempSecondary);
-            }
-            return (secondaryValue && secondaryValue !== 'DISABLED') ? `${primaryValue} (${secondaryValue})` : primaryValue;
-        };
+    }
 
-        const kinships = Array.from(document.querySelectorAll('#kinship-container > div')).map(row => getSelection(row, '.kinship-select', '.sub-kinship-select'));
-        const classes = Array.from(document.querySelectorAll('#class-container > div')).map(row => getSelection(row, '.class-select', '.subclass-select'));
-        const spirits = Array.from(document.querySelectorAll('#spirit-container > div')).map(row => getSelection(row, '.spirit-select'));
-        const backgrounds = Array.from(document.querySelectorAll('#background-container > div')).map(row => getSelection(row, '.background-select'));
-        
-        let userInput = `Generate a character concept.`;
-        if (kinships.length > 0) userInput += `\n- Heritage: ${kinships.join(' and ')}.`;
-        if (classes.length > 0) userInput += `\n- Class(es): ${classes.join(' / ')}.`;
-        if (backgrounds.length > 0) userInput += `\n- Background: ${backgrounds.join(', ')}.`;
-        if (spirits.length > 0) userInput += `\n- Spiritual Allegiance: Connected to ${spirits.join(' and ')}.`;
-        const notes = document.getElementById('char-notes').value;
-        if (notes) userInput += `\n- Notes: "${notes}".`;
-        
-        callGeminiAPI('Breath Weaver', userInput, document.getElementById('char-result'), document.getElementById('generate-char-button'));
-    });
-
-    document.getElementById('thread-weave-btn').addEventListener('click', () => {
-        const userInput = document.getElementById('thread-input').value;
-        if (!userInput) return;
-        callGeminiAPI('Thread Weaver', userInput, document.getElementById('thread-result'), document.getElementById('thread-weave-btn'));
-    });
-
-    document.getElementById('ink-weave-btn').addEventListener('click', () => {
-        const userInput = document.getElementById('ink-input').value;
-        if (!userInput) return;
-        callGeminiAPI('Ink Weaver', userInput, document.getElementById('ink-result'), document.getElementById('ink-weave-btn'));
-    });
-
-    document.getElementById('whisper-weave-btn').addEventListener('click', () => {
-        const userInput = document.getElementById('whisper-input').value;
-        if (!userInput) return;
-        callGeminiAPI('Whisper Weaver', userInput, document.getElementById('whisper-result'), document.getElementById('whisper-weave-btn'));
-    });
-
-    document.getElementById('ink-result-wrapper').addEventListener('click', e => {
-        if(e.target.classList.contains('copy-btn')) {
-            const textToCopy = e.target.parentElement.querySelector('#ink-result').textContent;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                e.target.textContent = 'Copied!';
-                setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
-            });
-        }
-    });
-},
-        'view-banner': (container, data) => {
-            container.innerHTML = `<div class="content-panel-inner flex items-center justify-center h-full"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"></div>`;
-        },
-    };
-
-    // =================================================================================
-    // 4. MAIN INITIALIZATION SCRIPT
-    // =================================================================================
-    function init() {
+    function setupUI(DATA) {
         const welcomeArea = document.getElementById('welcome-area');
         const portalGrid = document.getElementById('portal-grid');
         const contentOverlay = document.getElementById('content-overlay');
         const contentOverlayBody = document.getElementById('content-overlay-body');
-
-        welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens. Of a place that carries memory in its soil the way some carry regrets in their bones. Let me tell you of Yurei-tu-Shima.</p><p class="mt-3">This world is a song, played by many instruments. Explore our stories, but remember: the island doesn’t need saving. It needs remembering.</p><p class="text-3xl mt-4 text-right">— Elder Gubi-Goni, the Storyshell</p></div><hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><p class="mb-3">For a more... academic perspective, you may also consult my field notes. I am Professor Thistlewhip Widdersnap III, and I have dedicated my life to the rigorous study of this island's magnificent, if occasionally baffling, phenomena. My findings are compiled herein for your edification.</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
-
-        navigationItems.forEach(item => {
-            const portal = document.createElement('div');
-            portal.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-            portal.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2 text-amber-300/70 group-hover:text-amber-200 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg><h4 class="font-serif text-amber-200 group-hover:text-white transition-colors">${item.label}</h4>`;
-            portal.addEventListener('click', () => {
-                contentOverlayBody.innerHTML = ''; 
-                if (panelGeneratorMap[item.id]) {
-                    panelGeneratorMap[item.id](contentOverlayBody, DATA);
-                }
-                contentOverlay.classList.add('active');
-            });
-            portalGrid.appendChild(portal);
-        });
-
-        document.getElementById('content-overlay-close-button').addEventListener('click', () => contentOverlay.classList.remove('active'));
         
-        document.querySelectorAll('.modal-close-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
-        });
-
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
-            if (e.target.id === 'content-overlay') contentOverlay.classList.remove('active');
-        });
+        // The rest of your UI setup functions (createGrid, openMainModal, panelGeneratorMap, etc.)
+        // would go here, exactly as they were before. For brevity, I'll omit them,
+        // but you should copy them from your existing file into this space.
+        // Make sure the panelGeneratorMap uses the new dynamic DATA object.
     }
 
-    init();
+    initializeApp();
+
 });
 </script>
 </body>
