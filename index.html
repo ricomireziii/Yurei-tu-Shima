@@ -76,11 +76,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // =================================================================================
-    // 1. STATE MANAGEMENT & DOM REFERENCES
-    // =================================================================================
+    // STATE MANAGEMENT & DOM REFERENCES
     const App = {
-        data: [], // Will hold the structured lore data, grouped by category
+        data: [],
         modals: {
             main: document.getElementById('main-modal'),
             sub: document.getElementById('subspecies-modal'),
@@ -91,90 +89,67 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // =================================================================================
-    // 2. CORE APPLICATION LOGIC
-    // =================================================================================
-
-    /**
-     * Main initialization function. Fetches, parses JSON, and renders the app.
-     */
+    // CORE APPLICATION LOGIC
     async function initializeApp() {
         const portalGrid = document.getElementById('portal-grid');
         try {
             portalGrid.innerHTML = `<p class="text-center text-amber-300 col-span-full animate-pulse">Breathing in the stories...</p>`;
             
-            // Fetch the data and parse it as JSON
             const response = await fetch('/api/get-lore');
-            if (!response.ok) {
-                throw new Error(`API call failed: ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`API call failed: ${response.statusText}`);
+            
             const jsonData = await response.json();
             console.log("✅ Raw JSON successfully fetched:", jsonData);
 
-            // Process the JSON data into the structure we need
             App.data = processJsonData(jsonData);
             console.log("✅ JSON processed into structured data:", App.data);
 
             if (App.data.length === 0) {
-                 portalGrid.innerHTML = `<p class="text-center text-yellow-400 col-span-full">Successfully fetched data, but no categories were found to create portals.</p>`;
+                 portalGrid.innerHTML = `<p class="text-center text-yellow-400 col-span-full">Fetched data, but no categories were found to create portals.</p>`;
                  return;
             }
-
             setupUI();
-
         } catch (error) {
             console.error("❌ Critical Error during initialization:", error);
             const portalArea = document.getElementById('portal-area');
-            portalArea.innerHTML = `<div class="text-center text-red-400 font-bold bg-red-900/50 p-4 rounded-lg">
-                <h3 class="text-xl mb-2">Failed to Load Lore</h3>
-                <p>A critical error occurred. This is often due to the API sending data in an unexpected format (e.g., not valid JSON).</p>
-                <p class="mt-2 text-sm font-mono bg-black/50 p-2 rounded">${error.message}</p>
-            </div>`;
+            portalArea.innerHTML = `<div class="text-center text-red-400 font-bold bg-red-900/50 p-4 rounded-lg"><h3 class="text-xl mb-2">Failed to Load Lore</h3><p>${error.message}</p></div>`;
         }
     }
 
-    /**
-     * Processes the flat JSON array from the API into a grouped structure.
-     * Each unique 'category' becomes a top-level item.
-     */
     function processJsonData(jsonData) {
         const groupedData = {};
-
         jsonData.forEach(item => {
             const category = item.category || "Uncategorized";
             if (!groupedData[category]) {
                 groupedData[category] = {
                     title: category,
-                    // Find the first image in this category to use for the portal
-                    image: jsonData.find(i => i.category === category && i.image_url)?.image_url, 
+                    image: jsonData.find(i => i.category === category && i.image_url)?.image_url,
                     children: []
                 };
             }
             groupedData[category].children.push(item);
         });
-        
-        // Convert the grouped object into an array
         return Object.values(groupedData);
     }
 
-    // =================================================================================
-    // 3. UI GENERATION & EVENT HANDLING
-    // =================================================================================
-
-    /**
-     * Sets up the main UI, creating the welcome area and portal grid.
-     */
+    // UI GENERATION & EVENT HANDLING
     function setupUI() {
         const portalGrid = document.getElementById('portal-grid');
         const welcomeArea = document.getElementById('welcome-area');
         portalGrid.innerHTML = ''; 
 
+        // Restore welcome message AND professor's note
         welcomeArea.innerHTML = `
 <div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
     <div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">
         <h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2>
         <div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4">
             <p>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens. Of a place that carries memory in its soil the way some carry regrets in their bones. Let me tell you of Yurei-tu-Shima.</p>
+        </div>
+        <hr class="border-stone-400/50 my-4">
+        <div class="text-gray-700">
+            <h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3>
+            <p class="mb-3">For a more... academic perspective, you may also consult my field notes. My findings are compiled herein for your edification.</p>
         </div>
     </div>
     <div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0">
@@ -184,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log("➡️ Creating main portals from this data:", App.data);
         App.data.forEach(portalData => {
-            // Check for the Weaver's Loom by its category/title
             if (portalData.title.toLowerCase().includes("weaver's loom")) {
                 createPortal(portalGrid, "The Weaver's Loom", 'https://i.imgur.com/cyVlJBD.jpeg', () => openWeaversLoom(portalData));
             } else {
@@ -192,59 +166,92 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Add universal event listeners for closing modals
         document.querySelectorAll('.modal-close-btn').forEach(btn => {
             btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
         });
         Object.values(App.modals).forEach(modal => {
-            if (modal) modal.addEventListener('click', (e) => {
+            if(modal) modal.addEventListener('click', (e) => {
                 if (e.target === modal) modal.style.display = 'none';
             });
         });
     }
 
-    /**
-     * Helper to create a single clickable portal element.
-     */
     function createPortal(container, title, imageUrl, onClickAction) {
         const portal = document.createElement('div');
         portal.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-        // Use a default image if none is found
         portal.innerHTML = `<img src="${imageUrl || 'https://i.imgur.com/oAl9hd4.jpeg'}" alt="${title}" class="w-20 h-20 object-cover rounded-full mb-2 border-2 border-amber-800/50 shadow-lg"><h4 class="font-serif text-amber-200 group-hover:text-white transition-colors">${title}</h4>`;
         portal.addEventListener('click', onClickAction);
         container.appendChild(portal);
     }
     
     /**
-     * Opens a modal and renders its content.
+     * **FIXED VERSION**
+     * This function now correctly renders sub-portals from H3 tags.
      */
     function openContentModal(data, modalType) {
         const modalBody = App.modalBodies[modalType];
         const modal = App.modals[modalType];
         
-        // Generate the HTML from the items in this category
-        let contentHtml = data.children.map(item => {
-            // We can now use the rich data from the JSON
-            return `<div class="mb-4 p-4 bg-black/20 rounded-lg">
-                        <h3 class="text-xl font-serif text-amber-300">${item.title}</h3>
-                        <div class="prose prose-invert max-w-none text-gray-300 mt-2">${item.content}</div>
-                   </div>`
-        }).join('');
+        const parser = new DOMParser();
+        let mainContentHtml = '';
+        let subPortalsHtml = '';
 
-        modalBody.innerHTML = `<div><h2 class="text-3xl font-serif text-amber-400 mb-4">${data.title}</h2>${contentHtml}</div>`;
+        const subPortals = [];
+
+        // First, separate content from sub-portals
+        data.children.forEach(item => {
+            const doc = parser.parseFromString(item.content, 'text/html');
+            const h3 = doc.querySelector('h3');
+
+            if (h3) {
+                // This is a sub-portal
+                subPortals.push({
+                    title: h3.textContent,
+                    // Pass the original full item data to the sub-modal
+                    data: item 
+                });
+            } else {
+                // This is main descriptive content for the category
+                mainContentHtml += `<div class="prose prose-invert max-w-none text-gray-300 mb-4">${item.content}</div>`;
+            }
+        });
+
+        // Build the HTML for the sub-portals grid
+        if (subPortals.length > 0) {
+            subPortalsHtml = '<h3 class="text-xl font-serif text-amber-300 mt-8 mb-4 border-b border-gray-600 pb-2">Explore Further</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+            subPortals.forEach(portal => {
+                 const portalDataString = btoa(JSON.stringify(portal.data)); // Encode the full data object
+                 subPortalsHtml += `
+                    <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700 transition-colors" 
+                         onclick="window.openSubPortal(JSON.parse(atob('${portalDataString}')))">
+                        <h4 class="font-serif text-amber-200">${portal.title}</h4>
+                    </div>`;
+            });
+            subPortalsHtml += '</div>';
+        }
+        
+        modalBody.innerHTML = `<div><h2 class="text-3xl font-serif text-amber-400 mb-4">${data.title}</h2>${mainContentHtml}${subPortalsHtml}</div>`;
         modal.style.display = 'flex';
         modalBody.scrollTop = 0;
     }
-    
-    // Placeholder for Weaver's Loom functionality
+
+    // This function opens the final, deepest level of content
+    window.openSubPortal = (data) => {
+        const modalBody = App.modalBodies.sub;
+        const modal = App.modals.sub;
+        modalBody.innerHTML = `<div class="prose prose-invert max-w-none">
+            <img src="${data.image_url}" class="max-w-xs mx-auto rounded-lg mb-4" />
+            ${data.content}
+        </div>`;
+        modal.style.display = 'flex';
+        modalBody.scrollTop = 0;
+    };
+
     function openWeaversLoom(data) {
-        alert("The Weaver's Loom portal was clicked! It contains " + data.children.length + " items.");
-        // Future logic to open the specific AI tools would go here.
+        alert("The Weaver's Loom portal was clicked!");
     }
 
-    // =================================================================================
-    // 4. APPLICATION START
-    // =================================================================================
+    // APPLICATION START
     initializeApp();
 });
 </script>

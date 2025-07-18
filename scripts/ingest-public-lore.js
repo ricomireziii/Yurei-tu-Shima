@@ -8,12 +8,12 @@ const { createClient } = require('@supabase/supabase-js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // --- Configuration ---
-const PUBLIC_LORE_DOC_ID = '1ib-2MGBDQih86JwrwiOGUGn8V7BL-O81gVG5ld43NMQ'; // <-- PASTE YOUR PUBLIC DOC ID HERE
+const PUBLIC_LORE_DOC_ID = '1ib-2MGBDQih86JwrwiOGUGn8V7BL-O81gVG5ld43NMQ';
 const CREDENTIALS_PATH = path.resolve(process.cwd(), 'google-credentials.json');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const BATCH_SIZE = 90;
+const BATCH_SIZE = 50; // Smaller batch size for larger content
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -28,11 +28,10 @@ async function authorize() {
     return client;
 }
 
-function chunkText(text) {
-    // Split by one or more newlines, which is more robust for Google Docs
-    return text.split(/\n+/).filter(p => p.trim().length > 20);
-}
-
+/**
+ * **REWRITTEN PARSING LOGIC**
+ * This function now correctly structures the document.
+ */
 async function parseDocContent(doc) {
     if (!doc?.body?.content) return [];
 
@@ -40,74 +39,70 @@ async function parseDocContent(doc) {
     let currentCategory = 'Uncategorized';
     let currentEntry = null;
 
+    // Helper to commit the current entry to the list
+    const commitCurrentEntry = () => {
+        if (currentEntry) {
+            entries.push(currentEntry);
+        }
+    };
+
     for (const element of doc.body.content) {
         if (!element.paragraph) continue;
 
         const paragraphStyle = element.paragraph.paragraphStyle?.namedStyleType;
-        if (paragraphStyle === 'TITLE' || paragraphStyle === 'SUBTITLE') continue;
+        const textContent = (element.paragraph.elements.map(e => e.textRun?.content || '').join('')).trim();
 
-        const isUnderlined = element.paragraph.elements.every(e => e.textRun?.textStyle?.underline);
-        let textContent = '';
-        for(const el of element.paragraph.elements) {
-            textContent += el.textRun?.content || '';
-        }
-        
+        if (paragraphStyle === 'TITLE' || paragraphStyle === 'SUBTITLE' || !textContent) continue;
+
         if (paragraphStyle === 'HEADING_1') {
-            if (currentEntry) entries.push(currentEntry);
-            currentCategory = textContent.trim();
-            currentEntry = null;
+            commitCurrentEntry(); // Save the previous entry before starting a new category
+            currentCategory = textContent;
+            currentEntry = null; // Reset entry for the new category
         } else if (paragraphStyle === 'HEADING_2') {
-            if (currentEntry) entries.push(currentEntry);
-            currentEntry = { title: textContent.trim(), text: '', imageUrl: null, category: currentCategory };
+            commitCurrentEntry(); // Save the previous entry
+            // Start a new entry for the H2
+            currentEntry = {
+                title: textContent,
+                content: '', // Content will be built from subsequent elements
+                imageUrl: null,
+                category: currentCategory,
+            };
         } else if (currentEntry) {
-            if (isUnderlined && textContent.trim()) {
-                currentEntry.text += `<blockquote>${textContent.trim()}</blockquote>\n\n`;
-            } else if (paragraphStyle === 'HEADING_3' && textContent.trim()) {
-                currentEntry.text += `<h3>${textContent.trim()}</h3>\n`;
-            } else if (paragraphStyle === 'HEADING_4' && textContent.trim()) {
-                currentEntry.text += `<h4>${textContent.trim()}</h4>\n`;
-            } else {
-                currentEntry.text += textContent;
+            // Append content to the current entry
+            let fullLineHtml = '';
+            for (const el of element.paragraph.elements) {
+                if(el.textRun) {
+                    fullLineHtml += el.textRun.content;
+                }
             }
 
+            if(paragraphStyle === 'HEADING_3') {
+                 currentEntry.content += `<h3>${fullLineHtml}</h3>\n`;
+            } else if (paragraphStyle === 'HEADING_4') {
+                 currentEntry.content += `<h4>${fullLineHtml}</h4>\n`;
+            } else {
+                 currentEntry.content += `<p>${fullLineHtml}</p>\n`;
+            }
+
+            // Find an image for the current entry if it doesn't have one
             if (!currentEntry.imageUrl) {
-                for (const el of element.paragraph.elements) {
+                 for (const el of element.paragraph.elements) {
                     if (el.inlineObjectElement) {
                         const objectId = el.inlineObjectElement.inlineObjectId;
-                        const imageProps = doc.inlineObjects?.[objectId]?.inlineObjectProperties?.embeddedObject?.imageProperties;
-                        if (imageProps?.contentUri) {
-                            currentEntry.imageUrl = imageProps.contentUri;
+                        const imageUri = doc.inlineObjects?.[objectId]?.inlineObjectProperties?.embeddedObject?.imageProperties?.contentUri;
+                        if (imageUri) {
+                            currentEntry.imageUrl = imageUri;
                         }
                     }
                 }
             }
         }
     }
-    if (currentEntry) entries.push(currentEntry);
+    commitCurrentEntry(); // Add the last entry
     
-    const finalChunks = [];
-    for (const entry of entries) {
-        const textChunks = chunkText(entry.text);
-        if (textChunks.length === 0 && entry.title) { // Handle entries with no body text
-             finalChunks.push({
-                content: entry.title,
-                image_url: entry.imageUrl,
-                title: entry.title,
-                category: entry.category,
-            });
-        } else {
-            for (const contentChunk of textChunks) {
-                finalChunks.push({
-                    content: `${entry.title}\n\n${contentChunk}`,
-                    image_url: entry.imageUrl,
-                    title: entry.title,
-                    category: entry.category,
-                });
-            }
-        }
-    }
-    return finalChunks;
+    return entries;
 }
+
 
 async function ingestPublicLore() {
     try {
@@ -118,26 +113,29 @@ async function ingestPublicLore() {
         console.log('Reading from Google Doc...');
         const docRes = await docs.documents.get({ documentId: PUBLIC_LORE_DOC_ID });
         
-        const parsedChunks = await parseDocContent(docRes.data);
-        console.log(`Parsed and chunked into ${parsedChunks.length} public lore documents.`);
+        const parsedEntries = await parseDocContent(docRes.data);
+        console.log(`Parsed into ${parsedEntries.length} public lore documents.`);
 
-        if (parsedChunks.length === 0) return console.log("No entries found to process. Please check Heading styles in your Google Doc.");
+        if (parsedEntries.length === 0) return console.log("No entries found to process. Please check Heading styles (H1, H2) in your Google Doc.");
         
         console.log('Clearing existing public lore from the database...');
         await supabase.from('lore_documents').delete().neq('id', 0);
         
-        for (let i = 0; i < parsedChunks.length; i += BATCH_SIZE) {
-            const batch = parsedChunks.slice(i, i + BATCH_SIZE);
-            console.log(`- Processing batch ${Math.floor(i / BATCH_SIZE) + 1}`);
+        for (let i = 0; i < parsedEntries.length; i += BATCH_SIZE) {
+            const batch = parsedEntries.slice(i, i + BATCH_SIZE);
+            console.log(`- Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(parsedEntries.length/BATCH_SIZE)}`);
             
+            // Create a text representation for embedding (title + content)
+            const embeddingContent = batch.map(item => `${item.title}\n\n${item.content.replace(/<[^>]*>?/gm, '')}`); // Strip HTML for embedding
+
             const embeddingResult = await embeddingModel.batchEmbedContents({
-                requests: batch.map(item => ({ content: { parts: [{ text: item.content }] } })),
+                requests: embeddingContent.map(text => ({ content: { parts: [{ text }] } })),
             });
 
             const documentsToInsert = batch.map((item, index) => ({
-                content: item.content,
+                content: item.content, // This keeps the HTML for the frontend
                 embedding: embeddingResult.embeddings[index].values,
-                image_url: item.image_url,
+                image_url: item.imageUrl,
                 title: item.title,
                 category: item.category,
             }));
