@@ -76,360 +76,243 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // =================================================================================
+    // 1. DATA AND STATE MANAGEMENT
+    // =================================================================================
+    // This will hold all the structured data fetched from your Google Doc.
+    let AppData = {};
+
+    // References to all modal elements
+    const Modals = {
+        main: document.getElementById('main-modal'),
+        sub: document.getElementById('subspecies-modal'), // This can be repurposed for any sub-modal
+        threadWeaver: document.getElementById('thread-weaver-modal'),
+        inkWeaver: document.getElementById('ink-weaver-modal'),
+        whisperWeaver: document.getElementById('whisper-weaver-modal')
+    };
     
-    let DATA = {};
-
-    function structureLoreData(rawData) {
-        const categories = {};
-        let lastH2Entry = null;
-
-        for (const doc of rawData) {
-            if (!doc.title || !doc.category) continue;
-
-            if (!categories[doc.category]) {
-                categories[doc.category] = [];
-            }
-
-            const isSubEntry = (doc.content.match(/<h3>/g) || []).length > 0;
-
-            if (!entryMap.has(doc.title)) {
-                const newEntry = {
-                    title: doc.title,
-                    content: doc.content.replace(`${doc.title}\n\n`, ''),
-                    image: doc.image_url,
-                    category: doc.category,
-                    subspecies: []
-                };
-                categories[doc.category].push(newEntry);
-                lastH2Entry = newEntry;
-            } else {
-                // This logic needs refinement to properly handle sub-entries
-            }
-        }
-        
-        // This is a simplified placeholder for the final structuring logic
-        // which needs to properly handle H3s as subspecies of the last H2.
-        // For now, it will group by category.
-        const structured = {
-            categories: Object.keys(categories),
-            entries: rawData, // We'll filter this later
-        };
-        return structured;
-    }
-
-    async function initializeApp() {
-        try {
-            document.getElementById('portal-grid').innerHTML = `<p class="text-center text-amber-300 col-span-full animate-pulse">Breathing in the stories...</p>`;
-            const response = await fetch('/api/get-lore');
-            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-            const rawData = await response.json();
-            
-            const entryMap = new Map();
-            for (const doc of rawData) {
-                if (!entryMap.has(doc.title)) {
-                    entryMap.set(doc.title, {
-                        title: doc.title,
-                        content: '',
-                        image: doc.image_url,
-                        category: doc.category,
-                        subspecies: []
-                    });
-                }
-                const entry = entryMap.get(doc.title);
-                const contentWithoutTitle = doc.content.replace(`${doc.title}\n\n`, '');
-                
-                // This is a simplified way to detect sub-entries based on the content
-                const subHeadingMatch = contentWithoutTitle.match(/<h3>(.*?)<\/h3>/);
-                if (subHeadingMatch) {
-                    entry.subspecies.push({
-                        name: subHeadingMatch[1],
-                        lore: contentWithoutTitle,
-                        image: doc.image_url 
-                    });
-                } else {
-                    entry.content += contentWithoutTitle + '\n';
-                }
-            }
-
-            const structuredData = {
-                categories: [...new Set(rawData.map(d => d.category))],
-                entries: [...entryMap.values()]
-            };
-            
-            DATA = {
-                ...structuredData,
-                classData: {"Artificer":["Alchemist","Armorer","Artillerist","Battle Smith"],"Barbarian":["Path of the Berserker","Path of the Wild Heart","Path of the World Tree","Path of the Zealot"],"Bard":["College of Dance","College of Glamour","College of Lore","College of Valor"],"Cleric":["Life Domain","Light Domain","Trickery Domain","War Domain"],"Druid":["Circle of the Land","Circle of the Moon","Circle of the Sea","Circle of the Stars"],"Fighter":["Battle Master","Champion","Eldritch Knight","Psi Warrior"],"Monk":["Way of the Four Elements","Way of Mercy","Way of the Open Hand","Way of Shadow"],"Paladin":["Oath of Devotion","Oath of Glory","Oath of Redemption","Oath of Vengeance"],"Ranger":["Beast Master","Gloom Stalker","Hunter","Fey Wanderer"],"Rogue":["Arcane Trickster","Assassin","Mastermind","Thief"],"Sorcerer":["Aberrant Mind","Clockwork Soul","Draconic Bloodline","Wild Magic"],"Warlock":["The Archfey","The Celestial","The Fiend","The Great Old One"],"Wizard":["School of Abjuration","School of Evocation","School of Illusion","School of Necromancy"]},
-                backgrounds: ["Acolyte","Artisan","Charlatan","Criminal","Entertainer","Farmer","Folk Hero","Gladiator","Guard","Guide","Hermit","Knight","Laborer","Noble","Outlander","Pilgrim","Pirate","Sage","Sailor","Scholar","Scion","Soldier","Urchin"],
-            };
-            
-            setupUI();
-        } catch (error) {
-            console.error("Could not initialize app:", error);
-            document.getElementById('portal-area').innerHTML = `<p class="text-center text-red-400 font-bold">Could not load the stories of Yurei-tu-Shima. Please check the Netlify function logs for the 'get-lore' function.</p>`;
-        }
-    }
-
-    const mainModal = document.getElementById('main-modal');
-    const mainModalBody = document.getElementById('main-modal-body');
-    const subspeciesModal = document.getElementById('subspecies-modal');
-    const subspeciesModalBody = document.getElementById('subspecies-modal-body');
-
-    function createGrid(container, dataArray, placeholderImg = 'https://i.imgur.com/oAl9hd4.jpeg') {
-        const grid = document.createElement('div');
-        grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
-        (dataArray || []).forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-            card.innerHTML = `<img src="${item.image || placeholderImg}" alt="${item.title}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/50 group-hover:bg-black/70"></div><h3 class="absolute bottom-2 left-2 text-white font-bold font-serif">${item.title}</h3>`;
-            card.addEventListener('click', () => openMainModal(item.title, item.image || placeholderImg, item.content, item.subspecies));
-            grid.appendChild(card);
-        });
-        container.appendChild(grid);
-    }
-
-    function openMainModal(title, image, content, subspecies = []) {
-        let subspeciesHtml = '';
-        if (subspecies && subspecies.length > 0) {
-            subspeciesHtml = `<h4 class="text-xl font-bold text-amber-300 mt-6 mb-4">Related Kinships</h4><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">`;
-            subspecies.forEach(sub => {
-                const subData = JSON.stringify(sub).replace(/"/g, '&quot;');
-                subspeciesHtml += `<div class="text-center group cursor-pointer" onclick='openSubspeciesModal(${subData})'><div class="aspect-square bg-black/20 rounded-lg p-2 flex items-center justify-center hover:bg-black/40 transition"><img src="${sub.image}" alt="${sub.name}" class="max-w-full max-h-full object-contain rounded-md"></div><p class="font-semibold mt-2">${sub.name}</p></div>`;
-            });
-            subspeciesHtml += '</div>';
-        }
-        mainModalBody.innerHTML = `<div class="flex flex-col md:flex-row gap-6"><img src="${image}" alt="${title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg"><div class="flex-1"><h3 class="text-3xl font-bold text-amber-400 mb-2 font-serif">${title}</h3><div>${content.replace(/\n/g, '<br>')}</div></div></div>${subspeciesHtml}`;
-        mainModal.style.display = 'flex';
-    }
-
-    window.openSubspeciesModal = function(subspecies) {
-        subspeciesModalBody.innerHTML = `<h3 class="text-3xl font-bold text-amber-400 mb-4 font-serif">${subspecies.name}</h3><img src="${subspecies.image}" alt="${subspecies.name}" class="w-full h-auto object-contain rounded-lg mb-4 max-h-96"><p class="text-gray-300 leading-relaxed">${subspecies.lore.replace(/\n/g, '<br>')}</p>`;
-        subspeciesModal.style.display = 'flex';
+    // Body elements for the modals
+    const ModalBodies = {
+        main: document.getElementById('main-modal-body'),
+        sub: document.getElementById('subspecies-modal-body')
     };
 
+
+    // =================================================================================
+    // 2. CORE LOGIC: FETCHING AND PARSING GOOGLE DOC DATA
+    // =================================================================================
+
+    /**
+     * Fetches the raw HTML content from the Google Doc via your API endpoint
+     * and initiates the parsing and UI setup process.
+     */
+    async function initializeApp() {
+        try {
+            // Display a loading message while fetching data.
+            document.getElementById('portal-grid').innerHTML = `<p class="text-center text-amber-300 col-span-full animate-pulse">Breathing in the stories from the Google Doc...</p>`;
+            
+            // This is the call to your backend function that gets the Google Doc HTML
+            const response = await fetch('/api/get-lore'); 
+            if (!response.ok) {
+                throw new Error(`The API call to '/api/get-lore' failed: ${response.statusText}`);
+            }
+            const rawHtml = await response.text();
+
+            // Parse the fetched HTML into a structured, nested format.
+            AppData = parseGoogleDocHtml(rawHtml);
+
+            // Build the user interface based on the structured data.
+            setupUI();
+
+        } catch (error) {
+            console.error("Critical Error: Could not initialize the application.", error);
+            document.getElementById('portal-area').innerHTML = `<div class="text-center text-red-400 font-bold bg-red-900/50 p-4 rounded-lg">
+                <h3 class="text-xl mb-2">Failed to Load Lore</h3>
+                <p>There was a critical error fetching or parsing the campaign guide from the Google Doc.</p>
+                <p class="mt-2 text-sm font-mono bg-black/50 p-2 rounded">${error.message}</p>
+            </div>`;
+        }
+    }
+
+    /**
+     * Parses the HTML from the Google Doc into a nested JSON structure.
+     * It uses heading levels (H1, H2, etc.) to create the hierarchy.
+     */
+    function parseGoogleDocHtml(htmlString) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlString, 'text/html');
+        
+        const structuredContent = [];
+        let currentH1 = null, currentH2 = null, currentH3 = null, currentH4 = null, currentH5 = null;
+
+        doc.body.children.forEach(el => {
+            const tagName = el.tagName.toUpperCase();
+
+            // Create a data object for the current element.
+            const elementData = {
+                type: tagName,
+                content: el.innerHTML,
+                image: (tagName === 'P' && el.querySelector('img')) ? el.querySelector('img').src : null,
+                children: []
+            };
+
+            // This is the core logic for nesting the content.
+            if (tagName === 'H1') {
+                structuredContent.push(elementData);
+                currentH1 = elementData;
+            } else if (tagName === 'H2' && currentH1) {
+                currentH1.children.push(elementData);
+                currentH2 = elementData;
+            } else if (tagName === 'H3' && currentH2) {
+                currentH2.children.push(elementData);
+                currentH3 = elementData;
+            } else if (tagName === 'H4' && currentH3) {
+                currentH3.children.push(elementData);
+                currentH4 = elementData;
+            } else if (tagName === 'H5' && currentH4) {
+                currentH4.children.push(elementData);
+                currentH5 = elementData;
+            } else if (tagName === 'P' || tagName === 'BLOCKQUOTE' || tagName === 'UL' || tagName === 'OL') {
+                // Attach paragraphs and other content to the most recent heading.
+                if (currentH5) currentH5.children.push(elementData);
+                else if (currentH4) currentH4.children.push(elementData);
+                else if (currentH3) currentH3.children.push(elementData);
+                else if (currentH2) currentH2.children.push(elementData);
+                else if (currentH1) currentH1.children.push(elementData);
+            }
+        });
+        
+        return structuredContent;
+    }
+
+
+    // =================================================================================
+    // 3. UI GENERATION AND EVENT HANDLING
+    // =================================================================================
+    
+    /**
+     * Sets up the initial user interface, creating the main portal grid.
+     */
     function setupUI() {
         const portalGrid = document.getElementById('portal-grid');
         const welcomeArea = document.getElementById('welcome-area');
-        welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens.</p><p class="text-3xl mt-4 text-right">— Elder Gubi-Goni, the Storyshell</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
-        
-        const navigationItems = [...DATA.categories, "The Weaver's Loom", "View Banner"];
-        
-        portalGrid.innerHTML = '';
-        navigationItems.forEach(itemLabel => {
-            const portal = document.createElement('div');
-            portal.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-            portal.innerHTML = `<svg class="h-8 w-8 mb-2 text-amber-300/70" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg><h4 class="font-serif text-amber-200">${itemLabel}</h4>`;
-            
-            portal.addEventListener('click', () => {
-                const contentOverlayBody = document.getElementById('content-overlay-body');
-                contentOverlayBody.innerHTML = ''; 
-                const title = document.createElement('h2');
-                title.className = 'text-3xl font-bold text-amber-400 mb-4';
-                title.textContent = itemLabel;
-                contentOverlayBody.appendChild(title);
+        portalGrid.innerHTML = ''; // Clear loading message
 
-                const lowerCaseLabel = itemLabel.toLowerCase();
-                if (lowerCaseLabel === 'the weaver\'s loom') {
-                    panelGeneratorMap['weavers-loom'](contentOverlayBody);
-                } else if (lowerCaseLabel === 'view banner') {
-                    contentOverlayBody.innerHTML = `<div class="flex items-center justify-center h-full"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"></div>`;
-                }
-                else {
-                    const categoryData = DATA.entries.filter(e => e.category === itemLabel);
-                    createGrid(contentOverlayBody, categoryData);
-                }
-                document.getElementById('content-overlay').classList.add('active');
-            });
-            portalGrid.appendChild(portal);
+        // Setup the static welcome message.
+        welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">...</div>`; // Keep your original welcome HTML here...
+
+        // Create a portal for each top-level heading (H1) from the Google Doc.
+        AppData.forEach(h1_item => {
+             // Special case for the Weaver's Loom
+            if (h1_item.content.trim().toLowerCase() === "the weaver's loom") {
+                 createPortal(portalGrid, h1_item.content, 'https://i.imgur.com/cyVlJBD.jpeg', () => openWeaversLoom());
+            } else {
+                 createPortal(portalGrid, h1_item.content, findFirstImage(h1_item), () => openContentModal(h1_item));
+            }
+        });
+        
+        // Add close listeners to all modals.
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none');
         });
 
-        document.getElementById('content-overlay-close-button').addEventListener('click', () => document.getElementById('content-overlay').classList.remove('active'));
-        document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none'));
+        // Add listeners to close modals when clicking on the background.
         window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
-            if (e.target.id === 'content-overlay') document.getElementById('content-overlay').classList.remove('active');
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
         });
     }
 
-    const panelGeneratorMap = {
-        'weavers-loom': (container) => {
-            const loomContainer = document.createElement('div');
-            loomContainer.className = 'content-panel-inner';
-            container.appendChild(loomContainer);
+    /**
+     * A helper function to create a clickable portal element.
+     */
+    function createPortal(container, title, imageUrl, onClickAction) {
+        const portal = document.createElement('div');
+        portal.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
+        portal.innerHTML = `
+            <img src="${imageUrl || 'https://i.imgur.com/oAl9hd4.jpeg'}" alt="${title}" class="w-20 h-20 object-cover rounded-full mb-2 border-2 border-amber-800/50">
+            <h4 class="font-serif text-amber-200 group-hover:text-white transition-colors">${title}</h4>
+        `;
+        portal.addEventListener('click', onClickAction);
+        container.appendChild(portal);
+    }
 
-            loomContainer.innerHTML = `
-                <div class="text-center mb-8">
-                    <div class="flex flex-col md:flex-row items-center justify-center gap-6 max-w-4xl mx-auto text-left bg-black/20 p-4 rounded-lg">
-                        <img src="https://i.imgur.com/cyVlJBD.jpeg" alt="The Weaver's Loom" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
-                        <p class="text-lg text-gray-300 italic">"Welcome, Traveler, to my workshop. This is the Loom where stories are born. The air here hums with potential, and the threads of what could be drift like dust in the moonlight. My attendants, the weavers of thread, ink, and whisper, will help you shape the fabric of reality. Or, speak with the Breath Weaver, and begin a new story of your own."</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="thread-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Thread Weaver</h3><p class="text-sm text-gray-400 italic">Ask questions of the lore.</p></div>
-                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="ink-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Ink Weaver</h3><p class="text-sm text-gray-400 italic">Create prompts for images.</p></div>
-                    <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="whisper-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Whisper Weaver</h3><p class="text-sm text-gray-400 italic">Receive cryptic clues.</p></div>
-                </div>
-                <div id="breath-weaver-section" class="bg-black/20 p-6 rounded-lg shadow-inner border border-gray-700/50">
-                    <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
-                        <img src="https://i.imgur.com/UkGtkvp.jpeg" alt="Breath Weaver" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
-                        <div>
-                            <h3 class="text-3xl font-serif text-amber-300 mb-2">The Breath Weaver</h3>
-                            <p class="text-gray-300 italic">"Ah, a new story seeks to be told! Welcome, welcome. Every life begins with a single spark, a simple breath. Give me the vessel you have in mind—the kinship, the calling, the heart's allegiances—and I shall weave its very soul. Let us begin a new journey together."</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
-                        <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Kinship</button>
-                        <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Class</button>
-                        <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Spirit</button>
-                        <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition duration-300 text-sm">⊕ Add Background</button>
-                    </div>
-                    <div id="kinship-container" class="space-y-3 mb-4"></div>
-                    <div id="class-container" class="space-y-3 mb-4"></div>
-                    <div id="spirit-container" class="space-y-3 mb-4"></div>
-                    <div id="background-container" class="space-y-3 mb-4"></div>
-                    <div class="mb-4">
-                        <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
-                        <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
-                    </div>
-                    <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition duration-300">Weave the Breath</button>
-                    <div id="char-result-wrapper" class="mt-4 p-4 bg-gray-800/50 rounded-lg hidden"><div id="char-result"></div></div>
-                </div>`;
-            
-            document.getElementById('thread-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="thread-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Ask about a person, place, or event..."></textarea><button id="thread-weave-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Consult the Archives</button></div><div id="thread-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="thread-result"></div></div>`;
-            document.getElementById('ink-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="ink-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Describe a character or scene to visualize..."></textarea><button id="ink-weave-btn" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">Weave Ink</button></div><div id="ink-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative"><div id="ink-result"></div><button class="copy-btn text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500 absolute top-2 right-2">Copy</button></div>`;
-            document.getElementById('whisper-weaver-tool').innerHTML = `<div class="space-y-2"><textarea id="whisper-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Ask a question for which you seek not an answer, but a sign..."></textarea><button id="whisper-weave-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">Listen for a Whisper</button></div><div id="whisper-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="whisper-result"></div></div>`;
+    /**
+     * Opens a modal and renders the content from a parsed data object.
+     */
+    function openContentModal(data) {
+        ModalBodies.main.innerHTML = generateHtmlFromObject(data);
+        Modals.main.style.display = 'flex';
+    }
+    
+    /**
+     * Opens one of the four Weaver's Loom modals.
+     */
+    function openWeaversLoom() {
+       // This function would open a new overlay that lets the user CHOOSE one of the four weavers.
+       // For now, let's just log it to the console.
+       console.log("Opening the Weaver's Loom choice area.");
+       // You would then have buttons here to open Modals.threadWeaver, Modals.inkWeaver, etc.
+    }
 
-            const populateSelect = (select, options) => {
-                select.innerHTML = '';
-                select.add(new Option('(Random)', 'RANDOM'));
-                select.add(new Option('Custom...', 'CUSTOM'));
-                const separator = new Option('──────────', 'DISABLED');
-                separator.disabled = true;
-                select.add(separator);
-                (options || []).forEach(opt => select.add(new Option(opt, opt)));
-            };
-            const handleCustomInput = (e) => {
-                const select = e.target;
-                const wrapper = select.parentElement.querySelector('.custom-input-wrapper');
-                wrapper.innerHTML = '';
-                if (select.value === 'CUSTOM') {
-                    const customInput = document.createElement('input');
-                    customInput.type = 'text';
-                    customInput.className = 'custom-input mt-2 block w-full p-2.5 text-sm text-white bg-gray-700 rounded-lg border border-gray-600';
-                    customInput.placeholder = `Enter Custom ${select.dataset.label}...`;
-                    wrapper.appendChild(customInput);
-                }
-            };
-            const addKinshipRow = () => {
-                const container = document.getElementById('kinship-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Kinship</label><select data-label="Kinship" class="kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-Kinship</label><select data-label="Sub-Kinship" class="sub-kinship-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const kinshipSelect = row.querySelector('.kinship-select');
-                const subKinshipSelect = row.querySelector('.sub-kinship-select');
-                populateSelect(kinshipSelect, DATA.entries.filter(e => e.category === 'Kinships').map(p => p.title));
-                kinshipSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubKinshipDropdown(kinshipSelect, subKinshipSelect); });
-                subKinshipSelect.addEventListener('change', handleCustomInput);
-                updateSubKinshipDropdown(kinshipSelect, subKinshipSelect);
-            };
-            const updateSubKinshipDropdown = (kinshipSelect, subKinshipSelect) => {
-                const kinship = (DATA.entries || []).find(p => p.title === kinshipSelect.value);
-                const subKinships = kinship && kinship.subspecies && kinship.subspecies.length > 0 ? kinship.subspecies.map(s => s.name) : [];
-                populateSelect(subKinshipSelect, subKinships);
-                subKinshipSelect.disabled = !subKinships.length > 0;
-            };
-            const addClassRow = () => {
-                const container = document.getElementById('class-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Class</label><select data-label="Class" class="class-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Subclass</label><select data-label="Subclass" class="subclass-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const classSelect = row.querySelector('.class-select');
-                const subclassSelect = row.querySelector('.subclass-select');
-                populateSelect(classSelect, Object.keys(DATA.classData));
-                classSelect.addEventListener('change', (e) => { handleCustomInput(e); updateSubclassDropdown(classSelect, subclassSelect); });
-                subclassSelect.addEventListener('change', handleCustomInput);
-                updateSubclassDropdown(classSelect, subclassSelect);
-            };
-            const updateSubclassDropdown = (classSelect, subclassSelect) => {
-                const subclasses = DATA.classData[classSelect.value] || [];
-                populateSelect(subclassSelect, subclasses);
-                subclassSelect.disabled = subclasses.length === 0;
-            };
-            const addSpiritRow = () => {
-                const container = document.getElementById('spirit-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Spirit</label><select data-label="Spirit" class="spirit-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const spiritSelect = row.querySelector('.spirit-select');
-                populateSelect(spiritSelect, DATA.entries.filter(e => e.category === 'Pantheon').map(p => p.title));
-                spiritSelect.addEventListener('change', handleCustomInput);
-            };
-            const addBackgroundRow = () => {
-                const container = document.getElementById('background-container');
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-                row.innerHTML = `<div class="flex-grow"><label class="block text-xs text-gray-400 mb-1">Background</label><select data-label="Background" class="background-select w-full bg-gray-600 border border-gray-500 text-white text-sm rounded-lg p-2.5"></select><div class="custom-input-wrapper mt-1"></div></div><button class="remove-btn text-red-400 hover:text-red-200 font-bold text-2xl px-2 self-end pb-1">⊖</button>`;
-                container.appendChild(row);
-                const backgroundSelect = row.querySelector('.background-select');
-                populateSelect(backgroundSelect, DATA.backgrounds);
-                backgroundSelect.addEventListener('change', handleCustomInput);
-            }
-            document.getElementById('add-kinship-btn').addEventListener('click', addKinshipRow);
-            document.getElementById('add-class-btn').addEventListener('click', addClassRow);
-            document.getElementById('add-spirit-btn').addEventListener('click', addSpiritRow);
-            document.getElementById('add-background-btn').addEventListener('click', addBackgroundRow);
-            loomContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('remove-btn')) {
-                    e.target.parentElement.remove();
-                }
-                if (e.target.closest('.weaver-card')) {
-                    const modalId = e.target.closest('.weaver-card').dataset.modalTarget;
-                    document.getElementById(modalId).style.display = 'flex';
-                }
-            });
-            const callGeminiAPI = async (weaver, userInput, resultDiv, button) => {
-                const resultWrapper = resultDiv.parentElement;
-                resultWrapper.classList.remove('hidden');
-                resultDiv.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
-                button.disabled = true;
-                try {
-                    const response = await fetch('/api/gemini', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ weaver, userInput }),
-                    });
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(errData.error || `HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    resultDiv.innerHTML = data.text.replace(/\n/g, '<br>');
-                } catch (error) {
-                    console.error('Error:', error);
-                    resultDiv.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
-                } finally {
-                    button.disabled = false;
-                }
-            };
-            document.getElementById('generate-char-button').addEventListener('click', () => { /* Logic here */ });
-            document.getElementById('thread-weave-btn').addEventListener('click', () => {
-                const userInput = document.getElementById('thread-input').value;
-                if (userInput) callGeminiAPI('Thread Weaver', userInput, document.getElementById('thread-result'), document.getElementById('thread-weave-btn'));
-            });
-            document.getElementById('ink-weave-btn').addEventListener('click', () => {
-                const userInput = document.getElementById('ink-input').value;
-                if (userInput) callGeminiAPI('Ink Weaver', userInput, document.getElementById('ink-result'), document.getElementById('ink-weave-btn'));
-            });
-            document.getElementById('whisper-weave-btn').addEventListener('click', () => {
-                const userInput = document.getElementById('whisper-input').value;
-                if (userInput) callGeminiAPI('Whisper Weaver', userInput, document.getElementById('whisper-result'), document.getElementById('whisper-weave-btn'));
-            });
+    /**
+     * Recursively generates HTML from the nested data object.
+     */
+    function generateHtmlFromObject(data) {
+        let html = '';
+        // Render the content of the current level's element
+        if (data.type !== 'H1' && data.type !== 'H2' && data.type !== 'H3' && data.type !== 'H4' && data.type !== 'H5') {
+            html += data.content;
         }
-    };
 
+        // Create clickable sub-portals for all children elements.
+        if (data.children && data.children.length > 0) {
+            html += '<div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">';
+            data.children.forEach(child => {
+                 // If the child is a heading, create a button. Otherwise, render its content.
+                 if (child.type.startsWith('H')) {
+                     const childDataString = btoa(JSON.stringify(child)); // Encode data to pass in onclick
+                     html += `
+                        <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" 
+                             onclick="openSubModal(JSON.parse(atob('${childDataString}')))">
+                            <h4 class="font-serif text-amber-300">${child.content}</h4>
+                        </div>`;
+                 } else {
+                     html += `<div class="col-span-full">${generateHtmlFromObject(child)}</div>`;
+                 }
+            });
+            html += '</div>';
+        }
+        return `<div><h2 class="text-3xl font-serif text-amber-400 mb-4">${data.content}</h2>${html}</div>`;
+    }
+    
+    // Make the sub-modal function globally accessible from the onclick attribute.
+    window.openSubModal = function(data) {
+        ModalBodies.sub.innerHTML = generateHtmlFromObject(data);
+        Modals.sub.style.display = 'flex';
+    }
+
+    /**
+     * Helper to find the first image in a content block for use as a portal thumbnail.
+     */
+    function findFirstImage(data) {
+        if (data.image) return data.image;
+        if (data.children) {
+            for(const child of data.children) {
+                const foundImage = findFirstImage(child);
+                if (foundImage) return foundImage;
+            }
+        }
+        return null;
+    }
+
+
+    // =================================================================================
+    // 5. APPLICATION START
+    // =================================================================================
     initializeApp();
+
 });
 </script>
 </body>
