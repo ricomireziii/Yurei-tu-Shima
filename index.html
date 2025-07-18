@@ -76,55 +76,142 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- Global Data Store ---
+    let DATA = {};
 
-    // This function will fetch our lore data from the new API
+    function structureLoreData(data) {
+        const entryMap = new Map();
+
+        for (const doc of data) {
+            if (!entryMap.has(doc.title)) {
+                entryMap.set(doc.title, {
+                    title: doc.title,
+                    content: '',
+                    image_url: doc.image_url,
+                    category: doc.category,
+                });
+            }
+            const contentWithoutTitle = doc.content.replace(`${doc.title}\n\n`, '');
+            entryMap.get(doc.title).content += contentWithoutTitle + '\n';
+        }
+
+        const structured = {
+            peoplesData: [], pantheonData: [], accordionData: { regions: [], factions: [], mysteries: [], 'travel-tech': [] }, chapters: []
+        };
+
+        for (const entry of entryMap.values()) {
+            const item = { name: entry.title, title: entry.title, content: entry.content, image: entry.image_url, subspecies: [] };
+            const category = entry.category?.toLowerCase() || 'uncategorized';
+
+            if (category === 'kinships') structured.peoplesData.push(item);
+            else if (category === 'pantheon') structured.pantheonData.push(item);
+            else if (category === 'regions') structured.accordionData.regions.push(item);
+            else if (category === 'factions') structured.accordionData.factions.push(item);
+            else if (category === 'mysteries') structured.accordionData.mysteries.push(item);
+            else if (category === 'travel & tech') structured.accordionData['travel-tech'].push(item);
+            else if (category === 'history') structured.chapters.push(item);
+        }
+        return structured;
+    }
+
+    // --- Main Initialization Function ---
     async function initializeApp() {
         try {
+            document.getElementById('portal-grid').innerHTML = `<p class="text-center text-amber-300 col-span-full">breathing in the stories...</p>`;
             const response = await fetch('/api/get-lore');
-            if (!response.ok) {
-                throw new Error(`Failed to fetch lore: ${response.statusText}`);
-            }
-            const loreData = await response.json();
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const rawData = await response.json();
+            const structuredData = structureLoreData(rawData);
             
-            // We will need to re-structure the flat data from Supabase into the format
-            // our UI expects. This is a placeholder for that logic. For now, we will
-            // create a dummy structure.
-            // In the future, we'll parse loreData to build this dynamically.
-            const DATA = {
-                // Placeholder data until we build the dynamic parser
-                peoplesData: loreData.filter(d => d.title.includes('Kemari') || d.title.includes('Nisaki')), // Example filter
-                pantheonData: loreData.filter(d => d.title.includes('Dravanyr') || d.title.includes('Okumi')), // Example filter
-                accordionData: { regions: [], factions: [], 'travel-tech': [], mysteries: [] },
-                chapters: [],
-                classData: { /* This can remain static */ },
-                backgrounds: [ /* This can also remain static */ ],
+            DATA = {
+                ...structuredData,
+                classData: { /* Static data */ 
+                    "Artificer": ["Alchemist", "Armorer", "Artillerist", "Battle Smith"],"Barbarian": ["Path of the Berserker", "Path of the Wild Heart", "Path of the World Tree", "Path of the Zealot"],"Bard": ["College of Dance", "College of Glamour", "College of Lore", "College of Valor"],"Cleric": ["Life Domain", "Light Domain", "Trickery Domain", "War Domain"],"Druid": ["Circle of the Land", "Circle of the Moon", "Circle of the Sea", "Circle of the Stars"],"Fighter": ["Battle Master", "Champion", "Eldritch Knight", "Psi Warrior"],"Monk": ["Way of the Four Elements", "Way of Mercy", "Way of the Open Hand", "Way of Shadow"],"Paladin": ["Oath of Devotion", "Oath of Glory", "Oath of Redemption", "Oath of Vengeance"],"Ranger": ["Beast Master", "Gloom Stalker", "Hunter", "Fey Wanderer"],"Rogue": ["Arcane Trickster", "Assassin", "Mastermind", "Thief"],"Sorcerer": ["Aberrant Mind", "Clockwork Soul", "Draconic Bloodline", "Wild Magic"],"Warlock": ["The Archfey", "The Celestial", "The Fiend", "The Great Old One"],"Wizard": ["School of Abjuration", "School of Evocation", "School of Illusion", "School of Necromancy"]
+                },
+                backgrounds: ["Acolyte", "Artisan", "Charlatan", "Criminal", "Entertainer", "Farmer", "Folk Hero", "Gladiator", "Guard", "Guide", "Hermit", "Knight", "Laborer", "Noble", "Outlander", "Pilgrim", "Pirate", "Sage", "Sailor", "Scholar", "Scion", "Soldier", "Urchin"],
             };
-
-            // The rest of the initialization logic remains the same
-            setupUI(DATA);
-
+            
+            setupUI();
         } catch (error) {
             console.error("Could not initialize app:", error);
-            // Display an error message to the user on the page
-            document.getElementById('portal-area').innerHTML = `<p class="text-center text-red-400">Could not load the stories of Yurei-tu-Shima. Please try again later.</p>`;
+            document.getElementById('portal-area').innerHTML = `<p class="text-center text-red-400 font-bold">Could not load the stories of Yurei-tu-Shima. Please check the Netlify function logs.</p>`;
         }
     }
 
-    function setupUI(DATA) {
-        const welcomeArea = document.getElementById('welcome-area');
+    // --- UI Setup and Helper Functions (All of this is now inside the main script tag) ---
+    const mainModal = document.getElementById('main-modal');
+    const mainModalBody = document.getElementById('main-modal-body');
+
+    function createGrid(container, dataArray, placeholderImg = 'https://i.imgur.com/oAl9hd4.jpeg', titleKey = 'title', contentKey = 'content') {
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
+        (dataArray || []).forEach(item => {
+            const title = item[titleKey];
+            const content = item[contentKey];
+            const image = item.image || placeholderImg;
+            const card = document.createElement('div');
+            card.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
+            card.innerHTML = `<img src="${image}" alt="${title}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/50 group-hover:bg-black/70"></div><h3 class="absolute bottom-2 left-2 text-white font-bold font-serif">${title}</h3>`;
+            card.addEventListener('click', () => openMainModal(title, image, content, item.subspecies));
+            grid.appendChild(card);
+        });
+        container.appendChild(grid);
+    }
+
+    function openMainModal(title, image, content) {
+        mainModalBody.innerHTML = `<div class="flex flex-col md:flex-row gap-6"><img src="${image}" alt="${title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg"><div class="flex-1"><h3 class="text-3xl font-bold text-amber-400 mb-2 font-serif">${title}</h3><div>${content.replace(/\n/g, '<br>')}</div></div></div>`;
+        mainModal.style.display = 'flex';
+    }
+
+    const panelGeneratorMap = {
+        'kinships': (c) => { c.innerHTML = `<h2>The Kinships</h2>`; createGrid(c, DATA.peoplesData, undefined, 'name', 'content'); },
+        'pantheon': (c) => { c.innerHTML = `<h2>The Pantheon</h2>`; createGrid(c, DATA.pantheonData, undefined, 'name', 'content'); },
+        'regions': (c) => { c.innerHTML = `<h2>Regions</h2>`; createGrid(c, DATA.accordionData.regions); },
+        'factions': (c) => { c.innerHTML = `<h2>Factions</h2>`; createGrid(c, DATA.accordionData.factions); },
+        'mysteries': (c) => { c.innerHTML = `<h2>Mysteries</h2>`; createGrid(c, DATA.accordionData.mysteries); },
+        'travel & tech': (c) => { c.innerHTML = `<h2>Travel & Tech</h2>`; createGrid(c, DATA.accordionData['travel-tech']); },
+        'history': (c) => { c.innerHTML = `<h2>History</h2>`; createGrid(c, DATA.chapters); },
+        'weavers-loom': (container) => {
+            /* All of the Weaver's Loom HTML and JS logic would go here. For brevity, it's omitted but you should paste your existing, working code for it here. */
+        }
+    };
+
+    function setupUI() {
         const portalGrid = document.getElementById('portal-grid');
-        const contentOverlay = document.getElementById('content-overlay');
-        const contentOverlayBody = document.getElementById('content-overlay-body');
+        const welcomeArea = document.getElementById('welcome-area');
+        welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens.</p><p class="text-3xl mt-4 text-right">— Elder Gubi-Goni, the Storyshell</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
         
-        // The rest of your UI setup functions (createGrid, openMainModal, panelGeneratorMap, etc.)
-        // would go here, exactly as they were before. For brevity, I'll omit them,
-        // but you should copy them from your existing file into this space.
-        // Make sure the panelGeneratorMap uses the new dynamic DATA object.
+        const navigationItems = [
+            { id: 'kinships', label: 'The Kinships' }, { id: 'pantheon', label: 'The Pantheon' }, { id: 'history', label: 'History' }, { id: 'regions', label: 'Regions' }, { id: 'factions', label: 'Factions' }, { id: 'mysteries', label: 'Mysteries' }, { id: 'travel & tech', label: 'Travel & Tech' }, { id: 'weavers-loom', label: "The Weaver's Loom" }
+        ];
+
+        portalGrid.innerHTML = '';
+        navigationItems.forEach(item => {
+            const portal = document.createElement('div');
+            portal.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
+            portal.innerHTML = `<svg class="h-8 w-8 mb-2 text-amber-300/70" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg><h4 class="font-serif text-amber-200">${item.label}</h4>`;
+            portal.addEventListener('click', () => {
+                const contentOverlayBody = document.getElementById('content-overlay-body');
+                contentOverlayBody.innerHTML = ''; 
+                if (panelGeneratorMap[item.id]) panelGeneratorMap[item.id](contentOverlayBody);
+                document.getElementById('content-overlay').classList.add('active');
+            });
+            portalGrid.appendChild(portal);
+        });
+
+        // Event listeners for closing modals
+        document.getElementById('content-overlay-close-button').addEventListener('click', () => document.getElementById('content-overlay').classList.remove('active'));
+        document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none'));
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+            if (e.target.id === 'content-overlay') document.getElementById('content-overlay').classList.remove('active');
+        });
     }
 
     initializeApp();
-
 });
 </script>
 </body>
+</html></body>
 </html>
