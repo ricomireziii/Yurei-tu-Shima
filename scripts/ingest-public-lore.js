@@ -20,17 +20,17 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
 async function authorize() {
-    try {
-        const content = await fs.readFile(CREDENTIALS_PATH);
-        return google.auth.fromJSON(JSON.parse(content));
-    } catch (e) {
-        console.error("Error reading credentials file. Make sure 'google-credentials.json' is in your project root.", e);
-        process.exit(1);
-    }
+    const content = await fs.readFile(CREDENTIALS_PATH);
+    const keys = JSON.parse(content);
+    const scopes = ['https://www.googleapis.com/auth/documents.readonly'];
+    const client = google.auth.fromJSON(keys);
+    client.scopes = scopes;
+    return client;
 }
 
 function chunkText(text) {
-    return text.split(/\n\s*\n/).filter(p => p.trim().length > 20);
+    // Split by one or more newlines, which is more robust for Google Docs
+    return text.split(/\n+/).filter(p => p.trim().length > 20);
 }
 
 async function parseDocContent(doc) {
@@ -47,29 +47,27 @@ async function parseDocContent(doc) {
         if (paragraphStyle === 'TITLE' || paragraphStyle === 'SUBTITLE') continue;
 
         const isUnderlined = element.paragraph.elements.every(e => e.textRun?.textStyle?.underline);
-
         let textContent = '';
         for(const el of element.paragraph.elements) {
             textContent += el.textRun?.content || '';
         }
-        textContent = textContent.trim();
         
         if (paragraphStyle === 'HEADING_1') {
             if (currentEntry) entries.push(currentEntry);
-            currentCategory = textContent;
+            currentCategory = textContent.trim();
             currentEntry = null;
         } else if (paragraphStyle === 'HEADING_2') {
             if (currentEntry) entries.push(currentEntry);
-            currentEntry = { title: textContent, text: '', imageUrl: null, category: currentCategory };
+            currentEntry = { title: textContent.trim(), text: '', imageUrl: null, category: currentCategory };
         } else if (currentEntry) {
-            if (isUnderlined && textContent) {
-                currentEntry.text += `<blockquote>${textContent}</blockquote>\n\n`;
-            } else if (paragraphStyle === 'HEADING_3' && textContent) {
-                currentEntry.text += `<h3>${textContent}</h3>\n`;
-            } else if (paragraphStyle === 'HEADING_4' && textContent) {
-                currentEntry.text += `<h4>${textContent}</h4>\n`;
+            if (isUnderlined && textContent.trim()) {
+                currentEntry.text += `<blockquote>${textContent.trim()}</blockquote>\n\n`;
+            } else if (paragraphStyle === 'HEADING_3' && textContent.trim()) {
+                currentEntry.text += `<h3>${textContent.trim()}</h3>\n`;
+            } else if (paragraphStyle === 'HEADING_4' && textContent.trim()) {
+                currentEntry.text += `<h4>${textContent.trim()}</h4>\n`;
             } else {
-                currentEntry.text += textContent + '\n';
+                currentEntry.text += textContent;
             }
 
             if (!currentEntry.imageUrl) {
@@ -90,13 +88,22 @@ async function parseDocContent(doc) {
     const finalChunks = [];
     for (const entry of entries) {
         const textChunks = chunkText(entry.text);
-        for (const contentChunk of textChunks) {
-            finalChunks.push({
-                content: `${entry.title}\n\n${contentChunk}`,
+        if (textChunks.length === 0 && entry.title) { // Handle entries with no body text
+             finalChunks.push({
+                content: entry.title,
                 image_url: entry.imageUrl,
                 title: entry.title,
                 category: entry.category,
             });
+        } else {
+            for (const contentChunk of textChunks) {
+                finalChunks.push({
+                    content: `${entry.title}\n\n${contentChunk}`,
+                    image_url: entry.imageUrl,
+                    title: entry.title,
+                    category: entry.category,
+                });
+            }
         }
     }
     return finalChunks;
@@ -114,7 +121,7 @@ async function ingestPublicLore() {
         const parsedChunks = await parseDocContent(docRes.data);
         console.log(`Parsed and chunked into ${parsedChunks.length} public lore documents.`);
 
-        if (parsedChunks.length === 0) return console.log("No entries found to process. Exiting.");
+        if (parsedChunks.length === 0) return console.log("No entries found to process. Please check Heading styles in your Google Doc.");
         
         console.log('Clearing existing public lore from the database...');
         await supabase.from('lore_documents').delete().neq('id', 0);
