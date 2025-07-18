@@ -76,14 +76,14 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // STATE MANAGEMENT & DOM REFERENCES
+    // STATE & DOM REFERENCES
     const App = {
         data: [],
         modals: { main: document.getElementById('main-modal'), sub: document.getElementById('subspecies-modal') },
         modalBodies: { main: document.getElementById('main-modal-body'), sub: document.getElementById('subspecies-modal-body') }
     };
 
-    // CORE APPLICATION LOGIC
+    // INITIALIZATION
     async function initializeApp() {
         const portalGrid = document.getElementById('portal-grid');
         try {
@@ -95,17 +95,18 @@ document.addEventListener('DOMContentLoaded', function() {
             App.data = processJsonData(jsonData);
             console.log("✅ JSON processed into structured data:", App.data);
             if (App.data.length === 0) {
-                portalGrid.innerHTML = `<p class="text-center text-yellow-400 col-span-full">Fetched data, but no categories were found to create portals.</p>`;
+                portalGrid.innerHTML = `<p class="text-center text-yellow-400 col-span-full">Fetched data, but no categories were found.</p>`;
                 return;
             }
             setupUI();
         } catch (error) {
             console.error("❌ Critical Error during initialization:", error);
             const portalArea = document.getElementById('portal-area');
-            portalArea.innerHTML = `<div class="text-center text-red-400 font-bold bg-red-900/50 p-4 rounded-lg"><h3 class="text-xl mb-2">Failed to Load Lore</h3><p>${error.message}</p></div>`;
+            portalArea.innerHTML = `<div class="text-center text-red-400 p-4"><h3 class="text-xl">Failed to Load Lore</h3><p>${error.message}</p></div>`;
         }
     }
 
+    // DATA PROCESSING
     function processJsonData(jsonData) {
         const groupedData = {};
         jsonData.forEach(item => {
@@ -122,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return Object.values(groupedData);
     }
 
-    // UI GENERATION & EVENT HANDLING
+    // UI & EVENT HANDLING
     function setupUI() {
         const portalGrid = document.getElementById('portal-grid');
         const welcomeArea = document.getElementById('welcome-area');
@@ -140,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("➡️ Creating main portals from this data:", App.data);
         App.data.forEach(portalData => {
             if (portalData.title.toLowerCase().includes("weaver's loom")) {
-                createPortal(portalGrid, "The Weaver's Loom", 'https://i.imgur.com/cyVlJBD.jpeg', () => openWeaversLoom(portalData));
+                createPortal(portalGrid, "The Weaver's Loom", 'https://i.imgur.com/cyVlJBD.jpeg', () => openWeaversLoom());
             } else {
                 createPortal(portalGrid, portalData.title, portalData.image, () => openContentModal(portalData, 'main'));
             }
@@ -162,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function openContentModal(data, modalType) {
+        // ... (This function remains the same as the previous version)
         const modalBody = App.modalBodies[modalType];
         const modal = App.modals[modalType];
         const parser = new DOMParser();
@@ -171,19 +173,19 @@ document.addEventListener('DOMContentLoaded', function() {
         data.children.forEach(item => {
             const doc = parser.parseFromString(item.content, 'text/html');
             const h3 = doc.querySelector('h3');
-            if (h3) {
-                subPortals.push({ title: h3.textContent, data: item });
+            // A simple way to check if the main content is just the h3 title
+            const isSubPortalEntry = h3 && h3.textContent.trim() === item.title.trim();
+            if (isSubPortalEntry) {
+                subPortals.push({ title: item.title, data: item });
             } else {
-                mainContentHtml += `<div class="prose prose-invert max-w-none text-gray-300 mb-4">${item.content}</div>`;
+                mainContentHtml += `<div class="prose prose-invert max-w-none text-gray-300 mb-4 p-4 bg-black/20 rounded-lg"><h4>${item.title}</h4>${item.content}</div>`;
             }
         });
         if (subPortals.length > 0) {
             subPortalsHtml = '<h3 class="text-xl font-serif text-amber-300 mt-8 mb-4 border-b border-gray-600 pb-2">Explore Further</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
             subPortals.forEach(portal => {
-                // **FIX for btoa error**
                 const portalDataString = encodeURIComponent(JSON.stringify(portal.data));
-                subPortalsHtml += `<div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700 transition-colors" 
-                    onclick="window.openSubPortal(JSON.parse(decodeURIComponent('${portalDataString}')))">
+                subPortalsHtml += `<div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700 transition-colors" onclick="window.openSubPortal(JSON.parse(decodeURIComponent('${portalDataString}')))">
                     <h4 class="font-serif text-amber-200">${portal.title}</h4></div>`;
             });
             subPortalsHtml += '</div>';
@@ -204,8 +206,31 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBody.scrollTop = 0;
     };
 
-    function openWeaversLoom(data) { alert("The Weaver's Loom portal was clicked!"); }
+    function openWeaversLoom() {
+        // This now opens the actual pre-defined tool modals
+        const modalBody = App.modalBodies.main;
+        const modal = App.modals.main;
+        modalBody.innerHTML = `
+            <h2 class="text-3xl font-serif text-amber-400 mb-4">The Weaver's Loom</h2>
+            <p class="text-gray-300 mb-6 italic">This is the Loom where stories are born. Choose an attendant to help you shape the fabric of reality.</p>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('character-generator-modal-id').style.display='flex'">
+                    <h4 class="font-serif text-amber-300 text-xl">Character Concept Generator</h4>
+                </div>
+                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('ink-weaver-modal').style.display='flex'">
+                    <h4 class="font-serif text-amber-300 text-xl">The Ink Weaver</h4>
+                </div>
+                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('whisper-weaver-modal').style.display='flex'">
+                     <h4 class="font-serif text-amber-300 text-xl">The Whisper Weaver</h4>
+                </div>
+                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('thread-weaver-modal').style.display='flex'">
+                     <h4 class="font-serif text-amber-300 text-xl">The Thread Weaver</h4>
+                </div>
+            </div>`;
+        modal.style.display = 'flex';
+    }
 
+    // START APP
     initializeApp();
 });
 </script>

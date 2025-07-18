@@ -49,6 +49,17 @@ async function parseDocContent(doc) {
             commitCurrentEntry();
             currentCategory = text;
             currentEntry = null;
+
+            // **THE FIX IS HERE**
+            // If this H1 is The Weaver's Loom, create a special entry for it.
+            if (currentCategory.toLowerCase().includes("the weaver's loom")) {
+                 entries.push({
+                    title: "The Weaver's Loom",
+                    content: "The gateway to the four weavers.",
+                    imageUrl: null, // No image needed
+                    category: "The Weaver's Loom" // Self-categorized
+                 });
+            }
             continue;
         }
 
@@ -73,15 +84,10 @@ async function parseDocContent(doc) {
         
         if (currentEntry) {
             const htmlContent = element.paragraph.elements.map(e => e.textRun?.content || '').join('');
+            if (style === 'HEADING_3') currentEntry.content += `<h3>${htmlContent}</h3>`;
+            else if (style === 'HEADING_4') currentEntry.content += `<h4>${htmlContent}</h4>`;
+            else currentEntry.content += `<p>${htmlContent}</p>`;
             
-            if (style === 'HEADING_3') {
-                currentEntry.content += `<h3>${htmlContent}</h3>`;
-            } else if (style === 'HEADING_4') {
-                currentEntry.content += `<h4>${htmlContent}</h4>`;
-            } else {
-                 currentEntry.content += `<p>${htmlContent}</p>`;
-            }
-            // Find an image within the content if we don't have one yet
             if (!currentEntry.imageUrl) {
                  for (const el of element.paragraph.elements) {
                      if (el.inlineObjectElement) {
@@ -93,7 +99,7 @@ async function parseDocContent(doc) {
             }
         }
     }
-    commitCurrentEntry(); // Commit the very last entry
+    commitCurrentEntry();
     return entries;
 }
 
@@ -102,28 +108,23 @@ async function ingestPublicLore() {
         console.log('Starting PUBLIC lore ingestion...');
         const auth = await authorize();
         const docs = google.docs({ version: 'v1', auth });
-
-        console.log('Reading from Google Doc...');
         const docRes = await docs.documents.get({ documentId: PUBLIC_LORE_DOC_ID });
-        
         const parsedEntries = await parseDocContent(docRes.data);
+        
         console.log(`Parsed into ${parsedEntries.length} public lore documents.`);
-
-        if (parsedEntries.length === 0) return console.log("No entries found to process. Please check Heading styles (H1, H2) in your Google Doc.");
+        if (parsedEntries.length === 0) return console.log("No entries found to process.");
         
         console.log('Clearing existing public lore from the database...');
         await supabase.from('lore_documents').delete().neq('id', 0);
         
         for (let i = 0; i < parsedEntries.length; i += BATCH_SIZE) {
             const batch = parsedEntries.slice(i, i + BATCH_SIZE);
-            console.log(`- Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(parsedEntries.length / BATCH_SIZE)}`);
+            console.log(`- Processing batch ${Math.floor(i / BATCH_SIZE) + 1}`);
             
             const embeddingContent = batch.map(item => `${item.title}\n\n${item.content.replace(/<[^>]*>?/gm, '')}`);
-
             const embeddingResult = await embeddingModel.batchEmbedContents({
                 requests: embeddingContent.map(text => ({ content: { parts: [{ text }] } })),
             });
-
             const documentsToInsert = batch.map((item, index) => ({
                 content: item.content,
                 embedding: embeddingResult.embeddings[index].values,
@@ -131,11 +132,9 @@ async function ingestPublicLore() {
                 title: item.title,
                 category: item.category,
             }));
-
             const { error: insertError } = await supabase.from('lore_documents').insert(documentsToInsert);
             if (insertError) throw insertError;
         }
-
         console.log(`\n✅ Public lore ingestion complete!`);
     } catch (error) {
         console.error("\n❌ An error occurred during public lore ingestion:", error);
