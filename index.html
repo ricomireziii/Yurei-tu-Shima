@@ -80,20 +80,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Global Data Store ---
     let DATA = {};
 
-    function structureLoreData(data) {
+    function structureLoreData(rawData) {
         const entryMap = new Map();
 
-        for (const doc of data) {
+        for (const doc of rawData) {
             if (!entryMap.has(doc.title)) {
                 entryMap.set(doc.title, {
                     title: doc.title,
                     content: '',
-                    image_url: doc.image_url,
+                    image: doc.image_url,
                     category: doc.category,
+                    subspecies: [] // Placeholder for future logic
                 });
             }
+            const currentEntry = entryMap.get(doc.title);
             const contentWithoutTitle = doc.content.replace(`${doc.title}\n\n`, '');
-            entryMap.get(doc.title).content += contentWithoutTitle + '\n';
+            currentEntry.content += contentWithoutTitle + '\n\n';
         }
 
         const structured = {
@@ -101,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         for (const entry of entryMap.values()) {
-            const item = { name: entry.title, title: entry.title, content: entry.content, image: entry.image_url, subspecies: [] };
+            const item = { name: entry.title, title: entry.title, content: entry.content, image: entry.image, subspecies: entry.subspecies };
             const category = entry.category?.toLowerCase() || 'uncategorized';
 
             if (category === 'kinships') structured.peoplesData.push(item);
@@ -115,31 +117,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return structured;
     }
 
-    // --- Main Initialization Function ---
     async function initializeApp() {
         try {
-            document.getElementById('portal-grid').innerHTML = `<p class="text-center text-amber-300 col-span-full">breathing in the stories...</p>`;
+            document.getElementById('portal-grid').innerHTML = `<p class="text-center text-amber-300 col-span-full animate-pulse">Breathing in the stories...</p>`;
             const response = await fetch('/api/get-lore');
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
             const rawData = await response.json();
             const structuredData = structureLoreData(rawData);
             
             DATA = {
                 ...structuredData,
-                classData: { /* Static data */ 
-                    "Artificer": ["Alchemist", "Armorer", "Artillerist", "Battle Smith"],"Barbarian": ["Path of the Berserker", "Path of the Wild Heart", "Path of the World Tree", "Path of the Zealot"],"Bard": ["College of Dance", "College of Glamour", "College of Lore", "College of Valor"],"Cleric": ["Life Domain", "Light Domain", "Trickery Domain", "War Domain"],"Druid": ["Circle of the Land", "Circle of the Moon", "Circle of the Sea", "Circle of the Stars"],"Fighter": ["Battle Master", "Champion", "Eldritch Knight", "Psi Warrior"],"Monk": ["Way of the Four Elements", "Way of Mercy", "Way of the Open Hand", "Way of Shadow"],"Paladin": ["Oath of Devotion", "Oath of Glory", "Oath of Redemption", "Oath of Vengeance"],"Ranger": ["Beast Master", "Gloom Stalker", "Hunter", "Fey Wanderer"],"Rogue": ["Arcane Trickster", "Assassin", "Mastermind", "Thief"],"Sorcerer": ["Aberrant Mind", "Clockwork Soul", "Draconic Bloodline", "Wild Magic"],"Warlock": ["The Archfey", "The Celestial", "The Fiend", "The Great Old One"],"Wizard": ["School of Abjuration", "School of Evocation", "School of Illusion", "School of Necromancy"]
-                },
-                backgrounds: ["Acolyte", "Artisan", "Charlatan", "Criminal", "Entertainer", "Farmer", "Folk Hero", "Gladiator", "Guard", "Guide", "Hermit", "Knight", "Laborer", "Noble", "Outlander", "Pilgrim", "Pirate", "Sage", "Sailor", "Scholar", "Scion", "Soldier", "Urchin"],
+                classData: {"Artificer":["Alchemist","Armorer","Artillerist","Battle Smith"],"Barbarian":["Path of the Berserker","Path of the Wild Heart","Path of the World Tree","Path of the Zealot"],"Bard":["College of Dance","College of Glamour","College of Lore","College of Valor"],"Cleric":["Life Domain","Light Domain","Trickery Domain","War Domain"],"Druid":["Circle of the Land","Circle of the Moon","Circle of the Sea","Circle of the Stars"],"Fighter":["Battle Master","Champion","Eldritch Knight","Psi Warrior"],"Monk":["Way of the Four Elements","Way of Mercy","Way of the Open Hand","Way of Shadow"],"Paladin":["Oath of Devotion","Oath of Glory","Oath of Redemption","Oath of Vengeance"],"Ranger":["Beast Master","Gloom Stalker","Hunter","Fey Wanderer"],"Rogue":["Arcane Trickster","Assassin","Mastermind","Thief"],"Sorcerer":["Aberrant Mind","Clockwork Soul","Draconic Bloodline","Wild Magic"],"Warlock":["The Archfey","The Celestial","The Fiend","The Great Old One"],"Wizard":["School of Abjuration","School of Evocation","School of Illusion","School of Necromancy"]},
+                backgrounds: ["Acolyte","Artisan","Charlatan","Criminal","Entertainer","Farmer","Folk Hero","Gladiator","Guard","Guide","Hermit","Knight","Laborer","Noble","Outlander","Pilgrim","Pirate","Sage","Sailor","Scholar","Scion","Soldier","Urchin"],
             };
             
             setupUI();
         } catch (error) {
             console.error("Could not initialize app:", error);
-            document.getElementById('portal-area').innerHTML = `<p class="text-center text-red-400 font-bold">Could not load the stories of Yurei-tu-Shima. Please check the Netlify function logs.</p>`;
+            document.getElementById('portal-area').innerHTML = `<p class="text-center text-red-400 font-bold">Could not load the stories of Yurei-tu-Shima. Please check the Netlify function logs for the 'get-lore' function.</p>`;
         }
     }
 
-    // --- UI Setup and Helper Functions (All of this is now inside the main script tag) ---
     const mainModal = document.getElementById('main-modal');
     const mainModalBody = document.getElementById('main-modal-body');
 
@@ -147,45 +145,37 @@ document.addEventListener('DOMContentLoaded', function() {
         const grid = document.createElement('div');
         grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
         (dataArray || []).forEach(item => {
-            const title = item[titleKey];
-            const content = item[contentKey];
-            const image = item.image || placeholderImg;
             const card = document.createElement('div');
             card.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-            card.innerHTML = `<img src="${image}" alt="${title}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/50 group-hover:bg-black/70"></div><h3 class="absolute bottom-2 left-2 text-white font-bold font-serif">${title}</h3>`;
-            card.addEventListener('click', () => openMainModal(title, image, content, item.subspecies));
+            card.innerHTML = `<img src="${item.image || placeholderImg}" alt="${item[titleKey]}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/50 group-hover:bg-black/70"></div><h3 class="absolute bottom-2 left-2 text-white font-bold font-serif">${item[titleKey]}</h3>`;
+            card.addEventListener('click', () => openMainModal(item[titleKey], item.image || placeholderImg, item[contentKey], item.subspecies));
             grid.appendChild(card);
         });
         container.appendChild(grid);
     }
 
-    function openMainModal(title, image, content) {
+    function openMainModal(title, image, content, subspecies = []) {
         mainModalBody.innerHTML = `<div class="flex flex-col md:flex-row gap-6"><img src="${image}" alt="${title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg"><div class="flex-1"><h3 class="text-3xl font-bold text-amber-400 mb-2 font-serif">${title}</h3><div>${content.replace(/\n/g, '<br>')}</div></div></div>`;
         mainModal.style.display = 'flex';
     }
 
     const panelGeneratorMap = {
-        'kinships': (c) => { c.innerHTML = `<h2>The Kinships</h2>`; createGrid(c, DATA.peoplesData, undefined, 'name', 'content'); },
-        'pantheon': (c) => { c.innerHTML = `<h2>The Pantheon</h2>`; createGrid(c, DATA.pantheonData, undefined, 'name', 'content'); },
-        'regions': (c) => { c.innerHTML = `<h2>Regions</h2>`; createGrid(c, DATA.accordionData.regions); },
-        'factions': (c) => { c.innerHTML = `<h2>Factions</h2>`; createGrid(c, DATA.accordionData.factions); },
-        'mysteries': (c) => { c.innerHTML = `<h2>Mysteries</h2>`; createGrid(c, DATA.accordionData.mysteries); },
-        'travel & tech': (c) => { c.innerHTML = `<h2>Travel & Tech</h2>`; createGrid(c, DATA.accordionData['travel-tech']); },
-        'history': (c) => { c.innerHTML = `<h2>History</h2>`; createGrid(c, DATA.chapters); },
-        'weavers-loom': (container) => {
-            /* All of the Weaver's Loom HTML and JS logic would go here. For brevity, it's omitted but you should paste your existing, working code for it here. */
-        }
+        'Kinships': c => createGrid(c, DATA.peoplesData, undefined, 'name', 'content'),
+        'Pantheon': c => createGrid(c, DATA.pantheonData, undefined, 'name', 'content'),
+        'Regions': c => createGrid(c, DATA.accordionData.regions),
+        'Factions': c => createGrid(c, DATA.accordionData.factions),
+        'Mysteries': c => createGrid(c, DATA.accordionData.mysteries),
+        'Travel & Tech': c => createGrid(c, DATA.accordionData['travel-tech']),
+        'History': c => createGrid(c, DATA.chapters),
+        'The Weaver\'s Loom': container => { /* PASTE YOUR WEAVER'S LOOM HTML AND JS LOGIC HERE */ }
     };
 
     function setupUI() {
         const portalGrid = document.getElementById('portal-grid');
-        const welcomeArea = document.getElementById('welcome-area');
-        welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens.</p><p class="text-3xl mt-4 text-right">— Elder Gubi-Goni, the Storyshell</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
+        document.getElementById('welcome-area').innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens.</p><p class="text-3xl mt-4 text-right">— Elder Gubi-Goni, the Storyshell</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
         
-        const navigationItems = [
-            { id: 'kinships', label: 'The Kinships' }, { id: 'pantheon', label: 'The Pantheon' }, { id: 'history', label: 'History' }, { id: 'regions', label: 'Regions' }, { id: 'factions', label: 'Factions' }, { id: 'mysteries', label: 'Mysteries' }, { id: 'travel & tech', label: 'Travel & Tech' }, { id: 'weavers-loom', label: "The Weaver's Loom" }
-        ];
-
+        const navigationItems = Object.keys(panelGeneratorMap).map(key => ({id: key, label: key}));
+        
         portalGrid.innerHTML = '';
         navigationItems.forEach(item => {
             const portal = document.createElement('div');
@@ -194,13 +184,18 @@ document.addEventListener('DOMContentLoaded', function() {
             portal.addEventListener('click', () => {
                 const contentOverlayBody = document.getElementById('content-overlay-body');
                 contentOverlayBody.innerHTML = ''; 
-                if (panelGeneratorMap[item.id]) panelGeneratorMap[item.id](contentOverlayBody);
+                if (panelGeneratorMap[item.id]) {
+                    const title = document.createElement('h2');
+                    title.className = 'text-3xl font-bold text-amber-400 mb-4';
+                    title.textContent = item.label;
+                    contentOverlayBody.appendChild(title);
+                    panelGeneratorMap[item.id](contentOverlayBody);
+                }
                 document.getElementById('content-overlay').classList.add('active');
             });
             portalGrid.appendChild(portal);
         });
 
-        // Event listeners for closing modals
         document.getElementById('content-overlay-close-button').addEventListener('click', () => document.getElementById('content-overlay').classList.remove('active'));
         document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none'));
         window.addEventListener('click', (e) => {
@@ -213,5 +208,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html></body>
 </html>
