@@ -26,7 +26,7 @@
         .backdrop-blur-md { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
         .content-overlay { display: none; }
         .content-overlay.active { display: flex; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; }
         .modal-content { animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #d1d5db; }
@@ -42,6 +42,14 @@
             transform: scale(1.05);
             box-shadow: 0 10px 20px rgba(0,0,0,0.6), 0 0 15px rgba(252, 211, 77, 0.4);
         }
+        /* Added for Accordion Panels */
+        .accordion-panel {
+            padding: 1rem;
+            margin-top: 0.5rem;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
@@ -51,7 +59,7 @@
         <div id="ui-container" class="relative w-full h-full flex flex-col p-4 md:p-8 overflow-y-auto custom-scrollbar">
 
             <header id="welcome-area" class="flex-shrink-0 bg-gray-900/40 backdrop-blur-md p-6 rounded-xl shadow-lg border border-gray-500/30">
-            </header>
+                </header>
 
             <main id="portal-area" class="py-8">
                 <h3 class="text-2xl md:text-3xl font-serif text-amber-100/90 text-center mb-6" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Explore the Stories</h3>
@@ -62,176 +70,153 @@
         </div>
     </div>
 
-    <div id="content-overlay" class="content-overlay absolute inset-0 z-20 p-4 md:p-8 bg-gray-900/50 backdrop-blur-xl">
-        <button id="content-overlay-close-button" class="absolute top-4 right-4 text-gray-300 hover:text-white text-4xl font-bold z-30">&times;</button>
-        <div id="content-overlay-body" class="w-full h-full bg-black/30 rounded-lg p-6 overflow-y-auto custom-scrollbar border border-gray-500/50"></div>
-    </div>
-
     <div id="main-modal" class="modal"><div class="modal-content bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-4xl w-11/12 relative"><button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button><div id="main-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div></div></div>
     <div id="subspecies-modal" class="modal"><div class="modal-content bg-gray-900/95 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-2xl w-10/12 relative"><button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button><div id="subspecies-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div></div></div>
-    
-    <div id="thread-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Thread Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://i.imgur.com/uav189P.jpeg" alt="Thread Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><p class="flex-1 italic">"Ah, a query! Excellent. Precision is the cornerstone of all meaningful inquiry. State your question regarding the island's lore, its inhabitants, or its spiritual phenomena. I shall consult my records and provide a thorough, academically sound response. Do be specific."</p></div><div id="thread-weaver-tool"></div></div></div></div>
-    <div id="ink-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Ink Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://i.imgur.com/v61pvTf.jpeg" alt="Ink Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><p class="flex-1 italic">"A vision! You seek a form, a visage to burn into your mind? My ink holds every color, every shadow, every possible shape. Describe to me what you see in your mind's eye. I will grind the pigment and prepare the words to capture its essence perfectly. But know this: I am no painter. You must take the description I prepare and carry it to an artisan in the world beyond (your image generator of choice). Only they can bring it to life."</p></div><div id="ink-weaver-tool"></div></div></div></div>
-    <div id="whisper-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Whisper Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://i.imgur.com/AWNAuQA.jpeg" alt="Whisper Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><p class="flex-1 italic">"Hush now... listen. Do you hear that? The answers you seek are not always in the loud, bright threads of history. The best secrets are in the silence between them. Ask me... but do not expect a map. Expect a signpost. A riddle. A half-forgotten sound. What is it you truly wish to know?"</p></div><div id="whisper-weaver-tool"></div></div></div></div>
+    <div id="thread-weaver-modal" class="modal"> </div>
+    <div id="ink-weaver-modal" class="modal"> </div>
+    <div id="whisper-weaver-modal" class="modal"> </div>
+
+    <script src="https://unpkg.com/contentful@latest/dist/contentful.browser.min.js"></script>
+    <script src="https://unpkg.com/@contentful/rich-text-html-renderer@15.11.0/dist/rich-text-html-renderer.browser.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // STATE & DOM REFERENCES
-    const App = {
-        data: [],
-        modals: { main: document.getElementById('main-modal'), sub: document.getElementById('subspecies-modal') },
-        modalBodies: { main: document.getElementById('main-modal-body'), sub: document.getElementById('subspecies-modal-body') }
-    };
+    // --- Configuration ---
+    const CSL_SPACE_ID = 'wvafujdu1t0o';
+    const CSL_ACCESS_TOKEN = 'oZfQWxr-xSXvptXlFgAwJfhcmjYBp_xzmZM7-b5IaaU';
 
-    // INITIALIZATION
-    async function initializeApp() {
-        const portalGrid = document.getElementById('portal-grid');
-        try {
-            portalGrid.innerHTML = `<p class="text-center text-amber-300 col-span-full animate-pulse">Breathing in the stories...</p>`;
-            const response = await fetch('/api/get-lore');
-            if (!response.ok) throw new Error(`API call failed: ${response.statusText}`);
-            const jsonData = await response.json();
-            console.log("✅ Raw JSON successfully fetched:", jsonData);
-            App.data = processJsonData(jsonData);
-            console.log("✅ JSON processed into structured data:", App.data);
-            if (App.data.length === 0) {
-                portalGrid.innerHTML = `<p class="text-center text-yellow-400 col-span-full">Fetched data, but no categories were found.</p>`;
-                return;
-            }
-            setupUI();
-        } catch (error) {
-            console.error("❌ Critical Error during initialization:", error);
-            const portalArea = document.getElementById('portal-area');
-            portalArea.innerHTML = `<div class="text-center text-red-400 p-4"><h3 class="text-xl">Failed to Load Lore</h3><p>${error.message}</p></div>`;
+    const client = contentful.createClient({
+        space: CSL_SPACE_ID,
+        accessToken: CSL_ACCESS_TOKEN,
+    });
+
+    // --- Your Existing Modal Elements ---
+    const mainModal = document.getElementById('main-modal');
+    const mainModalBody = document.getElementById('main-modal-body');
+    const allCloseButtons = document.querySelectorAll('.modal-close-btn');
+    const allModals = document.querySelectorAll('.modal');
+
+    // --- Functions to Control Your Modals ---
+    function openModal(contentHtml) {
+        mainModalBody.innerHTML = contentHtml;
+        mainModal.style.display = 'flex';
+    }
+
+    allCloseButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.closest('.modal').style.display = 'none';
+        });
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
         }
-    }
+    });
 
-    // DATA PROCESSING
-    function processJsonData(jsonData) {
-        const groupedData = {};
-        jsonData.forEach(item => {
-            const category = item.category || "Uncategorized";
-            if (!groupedData[category]) {
-                groupedData[category] = {
-                    title: category,
-                    image: jsonData.find(i => i.category === category && i.image_url)?.image_url,
-                    children: []
-                };
-            }
-            groupedData[category].children.push(item);
-        });
-        return Object.values(groupedData);
-    }
-
-    // UI & EVENT HANDLING
-    function setupUI() {
-        const portalGrid = document.getElementById('portal-grid');
-        const welcomeArea = document.getElementById('welcome-area');
-        portalGrid.innerHTML = '';
-        welcomeArea.innerHTML = `
-<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
-    <div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">
-        <h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2>
-        <div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum...</p></div>
-        <hr class="border-stone-400/50 my-4">
-        <div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><p class="mb-3">For a more... academic perspective, you may also consult my field notes.</p></div>
-    </div>
-    <div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>
-</div>`;
-        console.log("➡️ Creating main portals from this data:", App.data);
-        App.data.forEach(portalData => {
-            if (portalData.title.toLowerCase().includes("weaver's loom")) {
-                createPortal(portalGrid, "The Weaver's Loom", 'https://i.imgur.com/cyVlJBD.jpeg', () => openWeaversLoom());
-            } else {
-                createPortal(portalGrid, portalData.title, portalData.image, () => openContentModal(portalData, 'main'));
-            }
-        });
-        document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', (e) => e.target.closest('.modal').style.display = 'none'));
-        Object.values(App.modals).forEach(modal => {
-            if (modal) modal.addEventListener('click', (e) => {
-                if (e.target === modal) modal.style.display = 'none';
-            });
-        });
-    }
-
-    function createPortal(container, title, imageUrl, onClickAction) {
-        const portal = document.createElement('div');
-        portal.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-        portal.innerHTML = `<img src="${imageUrl || 'https://i.imgur.com/oAl9hd4.jpeg'}" alt="${title}" class="w-20 h-20 object-cover rounded-full mb-2 border-2 border-amber-800/50 shadow-lg"><h4 class="font-serif text-amber-200 group-hover:text-white transition-colors">${title}</h4>`;
-        portal.addEventListener('click', onClickAction);
-        container.appendChild(portal);
-    }
-
-    function openContentModal(data, modalType) {
-        // ... (This function remains the same as the previous version)
-        const modalBody = App.modalBodies[modalType];
-        const modal = App.modals[modalType];
-        const parser = new DOMParser();
-        let mainContentHtml = '';
-        let subPortalsHtml = '';
-        const subPortals = [];
-        data.children.forEach(item => {
-            const doc = parser.parseFromString(item.content, 'text/html');
-            const h3 = doc.querySelector('h3');
-            // A simple way to check if the main content is just the h3 title
-            const isSubPortalEntry = h3 && h3.textContent.trim() === item.title.trim();
-            if (isSubPortalEntry) {
-                subPortals.push({ title: item.title, data: item });
-            } else {
-                mainContentHtml += `<div class="prose prose-invert max-w-none text-gray-300 mb-4 p-4 bg-black/20 rounded-lg"><h4>${item.title}</h4>${item.content}</div>`;
-            }
-        });
-        if (subPortals.length > 0) {
-            subPortalsHtml = '<h3 class="text-xl font-serif text-amber-300 mt-8 mb-4 border-b border-gray-600 pb-2">Explore Further</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-            subPortals.forEach(portal => {
-                const portalDataString = encodeURIComponent(JSON.stringify(portal.data));
-                subPortalsHtml += `<div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700 transition-colors" onclick="window.openSubPortal(JSON.parse(decodeURIComponent('${portalDataString}')))">
-                    <h4 class="font-serif text-amber-200">${portal.title}</h4></div>`;
-            });
-            subPortalsHtml += '</div>';
+    // --- Main Portal Rendering Function ---
+    function createPortalElement(portalItem) {
+        if (!portalItem?.fields?.title) {
+            return null;
         }
-        modalBody.innerHTML = `<div><h2 class="text-3xl font-serif text-amber-400 mb-4">${data.title}</h2>${mainContentHtml}${subPortalsHtml}</div>`;
-        modal.style.display = 'flex';
-        modalBody.scrollTop = 0;
+
+        const portalWrapper = document.createElement('div');
+        portalWrapper.className = 'portal-wrapper';
+        const portalButton = document.createElement('div');
+        portalButton.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
+
+        if (portalItem.fields.portalImage?.fields?.file?.url) {
+            const imageElement = document.createElement('img');
+            imageElement.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
+            imageElement.alt = portalItem.fields.title;
+            imageElement.className = 'w-16 h-16 mb-2 rounded-full object-cover border-2 border-amber-500/50';
+            portalButton.appendChild(imageElement);
+        } else {
+            portalButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2 text-amber-300/70 group-hover:text-amber-200 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg>`;
+        }
+
+        const titleElement = document.createElement('h4');
+        titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
+        titleElement.textContent = portalItem.fields.title;
+        portalButton.appendChild(titleElement);
+        portalWrapper.appendChild(portalButton);
+
+        const displayType = portalItem.fields.displayType || 'Modal';
+
+        let contentHtml = '';
+        if (portalItem.fields.portalImage?.fields?.file?.url) {
+            contentHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`;
+        }
+        if (portalItem.fields.introduction) {
+            contentHtml += richTextHtmlRenderer.documentToHtmlString(portalItem.fields.introduction);
+        }
+        contentHtml += `<div class="sub-portal-container clear-both">`;
+        if (portalItem.fields.subPortals?.length > 0) {
+            portalItem.fields.subPortals.forEach(subPortal => {
+                const subPortalElement = createPortalElement(subPortal);
+                if (subPortalElement) {
+                    contentHtml += subPortalElement.outerHTML;
+                }
+            });
+        }
+        contentHtml += `</div>`;
+        if (portalItem.fields.conclusion) {
+            contentHtml += `<div class="clear-both">${richTextHtmlRenderer.documentToHtmlString(portalItem.fields.conclusion)}</div>`;
+        }
+
+        if (displayType === 'Accordion') {
+            const accordionPanel = document.createElement('div');
+            accordionPanel.className = 'accordion-panel';
+            accordionPanel.innerHTML = contentHtml;
+            accordionPanel.style.display = 'none';
+            portalWrapper.appendChild(accordionPanel);
+
+            portalButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const panel = e.currentTarget.nextElementSibling;
+                if (panel) {
+                    panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+                }
+            });
+        } else { // Modal behavior
+            portalButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const modalContentHtml = `
+                    <h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>
+                    ${contentHtml}
+                `;
+                openModal(modalContentHtml);
+            });
+        }
+
+        return portalWrapper;
     }
 
-    window.openSubPortal = (data) => {
-        const modalBody = App.modalBodies.sub;
-        const modal = App.modals.sub;
-        modalBody.innerHTML = `<div class="prose prose-invert max-w-none">
-            <h2 class="text-2xl font-serif text-amber-300">${data.title}</h2>
-            <img src="${data.image_url || ''}" class="max-w-xs mx-auto rounded-lg my-4" style="${!data.image_url ? 'display:none' : ''}" />
-            ${data.content}</div>`;
-        modal.style.display = 'flex';
-        modalBody.scrollTop = 0;
-    };
+    // --- Initial Fetch and Render ---
+    const portalGrid = document.getElementById('portal-grid');
+    document.getElementById('welcome-area').innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum. Let me tell you a story—not of war or empire, not of heroes carved in stone—but of breath. Of earth that listens. Of a place that carries memory in its soil the way some carry regrets in their bones. Let me tell you of Yurei-tu-Shima.</p><p class="mt-3">This world is a song, played by many instruments. Explore our stories, but remember: the island doesn’t need saving. It needs remembering.</p><p class="text-3xl mt-4 text-right">— Elder Gubi-Goni, the Storyshell</p></div><hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><p class="mb-3">For a more... academic perspective, you may also consult my field notes. I am Professor Thistlewhip Widdersnap III, and I have dedicated my life to the rigorous study of this island's magnificent, if occasionally baffling, phenomena. My findings are compiled herein for your edification.</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
 
-    function openWeaversLoom() {
-        // This now opens the actual pre-defined tool modals
-        const modalBody = App.modalBodies.main;
-        const modal = App.modals.main;
-        modalBody.innerHTML = `
-            <h2 class="text-3xl font-serif text-amber-400 mb-4">The Weaver's Loom</h2>
-            <p class="text-gray-300 mb-6 italic">This is the Loom where stories are born. Choose an attendant to help you shape the fabric of reality.</p>
-            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('character-generator-modal-id').style.display='flex'">
-                    <h4 class="font-serif text-amber-300 text-xl">Character Concept Generator</h4>
-                </div>
-                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('ink-weaver-modal').style.display='flex'">
-                    <h4 class="font-serif text-amber-300 text-xl">The Ink Weaver</h4>
-                </div>
-                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('whisper-weaver-modal').style.display='flex'">
-                     <h4 class="font-serif text-amber-300 text-xl">The Whisper Weaver</h4>
-                </div>
-                <div class="portal-book p-4 rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700" onclick="document.getElementById('thread-weaver-modal').style.display='flex'">
-                     <h4 class="font-serif text-amber-300 text-xl">The Thread Weaver</h4>
-                </div>
-            </div>`;
-        modal.style.display = 'flex';
-    }
-
-    // START APP
-    initializeApp();
+    client.getEntries({
+        content_type: 'portal',
+        'fields.isTopLevel': true,
+        include: 10
+    })
+    .then((response) => {
+        if (!response.items.length) {
+            portalGrid.innerHTML = '<p class="col-span-full text-center text-amber-200">No top-level portals found. Make sure you have at least one published portal with the "isTopLevel" switch turned on.</p>';
+        } else {
+            response.items.forEach(item => {
+                const portalElement = createPortalElement(item);
+                if (portalElement) {
+                    portalGrid.appendChild(portalElement);
+                }
+            });
+        }
+    })
+    .catch((error) => {
+        console.error(error);
+        portalGrid.innerHTML = '<p class="col-span-full text-center text-red-400">Error fetching content. Check the browser console (F12) and ensure your API keys are correct.</p>';
+    });
 });
 </script>
 </body>
