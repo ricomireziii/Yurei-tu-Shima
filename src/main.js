@@ -13,24 +13,17 @@ const mainModal = document.getElementById('main-modal');
 const mainModalBody = document.getElementById('main-modal-body');
 const allCloseButtons = document.querySelectorAll('.modal-close-btn');
 
-// --- NEW: History Stack ---
-// This array will keep track of the portals you've navigated through.
 let portalHistory = [];
 
-// --- NEW: Renders the currently active portal from the history stack ---
 function renderCurrentModal() {
     if (portalHistory.length === 0) {
         mainModal.style.display = 'none';
         return;
     }
 
-    // Get the last (current) portal from the history
     const currentPortal = portalHistory[portalHistory.length - 1];
-
-    // Clear the modal body before rendering
     mainModalBody.innerHTML = '';
 
-    // 1. Start building the modal's HTML string.
     let modalContentHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${currentPortal.fields.title}</h2>`;
     
     if (currentPortal.fields.portalImage?.fields?.file?.url) {
@@ -40,10 +33,8 @@ function renderCurrentModal() {
         modalContentHtml += documentToHtmlString(currentPortal.fields.introduction);
     }
 
-    // 2. Set the initial HTML content (Title, Image, Introduction).
     mainModalBody.innerHTML = modalContentHtml;
 
-    // 3. Create the container for sub-portals and add them.
     if (currentPortal.fields.subPortals?.length > 0) {
         const subPortalContainer = document.createElement('div');
         subPortalContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
@@ -57,10 +48,9 @@ function renderCurrentModal() {
         mainModalBody.appendChild(subPortalContainer);
     }
 
-    // 4. Add the conclusion HTML at the very end.
     if (currentPortal.fields.conclusion && currentPortal.fields.conclusion.content && currentPortal.fields.conclusion.content.length > 0) {
         const conclusionDiv = document.createElement('div');
-        conclusionDiv.className = 'clear-both';
+        conclusionDiv.className = 'clear-both pt-4'; // Added padding top for spacing
         conclusionDiv.innerHTML = documentToHtmlString(currentPortal.fields.conclusion);
         mainModalBody.appendChild(conclusionDiv);
     }
@@ -68,35 +58,40 @@ function renderCurrentModal() {
     mainModal.style.display = 'flex';
 }
 
-
-// --- MODIFIED: Pushes a new portal onto the stack and renders it ---
-function openPortal(portalItem) {
+function openPortal(portalItem, isSubPortal = false) {
     if (!portalItem) return;
+    
+    // Clear history if opening a top-level portal from the main grid
+    if (!isSubPortal) {
+        portalHistory = [];
+    }
+
     portalHistory.push(portalItem);
     renderCurrentModal();
 }
 
-// --- MODIFIED: Close button now goes back in history ---
 allCloseButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-        // Remove the current portal from history
         if (portalHistory.length > 0) {
             portalHistory.pop();
         }
-        // Render the previous one (or close the modal if history is empty)
         renderCurrentModal();
     });
 });
 
 window.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) {
-        portalHistory = []; // Clear history if clicking outside
+        portalHistory = [];
         renderCurrentModal();
     }
 });
 
 function createPortalElement(portalItem, isSubPortal = false) {
     if (!portalItem?.fields?.title) { return null; }
+
+    const portalWrapper = document.createElement('div');
+    // We use a wrapper to hold both the button and the accordion panel if needed
+    portalWrapper.className = 'portal-wrapper';
 
     const portalButton = document.createElement('div');
     portalButton.className = isSubPortal 
@@ -117,18 +112,47 @@ function createPortalElement(portalItem, isSubPortal = false) {
     titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
     titleElement.textContent = portalItem.fields.title;
     portalButton.appendChild(titleElement);
+    
+    portalWrapper.appendChild(portalButton);
 
-    portalButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        // --- MODIFIED: Clear history ONLY if it's a top-level portal ---
-        if (!isSubPortal) {
-            portalHistory = [];
+    const displayType = portalItem.fields.displayType || 'Modal';
+
+    // *** THIS IS THE CORRECTED LOGIC ***
+    if (isSubPortal && displayType === 'Accordion') {
+        // ACCORDION BEHAVIOR
+        const accordionPanel = document.createElement('div');
+        accordionPanel.className = 'accordion-panel';
+        accordionPanel.style.display = 'none'; // Start hidden
+
+        let contentHtml = '';
+        if (portalItem.fields.introduction && portalItem.fields.introduction.content && portalItem.fields.introduction.content.length > 0) {
+            contentHtml += documentToHtmlString(portalItem.fields.introduction);
         }
-        openPortal(portalItem);
-    });
+        if (portalItem.fields.conclusion && portalItem.fields.conclusion.content && portalItem.fields.conclusion.content.length > 0) {
+            contentHtml += `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
+        }
+        accordionPanel.innerHTML = contentHtml;
+        
+        portalWrapper.appendChild(accordionPanel);
 
-    return portalButton;
+        portalButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const panel = e.currentTarget.nextElementSibling;
+            if (panel) {
+                panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+            }
+        });
+    } else {
+        // MODAL BEHAVIOR (DEFAULT)
+        portalButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openPortal(portalItem, isSubPortal);
+        });
+    }
+
+    return portalWrapper;
 }
+
 
 const portalGrid = document.getElementById('portal-grid');
 document.getElementById('welcome-area').innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum...</p></div><hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><p class="mb-3">For a more... academic perspective, you may also consult my field notes...</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
