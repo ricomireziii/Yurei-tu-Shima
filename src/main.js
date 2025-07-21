@@ -16,7 +16,7 @@ const allCloseButtons = document.querySelectorAll('.modal-close-btn');
 function openModal(portalItem) {
     if (!portalItem) return;
 
-    // Build the main content of the modal (title, image, intro, conclusion)
+    // 1. Start building the modal's HTML string.
     let modalContentHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
     
     if (portalItem.fields.portalImage?.fields?.file?.url) {
@@ -26,28 +26,31 @@ function openModal(portalItem) {
         modalContentHtml += documentToHtmlString(portalItem.fields.introduction);
     }
 
-    // Create a container for sub-portals
-    const subPortalContainer = document.createElement('div');
-    subPortalContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+    // 2. Set the initial HTML content (Title, Image, Introduction).
+    mainModalBody.innerHTML = modalContentHtml;
 
-    // If sub-portals exist, create them as elements and attach event listeners
+    // 3. Create the container for sub-portals and add them.
+    //    This ensures their click events work correctly.
     if (portalItem.fields.subPortals?.length > 0) {
+        const subPortalContainer = document.createElement('div');
+        subPortalContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+        
         portalItem.fields.subPortals.forEach(subPortalData => {
-            const subPortalElement = createPortalElement(subPortalData, true); // Pass 'true' for isSubPortal
+            const subPortalElement = createPortalElement(subPortalData, true);
             if (subPortalElement) {
                 subPortalContainer.appendChild(subPortalElement);
             }
         });
+        mainModalBody.appendChild(subPortalContainer);
     }
 
-    // Add conclusion after the sub-portal container
+    // 4. NOW, add the conclusion HTML at the very end.
     if (portalItem.fields.conclusion && portalItem.fields.conclusion.content && portalItem.fields.conclusion.content.length > 0) {
-        modalContentHtml += `<div class="clear-both">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
+        const conclusionDiv = document.createElement('div');
+        conclusionDiv.className = 'clear-both';
+        conclusionDiv.innerHTML = documentToHtmlString(portalItem.fields.conclusion);
+        mainModalBody.appendChild(conclusionDiv);
     }
-
-    // Set the main HTML and then append the container with live sub-portals
-    mainModalBody.innerHTML = modalContentHtml;
-    mainModalBody.appendChild(subPortalContainer);
 
     mainModal.style.display = 'flex';
 }
@@ -57,15 +60,13 @@ allCloseButtons.forEach(btn => {
 });
 
 window.addEventListener('click', (e) => {
-    if (e.target.classList.comtains('modal')) { e.target.style.display = 'none'; }
+    if (e.target.classList.contains('modal')) { e.target.style.display = 'none'; }
 });
 
 function createPortalElement(portalItem, isSubPortal = false) {
     if (!portalItem?.fields?.title) { return null; }
 
-    // This is the clickable element
     const portalButton = document.createElement('div');
-    // Apply the new, smaller class if it's a sub-portal
     portalButton.className = isSubPortal 
         ? 'portal-book sub-portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer'
         : 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
@@ -85,7 +86,6 @@ function createPortalElement(portalItem, isSubPortal = false) {
     titleElement.textContent = portalItem.fields.title;
     portalButton.appendChild(titleElement);
 
-    // Attach the correct event listener
     portalButton.addEventListener('click', (e) => {
         e.stopPropagation();
         openModal(portalItem);
