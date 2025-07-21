@@ -13,29 +13,42 @@ const mainModal = document.getElementById('main-modal');
 const mainModalBody = document.getElementById('main-modal-body');
 const allCloseButtons = document.querySelectorAll('.modal-close-btn');
 
-function openModal(portalItem) {
-    if (!portalItem) return;
+// --- NEW: History Stack ---
+// This array will keep track of the portals you've navigated through.
+let portalHistory = [];
+
+// --- NEW: Renders the currently active portal from the history stack ---
+function renderCurrentModal() {
+    if (portalHistory.length === 0) {
+        mainModal.style.display = 'none';
+        return;
+    }
+
+    // Get the last (current) portal from the history
+    const currentPortal = portalHistory[portalHistory.length - 1];
+
+    // Clear the modal body before rendering
+    mainModalBody.innerHTML = '';
 
     // 1. Start building the modal's HTML string.
-    let modalContentHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
+    let modalContentHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${currentPortal.fields.title}</h2>`;
     
-    if (portalItem.fields.portalImage?.fields?.file?.url) {
-        modalContentHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`;
+    if (currentPortal.fields.portalImage?.fields?.file?.url) {
+        modalContentHtml += `<img src="${'https:' + currentPortal.fields.portalImage.fields.file.url}" alt="${currentPortal.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`;
     }
-    if (portalItem.fields.introduction && portalItem.fields.introduction.content && portalItem.fields.introduction.content.length > 0) {
-        modalContentHtml += documentToHtmlString(portalItem.fields.introduction);
+    if (currentPortal.fields.introduction && currentPortal.fields.introduction.content && currentPortal.fields.introduction.content.length > 0) {
+        modalContentHtml += documentToHtmlString(currentPortal.fields.introduction);
     }
 
     // 2. Set the initial HTML content (Title, Image, Introduction).
     mainModalBody.innerHTML = modalContentHtml;
 
     // 3. Create the container for sub-portals and add them.
-    //    This ensures their click events work correctly.
-    if (portalItem.fields.subPortals?.length > 0) {
+    if (currentPortal.fields.subPortals?.length > 0) {
         const subPortalContainer = document.createElement('div');
         subPortalContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
         
-        portalItem.fields.subPortals.forEach(subPortalData => {
+        currentPortal.fields.subPortals.forEach(subPortalData => {
             const subPortalElement = createPortalElement(subPortalData, true);
             if (subPortalElement) {
                 subPortalContainer.appendChild(subPortalElement);
@@ -44,23 +57,42 @@ function openModal(portalItem) {
         mainModalBody.appendChild(subPortalContainer);
     }
 
-    // 4. NOW, add the conclusion HTML at the very end.
-    if (portalItem.fields.conclusion && portalItem.fields.conclusion.content && portalItem.fields.conclusion.content.length > 0) {
+    // 4. Add the conclusion HTML at the very end.
+    if (currentPortal.fields.conclusion && currentPortal.fields.conclusion.content && currentPortal.fields.conclusion.content.length > 0) {
         const conclusionDiv = document.createElement('div');
         conclusionDiv.className = 'clear-both';
-        conclusionDiv.innerHTML = documentToHtmlString(portalItem.fields.conclusion);
+        conclusionDiv.innerHTML = documentToHtmlString(currentPortal.fields.conclusion);
         mainModalBody.appendChild(conclusionDiv);
     }
 
     mainModal.style.display = 'flex';
 }
 
+
+// --- MODIFIED: Pushes a new portal onto the stack and renders it ---
+function openPortal(portalItem) {
+    if (!portalItem) return;
+    portalHistory.push(portalItem);
+    renderCurrentModal();
+}
+
+// --- MODIFIED: Close button now goes back in history ---
 allCloseButtons.forEach(btn => {
-    btn.addEventListener('click', () => { btn.closest('.modal').style.display = 'none'; });
+    btn.addEventListener('click', () => {
+        // Remove the current portal from history
+        if (portalHistory.length > 0) {
+            portalHistory.pop();
+        }
+        // Render the previous one (or close the modal if history is empty)
+        renderCurrentModal();
+    });
 });
 
 window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) { e.target.style.display = 'none'; }
+    if (e.target.classList.contains('modal')) {
+        portalHistory = []; // Clear history if clicking outside
+        renderCurrentModal();
+    }
 });
 
 function createPortalElement(portalItem, isSubPortal = false) {
@@ -88,7 +120,11 @@ function createPortalElement(portalItem, isSubPortal = false) {
 
     portalButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        openModal(portalItem);
+        // --- MODIFIED: Clear history ONLY if it's a top-level portal ---
+        if (!isSubPortal) {
+            portalHistory = [];
+        }
+        openPortal(portalItem);
     });
 
     return portalButton;
