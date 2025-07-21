@@ -9,103 +9,98 @@ const client = contentful.createClient({
     accessToken: CSL_ACCESS_TOKEN,
 });
 
-const mainModal = document.getElementById('main-modal');
-const mainModalBody = document.getElementById('main-modal-body');
-const allCloseButtons = document.querySelectorAll('.modal-close-btn');
+const modalContainer = document.getElementById('modal-container');
+const modalTemplate = document.getElementById('modal-template');
+let zIndexCounter = 100; // Starting z-index for the first modal
 
-let portalHistory = [];
-
-function renderCurrentModal() {
-    if (portalHistory.length === 0) {
-        mainModal.style.display = 'none';
-        return;
-    }
-
-    const currentPortal = portalHistory[portalHistory.length - 1];
-    mainModalBody.innerHTML = '';
-
-    let modalContentHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${currentPortal.fields.title}</h2>`;
-    
-    if (currentPortal.fields.portalImage?.fields?.file?.url) {
-        modalContentHtml += `<img src="${'https:' + currentPortal.fields.portalImage.fields.file.url}" alt="${currentPortal.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`;
-    }
-    if (currentPortal.fields.introduction && currentPortal.fields.introduction.content && currentPortal.fields.introduction.content.length > 0) {
-        modalContentHtml += documentToHtmlString(currentPortal.fields.introduction);
-    }
-
-    mainModalBody.innerHTML = modalContentHtml;
-
-    if (currentPortal.fields.subPortals?.length > 0) {
-        const subPortalContainer = document.createElement('div');
-        subPortalContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
-        
-        currentPortal.fields.subPortals.forEach(subPortalData => {
-            const subPortalElement = createPortalElement(subPortalData, true);
-            if (subPortalElement) {
-                subPortalContainer.appendChild(subPortalElement);
-            }
-        });
-        mainModalBody.appendChild(subPortalContainer);
-    }
-
-    if (currentPortal.fields.conclusion && currentPortal.fields.conclusion.content && currentPortal.fields.conclusion.content.length > 0) {
-        const conclusionDiv = document.createElement('div');
-        conclusionDiv.className = 'clear-both pt-4'; // Added padding top for spacing
-        conclusionDiv.innerHTML = documentToHtmlString(currentPortal.fields.conclusion);
-        mainModalBody.appendChild(conclusionDiv);
-    }
-
-    mainModal.style.display = 'flex';
-}
-
-function openPortal(portalItem, isSubPortal = false) {
+function openPortal(portalItem) {
     if (!portalItem) return;
+
+    // 1. Create a new modal by cloning the template
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id'); // Remove template ID
+    newModal.style.zIndex = zIndexCounter++; // Assign and increment z-index for layering
+
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
     
-    // Clear history if opening a top-level portal from the main grid
-    if (!isSubPortal) {
-        portalHistory = [];
+    // Clear default content and add the title
+    modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
+
+    if (portalItem.fields.portalImage?.fields?.file?.url) {
+        const imgHtml = `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`;
+        modalBody.insertAdjacentHTML('beforeend', imgHtml);
+    }
+    if (portalItem.fields.introduction?.content) {
+        modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
     }
 
-    portalHistory.push(portalItem);
-    renderCurrentModal();
+    // 2. Separate accordions from grid items
+    const subPortals = portalItem.fields.subPortals || [];
+    const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
+    const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
+
+    // 3. Create and append the grid container for modal-type sub-portals
+    if (gridItems.length > 0) {
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+        gridItems.forEach(item => {
+            const portalElement = createPortalElement(item);
+            if (portalElement) gridContainer.appendChild(portalElement);
+        });
+        modalBody.appendChild(gridContainer);
+    }
+    
+    // 4. Create and append the list container for accordion-type sub-portals
+    if (accordionItems.length > 0) {
+        const listContainer = document.createElement('div');
+        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-4 mt-4';
+        accordionItems.forEach(item => {
+            const portalElement = createPortalElement(item);
+            if (portalElement) listContainer.appendChild(portalElement);
+        });
+        modalBody.appendChild(listContainer);
+    }
+    
+    if (portalItem.fields.conclusion?.content) {
+        const conclusionHtml = `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
+        modalBody.insertAdjacentHTML('beforeend', conclusionHtml);
+    }
+
+    // 5. Add event listeners for the new modal
+    closeButton.addEventListener('click', () => {
+        newModal.remove();
+        zIndexCounter--;
+    });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) {
+            newModal.remove();
+            zIndexCounter--;
+        }
+    });
+
+    // 6. Add the new modal to the page and display it
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
 }
 
-allCloseButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        if (portalHistory.length > 0) {
-            portalHistory.pop();
-        }
-        renderCurrentModal();
-    });
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) {
-        portalHistory = [];
-        renderCurrentModal();
-    }
-});
-
-function createPortalElement(portalItem, isSubPortal = false) {
+function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) { return null; }
 
     const portalWrapper = document.createElement('div');
-    // We use a wrapper to hold both the button and the accordion panel if needed
-    portalWrapper.className = 'portal-wrapper';
+    const isAccordion = portalItem.fields.displayType === 'Accordion';
 
     const portalButton = document.createElement('div');
-    portalButton.className = isSubPortal 
-        ? 'portal-book sub-portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer'
+    portalButton.className = isAccordion
+        ? 'portal-accordion-button group bg-gray-800/70 border border-amber-800/50 rounded-lg p-4 flex items-center text-left cursor-pointer'
         : 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
 
     if (portalItem.fields.portalImage?.fields?.file?.url) {
         const imageElement = document.createElement('img');
         imageElement.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
         imageElement.alt = portalItem.fields.title;
-        imageElement.className = 'w-16 h-16 mb-2 rounded-full object-cover border-2 border-amber-500/50';
+        imageElement.className = isAccordion ? 'w-12 h-12 mr-4 rounded-md object-cover flex-shrink-0' : 'w-16 h-16 mb-2 rounded-full object-cover border-2 border-amber-500/50';
         portalButton.appendChild(imageElement);
-    } else {
-        portalButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2 text-amber-300/70 group-hover:text-amber-200" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" /></svg>`;
     }
 
     const titleElement = document.createElement('h4');
@@ -114,21 +109,17 @@ function createPortalElement(portalItem, isSubPortal = false) {
     portalButton.appendChild(titleElement);
     
     portalWrapper.appendChild(portalButton);
-
-    const displayType = portalItem.fields.displayType || 'Modal';
-
-    // *** THIS IS THE CORRECTED LOGIC ***
-    if (isSubPortal && displayType === 'Accordion') {
-        // ACCORDION BEHAVIOR
+    
+    if (isAccordion) {
         const accordionPanel = document.createElement('div');
-        accordionPanel.className = 'accordion-panel';
-        accordionPanel.style.display = 'none'; // Start hidden
+        accordionPanel.className = 'accordion-panel ml-16';
+        accordionPanel.style.display = 'none';
 
         let contentHtml = '';
-        if (portalItem.fields.introduction && portalItem.fields.introduction.content && portalItem.fields.introduction.content.length > 0) {
+        if (portalItem.fields.introduction?.content) {
             contentHtml += documentToHtmlString(portalItem.fields.introduction);
         }
-        if (portalItem.fields.conclusion && portalItem.fields.conclusion.content && portalItem.fields.conclusion.content.length > 0) {
+        if (portalItem.fields.conclusion?.content) {
             contentHtml += `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
         }
         accordionPanel.innerHTML = contentHtml;
@@ -143,16 +134,14 @@ function createPortalElement(portalItem, isSubPortal = false) {
             }
         });
     } else {
-        // MODAL BEHAVIOR (DEFAULT)
         portalButton.addEventListener('click', (e) => {
             e.stopPropagation();
-            openPortal(portalItem, isSubPortal);
+            openPortal(portalItem);
         });
     }
 
     return portalWrapper;
 }
-
 
 const portalGrid = document.getElementById('portal-grid');
 document.getElementById('welcome-area').innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50"><h2 class="text-3xl lg:text-4xl font-serif text-gray-900">A Storyteller's Welcome</h2><div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4"><p>Sit with me here beneath the shrine gate where the vines have learned to hum...</p></div><hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><p class="mb-3">For a more... academic perspective, you may also consult my field notes...</p></div></div><div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="https://i.imgur.com/oAl9hd4.jpeg" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div></div>`;
