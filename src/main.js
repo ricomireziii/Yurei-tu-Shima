@@ -13,8 +13,42 @@ const mainModal = document.getElementById('main-modal');
 const mainModalBody = document.getElementById('main-modal-body');
 const allCloseButtons = document.querySelectorAll('.modal-close-btn');
 
-function openModal(contentHtml) {
-    mainModalBody.innerHTML = contentHtml;
+function openModal(portalItem) {
+    if (!portalItem) return;
+
+    // Build the main content of the modal (title, image, intro, conclusion)
+    let modalContentHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
+    
+    if (portalItem.fields.portalImage?.fields?.file?.url) {
+        modalContentHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`;
+    }
+    if (portalItem.fields.introduction && portalItem.fields.introduction.content && portalItem.fields.introduction.content.length > 0) {
+        modalContentHtml += documentToHtmlString(portalItem.fields.introduction);
+    }
+
+    // Create a container for sub-portals
+    const subPortalContainer = document.createElement('div');
+    subPortalContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+
+    // If sub-portals exist, create them as elements and attach event listeners
+    if (portalItem.fields.subPortals?.length > 0) {
+        portalItem.fields.subPortals.forEach(subPortalData => {
+            const subPortalElement = createPortalElement(subPortalData, true); // Pass 'true' for isSubPortal
+            if (subPortalElement) {
+                subPortalContainer.appendChild(subPortalElement);
+            }
+        });
+    }
+
+    // Add conclusion after the sub-portal container
+    if (portalItem.fields.conclusion && portalItem.fields.conclusion.content && portalItem.fields.conclusion.content.length > 0) {
+        modalContentHtml += `<div class="clear-both">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
+    }
+
+    // Set the main HTML and then append the container with live sub-portals
+    mainModalBody.innerHTML = modalContentHtml;
+    mainModalBody.appendChild(subPortalContainer);
+
     mainModal.style.display = 'flex';
 }
 
@@ -23,16 +57,18 @@ allCloseButtons.forEach(btn => {
 });
 
 window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) { e.target.style.display = 'none'; }
+    if (e.target.classList.comtains('modal')) { e.target.style.display = 'none'; }
 });
 
-function createPortalElement(portalItem) {
+function createPortalElement(portalItem, isSubPortal = false) {
     if (!portalItem?.fields?.title) { return null; }
 
-    const portalWrapper = document.createElement('div');
-    portalWrapper.className = 'portal-wrapper';
+    // This is the clickable element
     const portalButton = document.createElement('div');
-    portalButton.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
+    // Apply the new, smaller class if it's a sub-portal
+    portalButton.className = isSubPortal 
+        ? 'portal-book sub-portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer'
+        : 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
 
     if (portalItem.fields.portalImage?.fields?.file?.url) {
         const imageElement = document.createElement('img');
@@ -48,53 +84,14 @@ function createPortalElement(portalItem) {
     titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
     titleElement.textContent = portalItem.fields.title;
     portalButton.appendChild(titleElement);
-    portalWrapper.appendChild(portalButton);
 
-    const displayType = portalItem.fields.displayType || 'Modal';
+    // Attach the correct event listener
+    portalButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openModal(portalItem);
+    });
 
-    let contentHtml = '';
-    if (portalItem.fields.portalImage?.fields?.file?.url) {
-        contentHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`;
-    }
-    
-    if (portalItem.fields.introduction && portalItem.fields.introduction.content && portalItem.fields.introduction.content.length > 0) {
-        contentHtml += documentToHtmlString(portalItem.fields.introduction);
-    }
-    
-    contentHtml += `<div class="sub-portal-container clear-both">`;
-    if (portalItem.fields.subPortals?.length > 0) {
-        portalItem.fields.subPortals.forEach(subPortal => {
-            const subPortalElement = createPortalElement(subPortal);
-            if (subPortalElement) { contentHtml += subPortalElement.outerHTML; }
-        });
-    }
-    contentHtml += `</div>`;
-    
-    if (portalItem.fields.conclusion && portalItem.fields.conclusion.content && portalItem.fields.conclusion.content.length > 0) {
-        contentHtml += `<div class="clear-both">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
-    }
-
-    if (displayType === 'Accordion') {
-        const accordionPanel = document.createElement('div');
-        accordionPanel.className = 'accordion-panel';
-        accordionPanel.innerHTML = contentHtml;
-        accordionPanel.style.display = 'none';
-        portalWrapper.appendChild(accordionPanel);
-
-        portalButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const panel = e.currentTarget.nextElementSibling;
-            if (panel) { panel.style.display = (panel.style.display === 'none') ? 'block' : 'none'; }
-        });
-    } else {
-        portalButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const modalContentHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>${contentHtml}`;
-            openModal(modalContentHtml);
-        });
-    }
-
-    return portalWrapper;
+    return portalButton;
 }
 
 const portalGrid = document.getElementById('portal-grid');

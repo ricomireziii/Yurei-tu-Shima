@@ -11,3 +11,8 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
 .portal-book { transition: transform 0.3s ease, box-shadow 0.3s ease; }
 .portal-book:hover { transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.6), 0 0 15px rgba(252, 211, 77, 0.4); }
 .accordion-panel { padding: 1rem; margin-top: 0.5rem; background-color: rgba(0,0,0,0.2); border-radius: 0.5rem; border: 1px solid rgba(128, 128, 128, 0.2); }
+/* New style for sub-portals to make them smaller */
+.sub-portal-book {
+    width: 150px; /* You can adjust this width as needed */
+    flex-shrink: 0;
+}
