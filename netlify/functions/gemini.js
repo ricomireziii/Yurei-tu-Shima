@@ -1,49 +1,83 @@
-// This is the content for netlify/functions/gemini.js
-
-// Using the official Google Generative AI SDK for Node.js
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from 'contentful';
+import { documentToPlainTextString } from '@contentful/rich-text-plain-text-renderer';
 
-// Initialize the Contentful client to fetch AI personalities
 const contentfulClient = createClient({
     space: process.env.VITE_CONTENTFUL_SPACE_ID,
     accessToken: process.env.VITE_CONTENTFUL_ACCESS_TOKEN,
 });
 
+function getPortalText(portal) {
+    if (!portal || !portal.fields) return '';
+    let text = `Title: ${portal.fields.title}\n`;
+    if (portal.fields.introduction) {
+        text += `Introduction: ${documentToPlainTextString(portal.fields.introduction)}\n`;
+    }
+    if (portal.fields.conclusion) {
+        text += `Conclusion: ${documentToPlainTextString(portal.fields.conclusion)}\n`;
+    }
+    // Include hidden status in the knowledge base for context
+    if (portal.fields.isHidden) {
+        text += `(Note: This is hidden lore, not on the public website)\n`;
+    }
+    return text;
+}
+
 export default async (req, context) => {
     try {
-        // Get the Google API key from the secure environment variables
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // Get the user's prompt and the requested weaver from the front-end request
         const { prompt, weaverName } = await req.json();
-
         if (!prompt || !weaverName) {
-            return new Response(JSON.stringify({ error: "Missing prompt or weaver name" }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            throw new Error("Missing prompt or weaver name");
         }
         
-        // Fetch the correct AI personality from Contentful
         const personalityEntries = await contentfulClient.getEntries({
             content_type: 'aiPersonality',
             'fields.weaverName': weaverName,
-            limit: 1
+            limit: 1,
+            include: 2 
         });
 
         if (personalityEntries.items.length === 0) {
-            return new Response(JSON.stringify({ error: `Personality for ${weaverName} not found.` }), {
-                status: 404,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            throw new Error(`Personality for ${weaverName} not found.`);
         }
 
-        const systemPrompt = personalityEntries.items[0].fields.systemPrompt;
+        const personality = personalityEntries.items[0].fields;
+        const systemPrompt = personality.systemPrompt || '';
+        let knowledgeBase = '';
+
+        // ** THIS IS THE NEW LOGIC **
+        if (personality.knowsAllLore === true) {
+            // If the switch is ON, fetch ALL portal entries
+            knowledgeBase += "--- COMPLETE KNOWLEDGE BASE (Public and Hidden Lore) ---\n";
+            const allPortals = await contentfulClient.getEntries({
+                content_type: 'lore', // Use your portal's content type ID
+                limit: 1000 // Fetch up to 1000 entries
+            });
+            if (allPortals.items.length > 0) {
+                allPortals.items.forEach(portal => {
+                    knowledgeBase += getPortalText(portal) + '\n';
+                });
+            }
+        } else {
+            // If the switch is OFF, use the existing logic for linked portals
+            if (personality.coreKnowledgePortals && personality.coreKnowledgePortals.length > 0) {
+                knowledgeBase += "--- CORE KNOWLEDGE (Answer with confidence as facts) ---\n";
+                personality.coreKnowledgePortals.forEach(portal => {
+                    knowledgeBase += getPortalText(portal) + '\n';
+                });
+            }
+            if (personality.hiddenLorePortals && personality.hiddenLorePortals.length > 0) {
+                knowledgeBase += "\n--- HIDDEN LORE (Secret information not on the website) ---\n";
+                personality.hiddenLorePortals.forEach(portal => {
+                    knowledgeBase += getPortalText(portal) + '\n';
+                });
+            }
+        }
         
-        // Construct the full prompt with the system instructions
-        const fullPrompt = `${systemPrompt}\n\nUser Question: "${prompt}"`;
+        const fullPrompt = `${systemPrompt}\n\n${knowledgeBase}\n\nUser Question: "${prompt}"`;
         
         const result = await model.generateContent(fullPrompt);
         const response = await result.response;
