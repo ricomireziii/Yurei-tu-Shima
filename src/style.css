@@ -19,14 +19,14 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
     padding: 20px;
 }
 
-/* New styling for the "book" effect */
+/* Styling for the "book" effect */
 .portal-book {
-    width: 180px; /* Set a base width */
-    height: 240px; /* Set a base height */
+    width: 180px;
+    height: 240px;
     padding: 1rem;
-    background-color: #4a2c2a; /* A reddish-brown book color */
+    background-color: #4a2c2a;
     border: 1px solid #2d1a19;
-    border-left: 10px solid #2d1a19; /* Simulate a book spine */
+    border-left: 10px solid #2d1a19;
     border-radius: 2px 4px 4px 2px;
     box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
     display: flex;
@@ -41,5 +41,5 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
 .portal-book:hover {
     transform: scale(1.1) !important; /* Override the random transform on hover */
     box-shadow: 0 10px 20px rgba(0,0,0,0.6), 0 0 15px rgba(252, 211, 77, 0.4);
-    z-index: 10; /* Bring the hovered book to the front */
+    z-index: 10;
 }
