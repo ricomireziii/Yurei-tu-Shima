@@ -13,6 +13,7 @@ const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 let aiPersonalities = [];
+let characterOptions = null;
 
 async function loadHomepageContent() {
     try {
@@ -91,15 +92,10 @@ function openPortal(portalItem) {
 
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) return null;
-
-    if (portalItem.fields.isWeaversLoom) {
-        return createWeaversLoomPortal(portalItem);
-    }
-    
+    if (portalItem.fields.isWeaversLoom) { return createWeaversLoomPortal(portalItem); }
     const isAccordion = portalItem.fields.displayType === 'Accordion';
     const portalButton = document.createElement('div');
     const portalWrapper = document.createElement('div');
-
     if (isAccordion) {
         portalWrapper.appendChild(portalButton);
         portalButton.className = 'portal-accordion-button group p-4 flex items-center text-left cursor-pointer';
@@ -147,10 +143,7 @@ function createWeaversLoomPortal(portalItem) {
     }
     innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
     portalButton.innerHTML = innerHtml;
-
-    portalButton.addEventListener('click', () => {
-        openWeaversLoom();
-    });
+    portalButton.addEventListener('click', () => { openWeaversLoom(); });
     return portalButton;
 }
 
@@ -160,24 +153,21 @@ function openWeaversLoom() {
     newModal.style.zIndex = zIndexCounter++;
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
-
-    let loomHtml = `
-        <div class="text-center mb-8">
-            <h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2>
-        </div>
-        <div id="weaver-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
-    `;
+    let loomHtml = `<div class="text-center mb-8"><h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2></div><div id="weaver-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>`;
     modalBody.innerHTML = loomHtml;
-    
     const cardsContainer = modalBody.querySelector('#weaver-cards-container');
     aiPersonalities.forEach(personality => {
+        const weaverName = personality.fields.weaverName;
         const card = document.createElement('div');
         card.className = 'weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50';
-        card.innerHTML = `<h3 class="text-2xl font-serif text-amber-400">${personality.fields.weaverName}</h3>`;
-        card.addEventListener('click', () => openWeaverTool(personality));
+        card.innerHTML = `<h3 class="text-2xl font-serif text-amber-400">${weaverName}</h3>`;
+        if (weaverName.toLowerCase().includes('character')) {
+            card.addEventListener('click', () => openCharacterGenerator(personality));
+        } else {
+            card.addEventListener('click', () => openWeaverTool(personality));
+        }
         cardsContainer.appendChild(card);
     });
-
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
         if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
@@ -193,30 +183,172 @@ function openWeaverTool(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
-    
+    modalBody.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6">${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}<div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div></div><div><textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea><button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button><div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div class="weaver-result"></div></div></div></div>`;
+    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
+    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result')));
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
+function openCharacterGenerator(personality) {
+    if (!characterOptions) {
+        alert("Character options not loaded. Please ensure they are published in Contentful.");
+        return;
+    }
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
-        <div class="modal-body text-gray-300">
-            <div class="flex flex-col md:flex-row gap-6 mb-6">
-                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
-                <div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
+        <div id="char-gen-body" class="modal-body text-gray-300">
+             <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
+                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">` : ''}
+                <div class="italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
             </div>
-            <div>
-                <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
-                <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
-                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden">
-                    <div class="weaver-result"></div>
-                </div>
+            <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
+                <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Kinship</button>
+                <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Class</button>
+                <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Spirit</button>
+                <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Background</button>
+            </div>
+            <div id="kinship-container" class="space-y-3 mb-4"></div>
+            <div id="class-container" class="space-y-3 mb-4"></div>
+            <div id="spirit-container" class="space-y-3 mb-4"></div>
+            <div id="background-container" class="space-y-3 mb-4"></div>
+            <div class="mb-4">
+                <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
+                <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
+            </div>
+            <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded">Weave the Breath</button>
+            <div class="weaver-result-wrapper mt-4 p-4 bg-gray-800/50 rounded-lg hidden">
+                <div class="weaver-result"></div>
             </div>
         </div>
     `;
 
-    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
-    submitBtn.addEventListener('click', () => handleWeaverRequest(
-        weaverName,
-        modalBody.querySelector('.weaver-input'),
-        modalBody.querySelector('.weaver-result')
+    const charGenBody = modalBody.querySelector('#char-gen-body');
+
+    const populateSelect = (select, options) => {
+        select.add(new Option('(Random)', 'RANDOM'));
+        options.forEach(opt => select.add(new Option(opt, opt)));
+    };
+    
+    const addRow = (containerId, options, label, hasSub) => {
+        const container = charGenBody.querySelector(containerId);
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        let rowHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">${label}</label><select class="main-select w-full bg-gray-600 p-2.5"></select></div>`;
+        if (hasSub) {
+            rowHTML += `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-${label}</label><select class="sub-select w-full bg-gray-600 p-2.5"></select></div>`;
+        }
+        rowHTML += `<button class="remove-btn text-red-400 font-bold text-xl">⊖</button>`;
+        row.innerHTML = rowHTML;
+        container.appendChild(row);
+
+        const mainSelect = row.querySelector('.main-select');
+        populateSelect(mainSelect, options.main);
+        
+        if (hasSub) {
+            const subSelect = row.querySelector('.sub-select');
+            const updateSubOptions = () => {
+                subSelect.innerHTML = '';
+                const subOptions = options.getSubs(mainSelect.value) || [];
+                if (subOptions.length > 0) {
+                    populateSelect(subSelect, subOptions);
+                    subSelect.disabled = false;
+                } else {
+                    subSelect.disabled = true;
+                }
+            };
+            mainSelect.addEventListener('change', updateSubOptions);
+            updateSubOptions();
+        }
+    };
+
+    // ** UPDATED LOGIC FOR ALL THREE REFERENCE TYPES **
+    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow(
+        '#kinship-container',
+        {
+            main: (characterOptions.kinships || []).map(k => k.fields.title),
+            getSubs: (kinshipTitle) => {
+                const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle);
+                return kinship?.fields?.subkinships || [];
+            }
+        },
+        'Kinship', true
     ));
+
+    charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow(
+        '#class-container',
+        {
+            main: (characterOptions.classes || []).map(c => c.fields.title),
+            getSubs: (classTitle) => {
+                const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle);
+                return classPortal?.fields?.subclasses || [];
+            }
+        },
+        'Class', true
+    ));
+    
+    charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow(
+        '#spirit-container', 
+        { 
+            main: (characterOptions.spirits || []).map(s => s.fields.title)
+        }, 
+        'Spirit', false
+    ));
+    
+    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow(
+        '#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false
+    ));
+
+    charGenBody.addEventListener('click', e => {
+        if (e.target.classList.contains('remove-btn')) {
+            e.target.parentElement.remove();
+        }
+    });
+
+    const generateBtn = modalBody.querySelector('#generate-char-button');
+    generateBtn.addEventListener('click', () => {
+        let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima.`;
+        
+        const getSelections = (containerId, category) => {
+            const selections = [];
+            modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                const main = row.querySelector('.main-select').value;
+                const sub = row.querySelector('.sub-select');
+                if (main !== 'RANDOM') {
+                    selections.push(sub && sub.value && !sub.disabled ? `${main} (${sub.value})` : main);
+                }
+            });
+            if (selections.length > 0) {
+                prompt += `\n- ${category}: ${selections.join(' and ')}`;
+            }
+        };
+
+        getSelections('#kinship-container', 'Kinship');
+        getSelections('#class-container', 'Class');
+        getSelections('#spirit-container', 'Spirit');
+        getSelections('#background-container', 'Background');
+        
+        const notes = modalBody.querySelector('#char-notes').value;
+        if (notes) {
+            prompt += `\n- Notes: "${notes}"`;
+        }
+
+        prompt += `\n\nProvide a short concept including a name, personality, and plot hook.`;
+        
+        const resultDiv = modalBody.querySelector('.weaver-result');
+        handleWeaverRequest(weaverName, { value: prompt }, resultDiv, generateBtn);
+    });
 
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
@@ -226,8 +358,7 @@ function openWeaverTool(personality) {
     newModal.style.display = 'flex';
 }
 
-async function handleWeaverRequest(weaverName, inputElement, resultElement) {
-    const buttonElement = inputElement.nextElementSibling;
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
     const prompt = inputElement.value;
     if (!prompt) return;
 
@@ -260,22 +391,23 @@ async function initializeSite() {
     const portalGrid = document.getElementById('portal-grid');
     portalGrid.className = 'portal-container';
     try {
-        // ** THIS IS THE UPDATED CODE **
-        // It now fetches only portals where `isHidden` is not true.
-        const response = await client.getEntries({
-            content_type: 'lore',
-            'fields.isTopLevel': true,
-            'fields.isHidden[ne]': 'true', // Exclude entries where isHidden is true
-            include: 10
-        });
+        const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
+            client.getEntries({ content_type: 'lore', 'fields.isHidden[ne]': 'true', include: 2 }),
+            client.getEntries({ content_type: 'aiPersonality', include: 1 }),
+            client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
+        ]);
         
-        const personalityResponse = await client.getEntries({ content_type: 'aiPersonality', include: 1 });
+        allPortals = portalResponse.items;
         aiPersonalities = personalityResponse.items;
+        if (optionsResponse.items.length > 0) {
+            characterOptions = optionsResponse.items[0].fields;
+        }
         
-        if (!response.items.length) {
+        const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true);
+        if (!topLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
-            response.items.forEach(item => { portalGrid.appendChild(createPortalElement(item)); });
+            topLevelPortals.forEach(item => { portalGrid.appendChild(createPortalElement(item)); });
         }
     } catch (error) {
         console.error(error);
