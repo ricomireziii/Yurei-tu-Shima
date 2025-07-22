@@ -13,6 +13,69 @@ const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 
+// --- UPDATED: Function to load homepage content ---
+async function loadHomepageContent() {
+    try {
+        const response = await client.getEntries({ content_type: 'homepage', limit: 1 });
+        if (response.items.length > 0) {
+            const home = response.items[0].fields;
+
+            // 1. Update the main background image
+            if (home.backgroundImage?.fields?.file?.url) {
+                document.getElementById('app-container').querySelector('img').src = 'https:' + home.backgroundImage.fields.file.url;
+            }
+
+            // 2. Rebuild the two-column welcome area
+            const welcomeArea = document.getElementById('welcome-area');
+            
+            // Build the left side (text)
+            let textHtml = '';
+            if (home.welcomeTitle) {
+                textHtml += `<h2 class="text-3xl lg:text-4xl font-serif text-gray-900">${home.welcomeTitle}</h2>`;
+            }
+            if (home.welcomeLetter) {
+                const letterHtml = documentToHtmlString(home.welcomeLetter);
+                textHtml += `<div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4">${letterHtml}</div>`;
+            }
+
+            // NEW: Add the Professor's Note if it exists
+            if (home.professorsNote) {
+                const noteHtml = documentToHtmlString(home.professorsNote);
+                textHtml += `
+                    <hr class="border-stone-400/50 my-4">
+                    <div class="text-gray-700">
+                        <h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3>
+                        <div class="text-sm">${noteHtml}</div>
+                    </div>
+                `;
+            }
+
+            // Build the right side (image)
+            let imageHtml = '';
+            if (home.welcomeImage?.fields?.file?.url) {
+                imageHtml = `
+                    <div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0">
+                        <img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto">
+                    </div>
+                `;
+            }
+
+            // Combine both sides into the full two-column layout
+            welcomeArea.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
+                    <div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">
+                        ${textHtml}
+                    </div>
+                    ${imageHtml}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error("Failed to load homepage content:", error);
+    }
+}
+
+
 function openPortal(portalItem) {
     if (!portalItem) return;
 
@@ -80,20 +143,13 @@ function openPortal(portalItem) {
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) { return null; }
 
+    const portalWrapper = document.createElement('div');
     const isAccordion = portalItem.fields.displayType === 'Accordion';
+
     const portalButton = document.createElement('div');
-    
-    if (isAccordion) {
-        // Accordion specific styling
-        portalButton.className = 'portal-accordion-button group bg-gray-800/70 border border-amber-800/50 rounded-lg p-4 flex items-center text-left cursor-pointer';
-    } else {
-        // ** THIS IS THE UPDATED PART for the scattered book effect **
-        portalButton.className = 'portal-book'; // Use the new CSS class
-        const randomRotation = (Math.random() - 0.5) * 10; // Random tilt between -5 and +5 degrees
-        const randomX = (Math.random() - 0.5) * 10;      // Random x-shift between -5px and +5px
-        const randomY = (Math.random() - 0.5) * 10;      // Random y-shift between -5px and +5px
-        portalButton.style.transform = `rotate(${randomRotation}deg) translate(${randomX}px, ${randomY}px)`;
-    }
+    portalButton.className = isAccordion
+        ? 'portal-accordion-button group bg-gray-800/70 border border-amber-800/50 rounded-lg p-4 flex items-center text-left cursor-pointer'
+        : 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
 
     if (portalItem.fields.portalImage?.fields?.file?.url) {
         const imageElement = document.createElement('img');
@@ -108,9 +164,9 @@ function createPortalElement(portalItem) {
     titleElement.textContent = portalItem.fields.title;
     portalButton.appendChild(titleElement);
     
+    portalWrapper.appendChild(portalButton);
+    
     if (isAccordion) {
-        const portalWrapper = document.createElement('div');
-        portalWrapper.appendChild(portalButton);
         const accordionPanel = document.createElement('div');
         accordionPanel.className = 'accordion-panel ml-16';
         accordionPanel.style.display = 'none';
@@ -133,61 +189,32 @@ function createPortalElement(portalItem) {
                 panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
             }
         });
-        return portalWrapper;
     } else {
         portalButton.addEventListener('click', (e) => {
             e.stopPropagation();
             openPortal(portalItem);
         });
-        return portalButton;
     }
+
+    return portalWrapper;
 }
 
 const portalGrid = document.getElementById('portal-grid');
 
 async function initializeSite() {
-    // ... [rest of the initializeSite function remains the same] ...
-    const response = await client.getEntries({ content_type: 'homepage', limit: 1 });
-    // ... etc.
+    await loadHomepageContent();
 
-    // Duplicating the full initializeSite function for clarity, though it's unchanged.
     try {
-        const homeResponse = await client.getEntries({ content_type: 'homepage', limit: 1 });
-        if (homeResponse.items.length > 0) {
-            const home = homeResponse.items[0].fields;
-            if (home.backgroundImage?.fields?.file?.url) {
-                document.getElementById('app-container').querySelector('img').src = 'https:' + home.backgroundImage.fields.file.url;
-            }
-            const welcomeArea = document.getElementById('welcome-area');
-            let textHtml = '';
-            if (home.welcomeTitle) {
-                textHtml += `<h2 class="text-3xl lg:text-4xl font-serif text-gray-900">${home.welcomeTitle}</h2>`;
-            }
-            if (home.welcomeLetter) {
-                const letterHtml = documentToHtmlString(home.welcomeLetter);
-                textHtml += `<div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4">${letterHtml}</div>`;
-            }
-            let imageHtml = '';
-            if (home.welcomeImage?.fields?.file?.url) {
-                imageHtml = `<div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>`;
-            }
-            welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
-        }
-    } catch (error) {
-        console.error("Failed to load homepage content:", error);
-    }
-    
-    try {
-        const portalResponse = await client.getEntries({
+        const response = await client.getEntries({
             content_type: 'lore',
             'fields.isTopLevel': true,
             include: 10
         });
         
-        if (!portalResponse.items.length) {
+        if (!response.items.length) {
             portalGrid.innerHTML = '<p class="col-span-full text-center text-amber-200">No top-level portals found. Make sure at least one is published with "isTopLevel" ON.</p>';
         } else {
-            portalResponse.items.forEach(item => {
+            response.items.forEach(item => {
                 const portalElement = createPortalElement(item);
                 if (portalElement) { portalGrid.appendChild(portalElement); }
             });
