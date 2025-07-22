@@ -97,36 +97,45 @@ function openPortal(portalItem) {
 
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) { return null; }
-    const portalWrapper = document.createElement('div');
+
     const isAccordion = portalItem.fields.displayType === 'Accordion';
     const portalButton = document.createElement('div');
-
-    // ** THIS IS THE UPDATED LOGIC **
+    
+    // ** THIS IS THE UPDATED LOGIC for the book cover effect **
     if (isAccordion) {
-        portalWrapper.appendChild(portalButton);
         portalButton.className = 'portal-accordion-button group bg-gray-800/70 border border-amber-800/50 rounded-lg p-4 flex items-center text-left cursor-pointer';
+        // Accordion image and title handling
+        if (portalItem.fields.portalImage?.fields?.file?.url) {
+            const imageElement = document.createElement('img');
+            imageElement.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
+            imageElement.alt = portalItem.fields.title;
+            imageElement.className = 'w-12 h-12 mr-4 rounded-md object-cover flex-shrink-0';
+            portalButton.appendChild(imageElement);
+        }
+        const titleElement = document.createElement('h4');
+        titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
+        titleElement.textContent = portalItem.fields.title;
+        portalButton.appendChild(titleElement);
+
     } else {
-        // Apply scattered book style only to non-accordion portals
+        // Book cover styling and structure
         portalButton.className = 'portal-book';
         const randomRotation = (Math.random() - 0.5) * 8;
         const randomX = (Math.random() - 0.5) * 10;
         const randomY = (Math.random() - 0.5) * 10;
         portalButton.style.transform = `rotate(${randomRotation}deg) translate(${randomX}px, ${randomY}px)`;
+        
+        let innerHtml = '';
+        if (portalItem.fields.portalImage?.fields?.file?.url) {
+            innerHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}">`;
+        }
+        innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
+        portalButton.innerHTML = innerHtml;
     }
 
-    if (portalItem.fields.portalImage?.fields?.file?.url) {
-        const imageElement = document.createElement('img');
-        imageElement.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
-        imageElement.alt = portalItem.fields.title;
-        imageElement.className = isAccordion ? 'w-12 h-12 mr-4 rounded-md object-cover flex-shrink-0' : 'w-16 h-16 mb-2 rounded-full object-cover border-2 border-amber-500/50';
-        portalButton.appendChild(imageElement);
-    }
-    const titleElement = document.createElement('h4');
-    titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
-    titleElement.textContent = portalItem.fields.title;
-    portalButton.appendChild(titleElement);
-    
     if (isAccordion) {
+        const portalWrapper = document.createElement('div');
+        portalWrapper.appendChild(portalButton);
         const accordionPanel = document.createElement('div');
         accordionPanel.className = 'accordion-panel ml-16';
         accordionPanel.style.display = 'none';
