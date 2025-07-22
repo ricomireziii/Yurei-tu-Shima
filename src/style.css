@@ -10,45 +10,45 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(253, 186, 116, 0.5); border-radius: 20px; }
 .accordion-panel { padding: 1rem; margin-top: 0.5rem; background-color: rgba(0,0,0,0.2); border-radius: 0.5rem; border: 1px solid rgba(128, 128, 128, 0.2); }
 
+/* Updated portal grid for a flexible, centered layout */
 #portal-grid {
     display: flex;
     flex-wrap: wrap;
+    /* This property centers all rows, including the last one, solving the empty space issue */
     justify-content: center;
     gap: 20px;
     padding: 20px;
 }
 
-/* Updated styling for the "book cover" effect */
+/* Styling for the "book" effect */
 .portal-book {
     width: 180px;
     height: 240px;
-    position: relative; /* This is crucial for positioning the title on top */
+    position: relative;
     border-radius: 2px 4px 4px 2px;
     box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
     cursor: pointer;
-    overflow: hidden; /* Keeps everything contained in the book shape */
+    overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .portal-book img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Makes the image fill the book cover */
+    object-fit: cover;
     transition: transform 0.3s ease;
 }
 
 .portal-book:hover img {
-    transform: scale(1.05); /* Slight zoom effect on the image on hover */
+    transform: scale(1.05);
 }
 
-/* This is the dark overlay that sits on the image to make text readable */
 .portal-book .overlay {
     position: absolute;
     inset: 0;
     background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.8) 100%);
 }
 
-/* This positions the title on top of the image and overlay */
 .portal-book h4 {
     position: absolute;
     bottom: 0;
@@ -67,7 +67,7 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
 
 /* --- HOW TO CHANGE THE FONT --- */
 /* To change the font of the portal titles, modify the font-family property below.
-   You can use 'Merriweather' or 'Caveat' which are already loaded, or add a new Google Font. */
+   You can use 'Merriweather', 'Caveat', or 'Nunito Sans' which are already loaded, or add a new Google Font. */
 .portal-book h4 {
     font-family: 'Merriweather', serif;
 }
