@@ -28,7 +28,7 @@ function openPortal(portalItem) {
     if (portalItem.fields.portalImage?.fields?.file?.url) {
         modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
     }
-    if (portalItem.fields.introduction?.content) {
+    if (portalItem.fields.introduction && portalItem.fields.introduction.content && portalItem.fields.introduction.content.length > 0) {
         modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
     }
 
@@ -48,9 +48,8 @@ function openPortal(portalItem) {
     
     if (accordionItems.length > 0) {
         const listContainer = document.createElement('div');
-        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4'; // Reduced gap for scrolls
+        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
         
-        // ** NEW: Add Expand/Collapse All buttons **
         const controlsDiv = document.createElement('div');
         controlsDiv.className = 'scroll-controls';
         const expandButton = document.createElement('button');
@@ -62,7 +61,7 @@ function openPortal(portalItem) {
         
         controlsDiv.appendChild(expandButton);
         controlsDiv.appendChild(collapseButton);
-        modalBody.appendChild(controlsDiv); // Add controls before the list
+        modalBody.appendChild(controlsDiv);
         
         accordionItems.forEach(item => {
             const portalElement = createPortalElement(item);
@@ -70,7 +69,6 @@ function openPortal(portalItem) {
         });
         modalBody.appendChild(listContainer);
 
-        // ** NEW: Add functionality to the buttons **
         expandButton.addEventListener('click', () => {
             listContainer.querySelectorAll('.accordion-panel').forEach(panel => {
                 panel.style.display = 'block';
@@ -83,7 +81,7 @@ function openPortal(portalItem) {
         });
     }
     
-    if (portalItem.fields.conclusion?.content) {
+    if (portalItem.fields.conclusion && portalItem.fields.conclusion.content && portalItem.fields.conclusion.content.length > 0) {
         modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
     }
 
@@ -109,11 +107,11 @@ function createPortalElement(portalItem) {
     const isAccordion = portalItem.fields.displayType === 'Accordion';
 
     const portalButton = document.createElement('div');
-    portalButton.className = isAccordion
-        ? 'portal-accordion-button group p-4 flex items-center text-left cursor-pointer'
-        : 'portal-book';
     
-    if (!isAccordion) {
+    if (isAccordion) {
+        portalButton.className = 'portal-accordion-button group p-4 flex items-center text-left cursor-pointer';
+    } else {
+        portalButton.className = 'portal-book';
         const randomRotation = (Math.random() - 0.5) * 8;
         const randomX = (Math.random() - 0.5) * 10;
         const randomY = (Math.random() - 0.5) * 10;
@@ -129,7 +127,15 @@ function createPortalElement(portalItem) {
     }
     
     const titleElement = document.createElement('h4');
-    titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
+    
+    if (isAccordion) {
+        // ** THIS LINE IS THE FIX **
+        // Changed text-amber-200 to a dark text color for readability on the light background.
+        titleElement.className = 'font-serif text-stone-800 group-hover:text-black transition-colors';
+    } else {
+        titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
+    }
+    
     titleElement.textContent = portalItem.fields.title;
     
     if (isAccordion) {
