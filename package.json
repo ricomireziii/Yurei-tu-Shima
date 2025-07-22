@@ -12,9 +12,9 @@
     "vite": "^5.3.4"
   },
   "dependencies": {
-    "@contentful/rich-text-html-renderer": "^16.6.1",
-    "@contentful/rich-text-plain-text-renderer": "^16.8.0",
+    "@contentful/rich-text-html-renderer": "*",
+    "@contentful/rich-text-plain-text-renderer": "*",
     "@google/generative-ai": "^0.15.0",
-    "contentful": "^10.12.2"
+    "contentful": "*"
   }
 }
