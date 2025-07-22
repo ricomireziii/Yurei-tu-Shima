@@ -10,17 +10,23 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(253, 186, 116, 0.5); border-radius: 20px; }
 .accordion-panel { padding: 1rem; margin-top: 0.5rem; background-color: rgba(0,0,0,0.2); border-radius: 0.5rem; border: 1px solid rgba(128, 128, 128, 0.2); }
 
-/* Updated portal grid for a flexible, centered layout */
+/* NEW: This ensures the portal grid container itself is centered */
+main#portal-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 #portal-grid {
     display: flex;
     flex-wrap: wrap;
-    /* This property centers all rows, including the last one, solving the empty space issue */
+    /* This will now correctly center all items, including the last row */
     justify-content: center;
     gap: 20px;
     padding: 20px;
+    max-width: 1000px; /* Constrains the grid width for better centering */
 }
 
-/* Styling for the "book" effect */
 .portal-book {
     width: 180px;
     height: 240px;
@@ -57,17 +63,11 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
     padding: 1rem;
     color: white;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+    font-family: 'Merriweather', serif;
 }
 
 .portal-book:hover {
     transform: scale(1.1) !important;
     box-shadow: 0 10px 20px rgba(0,0,0,0.6), 0 0 15px rgba(252, 211, 77, 0.4);
     z-index: 10;
-}
-
-/* --- HOW TO CHANGE THE FONT --- */
-/* To change the font of the portal titles, modify the font-family property below.
-   You can use 'Merriweather', 'Caveat', or 'Nunito Sans' which are already loaded, or add a new Google Font. */
-.portal-book h4 {
-    font-family: 'Merriweather', serif;
 }
