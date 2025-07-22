@@ -62,7 +62,8 @@ function openPortal(portalItem) {
     const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
     if (gridItems.length > 0) {
         const gridContainer = document.createElement('div');
-        gridContainer.className = 'sub-portal-container clear-both grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+        // Apply the reusable centering class here
+        gridContainer.className = 'portal-container clear-both'; 
         gridItems.forEach(item => {
             const portalElement = createPortalElement(item);
             if (portalElement) gridContainer.appendChild(portalElement);
@@ -71,6 +72,7 @@ function openPortal(portalItem) {
     }
     if (accordionItems.length > 0) {
         const listContainer = document.createElement('div');
+        // Accordions still use a simpler vertical layout
         listContainer.className = 'sub-portal-container clear-both flex flex-col gap-4 mt-4';
         accordionItems.forEach(item => {
             const portalElement = createPortalElement(item);
@@ -97,45 +99,32 @@ function openPortal(portalItem) {
 
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) { return null; }
-
+    const portalWrapper = document.createElement('div');
     const isAccordion = portalItem.fields.displayType === 'Accordion';
     const portalButton = document.createElement('div');
-    
-    // ** THIS IS THE UPDATED LOGIC for the book cover effect **
     if (isAccordion) {
         portalButton.className = 'portal-accordion-button group bg-gray-800/70 border border-amber-800/50 rounded-lg p-4 flex items-center text-left cursor-pointer';
-        // Accordion image and title handling
-        if (portalItem.fields.portalImage?.fields?.file?.url) {
-            const imageElement = document.createElement('img');
-            imageElement.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
-            imageElement.alt = portalItem.fields.title;
-            imageElement.className = 'w-12 h-12 mr-4 rounded-md object-cover flex-shrink-0';
-            portalButton.appendChild(imageElement);
-        }
-        const titleElement = document.createElement('h4');
-        titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
-        titleElement.textContent = portalItem.fields.title;
-        portalButton.appendChild(titleElement);
-
     } else {
-        // Book cover styling and structure
         portalButton.className = 'portal-book';
         const randomRotation = (Math.random() - 0.5) * 8;
         const randomX = (Math.random() - 0.5) * 10;
         const randomY = (Math.random() - 0.5) * 10;
         portalButton.style.transform = `rotate(${randomRotation}deg) translate(${randomX}px, ${randomY}px)`;
-        
-        let innerHtml = '';
-        if (portalItem.fields.portalImage?.fields?.file?.url) {
-            innerHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}">`;
-        }
-        innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
-        portalButton.innerHTML = innerHtml;
     }
-
+    if (portalItem.fields.portalImage?.fields?.file?.url) {
+        const imageElement = document.createElement('img');
+        imageElement.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
+        imageElement.alt = portalItem.fields.title;
+        imageElement.className = isAccordion ? 'w-12 h-12 mr-4 rounded-md object-cover flex-shrink-0' : 'w-full h-full object-cover';
+        portalButton.appendChild(imageElement);
+    }
+    const titleElement = document.createElement('h4');
+    titleElement.className = 'font-serif text-amber-200 group-hover:text-white transition-colors';
+    titleElement.textContent = portalItem.fields.title;
+    
     if (isAccordion) {
-        const portalWrapper = document.createElement('div');
         portalWrapper.appendChild(portalButton);
+        portalButton.appendChild(titleElement); // Title is inside the button for accordions
         const accordionPanel = document.createElement('div');
         accordionPanel.className = 'accordion-panel ml-16';
         accordionPanel.style.display = 'none';
@@ -157,6 +146,10 @@ function createPortalElement(portalItem) {
         });
         return portalWrapper;
     } else {
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay';
+        portalButton.appendChild(overlay);
+        portalButton.appendChild(titleElement);
         portalButton.addEventListener('click', (e) => {
             e.stopPropagation();
             openPortal(portalItem);
@@ -166,6 +159,8 @@ function createPortalElement(portalItem) {
 }
 
 const portalGrid = document.getElementById('portal-grid');
+// Apply the reusable centering class to the main grid
+portalGrid.className = 'portal-container';
 
 async function initializeSite() {
     await loadHomepageContent();
@@ -176,7 +171,7 @@ async function initializeSite() {
             include: 10
         });
         if (!response.items.length) {
-            portalGrid.innerHTML = '<p class="col-span-full text-center text-amber-200">No top-level portals found. Make sure at least one is published with "isTopLevel" ON.</p>';
+            portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found. Make sure at least one is published with "isTopLevel" ON.</p>';
         } else {
             response.items.forEach(item => {
                 const portalElement = createPortalElement(item);
@@ -185,7 +180,7 @@ async function initializeSite() {
         }
     } catch (error) {
         console.error(error);
-        portalGrid.innerHTML = '<p class="col-span-full text-center text-red-400">Error fetching content. Check console (F12) and API keys.</p>';
+        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content. Check console (F12) and API keys.</p>';
     }
 }
 

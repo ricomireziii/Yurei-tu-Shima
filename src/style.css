@@ -10,21 +10,21 @@ blockquote { border-left: 4px solid #f59e0b; padding-left: 1rem; margin: 1rem 0;
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(253, 186, 116, 0.5); border-radius: 20px; }
 .accordion-panel { padding: 1rem; margin-top: 0.5rem; background-color: rgba(0,0,0,0.2); border-radius: 0.5rem; border: 1px solid rgba(128, 128, 128, 0.2); }
 
-/* NEW: This ensures the portal grid container itself is centered */
 main#portal-area {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-#portal-grid {
+/* NEW: Reusable class for all portal containers */
+.portal-container {
     display: flex;
     flex-wrap: wrap;
-    /* This will now correctly center all items, including the last row */
     justify-content: center;
     gap: 20px;
     padding: 20px;
-    max-width: 1000px; /* Constrains the grid width for better centering */
+    width: 100%;
+    max-width: 1000px;
 }
 
 .portal-book {
