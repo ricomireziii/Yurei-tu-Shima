@@ -12,7 +12,7 @@ const client = contentful.createClient({
 const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
-let aiPersonalities = []; // Cache for AI personalities
+let aiPersonalities = [];
 
 async function loadHomepageContent() {
     try {
@@ -136,7 +136,6 @@ function createPortalElement(portalItem) {
     }
 }
 
-// --- NEW/UPDATED: Weaver's Loom Dynamic Logic ---
 function createWeaversLoomPortal(portalItem) {
     const portalButton = document.createElement('div');
     portalButton.className = 'portal-book';
@@ -261,12 +260,15 @@ async function initializeSite() {
     const portalGrid = document.getElementById('portal-grid');
     portalGrid.className = 'portal-container';
     try {
+        // ** THIS IS THE UPDATED CODE **
+        // It now fetches only portals where `isHidden` is not true.
         const response = await client.getEntries({
             content_type: 'lore',
             'fields.isTopLevel': true,
+            'fields.isHidden[ne]': 'true', // Exclude entries where isHidden is true
             include: 10
         });
-        // Also fetch AI personalities and cache them
+        
         const personalityResponse = await client.getEntries({ content_type: 'aiPersonality', include: 1 });
         aiPersonalities = personalityResponse.items;
         
