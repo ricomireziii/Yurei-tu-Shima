@@ -18,20 +18,41 @@
             <header id="welcome-area" class="flex-shrink-0 bg-gray-900/40 backdrop-blur-md p-6 rounded-xl shadow-lg border border-gray-500/30"></header>
             <main id="portal-area" class="py-8">
                 <h3 class="text-2xl md:text-3xl font-serif text-amber-100/90 text-center mb-6" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Explore the Stories</h3>
-                <div id="portal-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"></div>
+                <div id="portal-grid" class="portal-container"></div>
             </main>
         </div>
     </div>
 
     <div id="modal-container"></div>
-
-<div id="modal-template" class="modal">
-    <div class="modal-content bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-4xl w-11/12 relative">
-        <button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
-        <div id="main-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div>
+    <div id="modal-template" class="modal">
+        <div class="modal-content bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-4xl w-11/12 relative">
+            <button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            <div id="main-modal-body" class="max-h-[80vh] overflow-y-auto pr-4 custom-scrollbar"></div>
+        </div>
     </div>
-</div>
 
+    <div id="weavers-loom-modal" class="modal">
+        <div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative">
+            <button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            <div class="text-center mb-8">
+                <h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2>
+                <div class="flex flex-col md:flex-row items-center justify-center gap-6 max-w-4xl mx-auto text-left bg-black/20 p-4 rounded-lg">
+                    <img src="https://i.imgur.com/cyVlJBD.jpeg" alt="The Weaver's Loom" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">
+                    <p class="text-lg text-gray-300 italic">"Welcome, Traveler, to my workshop. The air here hums with potential. My attendants will help you shape the fabric of reality."</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="thread-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Thread Weaver</h3><p class="text-sm text-gray-400 italic">Ask questions of the lore.</p></div>
+                <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="ink-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Ink Weaver</h3><p class="text-sm text-gray-400 italic">Create prompts for images.</p></div>
+                <div class="weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50" data-modal-target="whisper-weaver-modal"><h3 class="text-2xl font-serif text-amber-400">Whisper Weaver</h3><p class="text-sm text-gray-400 italic">Receive cryptic clues.</p></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="thread-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Thread Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://i.imgur.com/uav189P.jpeg" alt="Thread Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><div id="thread-weaver-personality" class="flex-1 italic"></div></div><div id="thread-weaver-tool"><textarea id="thread-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Ask about a person, place, or event..."></textarea><button id="thread-weave-btn" class="mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Consult the Archives</button><div id="thread-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="thread-result"></div></div></div></div></div></div>
+    <div id="ink-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Ink Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://i.imgur.com/v61pvTf.jpeg" alt="Ink Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><div id="ink-weaver-personality" class="flex-1 italic"></div></div><div id="ink-weaver-tool"><textarea id="ink-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Describe a character or scene..."></textarea><button id="ink-weave-btn" class="mt-2 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">Weave Ink</button><div id="ink-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative"><div id="ink-result"></div><button class="copy-btn text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500 absolute top-2 right-2">Copy</button></div></div></div></div></div>
+    <div id="whisper-weaver-modal" class="modal"><div class="modal-content bg-gray-800/95 backdrop-blur-lg rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-3xl w-11/12 relative"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">The Whisper Weaver</h2><button class="modal-close-btn text-gray-400 hover:text-white text-3xl font-bold">&times;</button></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6"><img src="https://i.imgur.com/AWNAuQA.jpeg" alt="Whisper Weaver" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600"><div id="whisper-weaver-personality" class="flex-1 italic"></div></div><div id="whisper-weaver-tool"><textarea id="whisper-input" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Ask a question for which you seek a sign..."></textarea><button id="whisper-weave-btn" class="mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">Listen for a Whisper</button><div id="whisper-result-wrapper" class="mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div id="whisper-result"></div></div></div></div></div></div>
+    
     <script type="module" src="/src/main.js"></script>
 </body>
 </html>

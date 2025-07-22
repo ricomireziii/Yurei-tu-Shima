@@ -13,7 +13,6 @@ const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 
-// --- Homepage Content ---
 async function loadHomepageContent() {
     try {
         const response = await client.getEntries({ content_type: 'homepage', limit: 1 });
@@ -44,7 +43,6 @@ async function loadHomepageContent() {
     }
 }
 
-// --- Modal and Portal Logic ---
 function openPortal(portalItem) {
     if (!portalItem) return;
     const newModal = modalTemplate.cloneNode(true);
@@ -116,10 +114,30 @@ function openPortal(portalItem) {
 
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) { return null; }
-    const isAccordion = portalItem.fields.displayType === 'Accordion';
+
     const portalButton = document.createElement('div');
+
+    // --- NEW LOGIC: Check for the isWeaversLoom switch ---
+    if (portalItem.fields.isWeaversLoom) {
+        portalButton.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
+        let innerHtml = '';
+        if (portalItem.fields.portalImage?.fields?.file?.url) {
+            innerHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-cover">`;
+        }
+        innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
+        portalButton.innerHTML = innerHtml;
+
+        portalButton.addEventListener('click', () => {
+            document.getElementById('weavers-loom-modal').style.display = 'flex';
+        });
+        return portalButton;
+    }
+
+    // --- Existing Logic for regular portals ---
+    const isAccordion = portalItem.fields.displayType === 'Accordion';
+    const portalWrapper = document.createElement('div');
+
     if (isAccordion) {
-        const portalWrapper = document.createElement('div');
         portalWrapper.appendChild(portalButton);
         portalButton.className = 'portal-accordion-button group p-4 flex items-center text-left cursor-pointer';
         if (portalItem.fields.portalImage?.fields?.file?.url) {
@@ -173,34 +191,27 @@ function createPortalElement(portalItem) {
     }
 }
 
-// --- NEW: Weaver's Loom Logic ---
 async function handleWeaverRequest(weaverName, inputId, resultId, buttonId) {
     const inputElement = document.getElementById(inputId);
     const resultElement = document.getElementById(resultId);
     const buttonElement = document.getElementById(buttonId);
     const prompt = inputElement.value;
-
     if (!prompt) return;
-
     resultElement.parentElement.style.display = 'block';
     resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
-
     try {
         const response = await fetch('/api/gemini', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, weaverName }),
         });
-
         if (!response.ok) {
             const errData = await response.json();
             throw new Error(errData.error || `HTTP error! status: ${response.status}`);
         }
-
         const data = await response.json();
         resultElement.innerHTML = data.text.replace(/\n/g, '<br>');
-
     } catch (error) {
         console.error('Error:', error);
         resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
@@ -209,13 +220,20 @@ async function handleWeaverRequest(weaverName, inputId, resultId, buttonId) {
     }
 }
 
-// Function to set up event listeners for the Weaver's Loom
 function initializeWeaversLoom() {
+    // This function wires up all the buttons inside the Weaver's Loom modals
+    document.body.addEventListener('click', function(event) {
+        const weaverCard = event.target.closest('.weaver-card');
+        if (weaverCard) {
+            const modalId = weaverCard.dataset.modalTarget;
+            document.getElementById(modalId).style.display = 'flex';
+        }
+    });
+    
     document.getElementById('thread-weave-btn').addEventListener('click', () => handleWeaverRequest('Thread Weaver', 'thread-input', 'thread-result', 'thread-weave-btn'));
     document.getElementById('ink-weave-btn').addEventListener('click', () => handleWeaverRequest('Ink Weaver', 'ink-input', 'ink-result', 'ink-weave-btn'));
     document.getElementById('whisper-weave-btn').addEventListener('click', () => handleWeaverRequest('Whisper Weaver', 'whisper-input', 'whisper-result', 'whisper-weave-btn'));
     
-    // Add logic for copy button if it exists
     const copyBtn = document.querySelector('#ink-result-wrapper .copy-btn');
     if (copyBtn) {
         copyBtn.addEventListener('click', e => {
@@ -226,14 +244,26 @@ function initializeWeaversLoom() {
             });
         });
     }
+
+    // Add close functionality to all modals, including the new Weaver ones
+    document.querySelectorAll('.modal-close-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.closest('.modal').style.display = 'none';
+        });
+    });
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', e => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
 }
 
-
-// --- Site Initialization ---
 async function initializeSite() {
     await loadHomepageContent();
     const portalGrid = document.getElementById('portal-grid');
-    portalGrid.className = 'portal-container';
     try {
         const response = await client.getEntries({
             content_type: 'lore',
@@ -241,7 +271,7 @@ async function initializeSite() {
             include: 10
         });
         if (!response.items.length) {
-            portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found. Make sure at least one is published with "isTopLevel" ON.</p>';
+            portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
             response.items.forEach(item => {
                 const portalElement = createPortalElement(item);
@@ -250,10 +280,8 @@ async function initializeSite() {
         }
     } catch (error) {
         console.error(error);
-        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content. Check console (F12) and API keys.</p>';
+        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
     }
-    
-    // Initialize the AI tools
     initializeWeaversLoom();
 }
 
