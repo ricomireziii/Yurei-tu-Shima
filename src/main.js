@@ -12,6 +12,7 @@ const client = contentful.createClient({
 const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
+let aiPersonalities = []; // Cache for AI personalities
 
 async function loadHomepageContent() {
     try {
@@ -23,24 +24,16 @@ async function loadHomepageContent() {
             }
             const welcomeArea = document.getElementById('welcome-area');
             let textHtml = '';
-            if (home.welcomeTitle) {
-                textHtml += `<h2 class="text-3xl lg:text-4xl font-serif text-gray-900">${home.welcomeTitle}</h2>`;
-            }
-            if (home.welcomeLetter) {
-                textHtml += `<div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4">${documentToHtmlString(home.welcomeLetter)}</div>`;
-            }
-            if (home.professorsNote) {
-                textHtml += `<hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><div class="text-sm">${documentToHtmlString(home.professorsNote)}</div></div>`;
-            }
+            if (home.welcomeTitle) { textHtml += `<h2 class="text-3xl lg:text-4xl font-serif text-gray-900">${home.welcomeTitle}</h2>`; }
+            if (home.welcomeLetter) { textHtml += `<div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4">${documentToHtmlString(home.welcomeLetter)}</div>`; }
+            if (home.professorsNote) { textHtml += `<hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><div class="text-sm">${documentToHtmlString(home.professorsNote)}</div></div>`; }
             let imageHtml = '';
             if (home.welcomeImage?.fields?.file?.url) {
                 imageHtml = `<div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>`;
             }
             welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
         }
-    } catch (error) {
-        console.error("Failed to load homepage content:", error);
-    }
+    } catch (error) { console.error("Failed to load homepage content:", error); }
 }
 
 function openPortal(portalItem) {
@@ -63,10 +56,7 @@ function openPortal(portalItem) {
     if (gridItems.length > 0) {
         const gridContainer = document.createElement('div');
         gridContainer.className = 'portal-container clear-both';
-        gridItems.forEach(item => {
-            const portalElement = createPortalElement(item);
-            if (portalElement) gridContainer.appendChild(portalElement);
-        });
+        gridItems.forEach(item => { gridContainer.appendChild(createPortalElement(item)); });
         modalBody.appendChild(gridContainer);
     }
     if (accordionItems.length > 0) {
@@ -75,131 +65,177 @@ function openPortal(portalItem) {
         const controlsDiv = document.createElement('div');
         controlsDiv.className = 'scroll-controls';
         const expandButton = document.createElement('button');
-        expandButton.className = 'scroll-button';
         expandButton.textContent = 'Expand All';
+        expandButton.className = 'scroll-button';
         const collapseButton = document.createElement('button');
-        collapseButton.className = 'scroll-button';
         collapseButton.textContent = 'Collapse All';
+        collapseButton.className = 'scroll-button';
         controlsDiv.appendChild(expandButton);
         controlsDiv.appendChild(collapseButton);
         modalBody.appendChild(controlsDiv);
-        accordionItems.forEach(item => {
-            const portalElement = createPortalElement(item);
-            if (portalElement) listContainer.appendChild(portalElement);
-        });
+        accordionItems.forEach(item => { listContainer.appendChild(createPortalElement(item)); });
         modalBody.appendChild(listContainer);
-        expandButton.addEventListener('click', () => {
-            listContainer.querySelectorAll('.accordion-panel').forEach(panel => { panel.style.display = 'block'; });
-        });
-        collapseButton.addEventListener('click', () => {
-            listContainer.querySelectorAll('.accordion-panel').forEach(panel => { panel.style.display = 'none'; });
-        });
+        expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
+        collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
     }
     if (portalItem.fields.conclusion?.content) {
         modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
     }
-    closeButton.addEventListener('click', () => {
-        newModal.remove();
-        zIndexCounter--;
-    });
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
-        if (e.target === newModal) {
-            newModal.remove();
-            zIndexCounter--;
-        }
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
     });
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
 }
 
 function createPortalElement(portalItem) {
-    if (!portalItem?.fields?.title) { return null; }
+    if (!portalItem?.fields?.title) return null;
 
-    const portalButton = document.createElement('div');
-
-    // --- NEW LOGIC: Check for the isWeaversLoom switch ---
     if (portalItem.fields.isWeaversLoom) {
-        portalButton.className = 'portal-book group aspect-[3/4] bg-gray-800/70 border-2 border-double border-amber-800/50 rounded-lg p-4 flex flex-col justify-center items-center text-center cursor-pointer';
-        let innerHtml = '';
-        if (portalItem.fields.portalImage?.fields?.file?.url) {
-            innerHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-cover">`;
-        }
-        innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
-        portalButton.innerHTML = innerHtml;
-
-        portalButton.addEventListener('click', () => {
-            document.getElementById('weavers-loom-modal').style.display = 'flex';
-        });
-        return portalButton;
+        return createWeaversLoomPortal(portalItem);
     }
-
-    // --- Existing Logic for regular portals ---
+    
     const isAccordion = portalItem.fields.displayType === 'Accordion';
+    const portalButton = document.createElement('div');
     const portalWrapper = document.createElement('div');
 
     if (isAccordion) {
         portalWrapper.appendChild(portalButton);
         portalButton.className = 'portal-accordion-button group p-4 flex items-center text-left cursor-pointer';
         if (portalItem.fields.portalImage?.fields?.file?.url) {
-            const imageElement = document.createElement('img');
-            imageElement.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
-            imageElement.alt = portalItem.fields.title;
-            imageElement.className = 'w-12 h-12 mr-4 rounded-md object-cover flex-shrink-0';
-            portalButton.appendChild(imageElement);
+            portalButton.insertAdjacentHTML('afterbegin', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-12 h-12 mr-4 rounded-md object-cover flex-shrink-0">`);
         }
-        const titleElement = document.createElement('h4');
-        titleElement.className = 'font-serif text-stone-800 group-hover:text-black transition-colors';
-        titleElement.textContent = portalItem.fields.title;
-        portalButton.appendChild(titleElement);
+        portalButton.insertAdjacentHTML('beforeend', `<h4 class="font-serif text-stone-800 group-hover:text-black transition-colors">${portalItem.fields.title}</h4>`);
         const accordionPanel = document.createElement('div');
         accordionPanel.className = 'accordion-panel ml-16';
         accordionPanel.style.display = 'none';
         let contentHtml = '';
-        if (portalItem.fields.introduction?.content) {
-            contentHtml += documentToHtmlString(portalItem.fields.introduction);
-        }
-        if (portalItem.fields.conclusion?.content) {
-            contentHtml += `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
-        }
+        if (portalItem.fields.introduction?.content) contentHtml += documentToHtmlString(portalItem.fields.introduction);
+        if (portalItem.fields.conclusion?.content) contentHtml += `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`;
         accordionPanel.innerHTML = contentHtml;
         portalWrapper.appendChild(accordionPanel);
         portalButton.addEventListener('click', (e) => {
             e.stopPropagation();
             const panel = e.currentTarget.nextElementSibling;
-            if (panel) {
-                panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
-            }
+            if (panel) panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
         });
         return portalWrapper;
     } else {
         portalButton.className = 'portal-book';
         const randomRotation = (Math.random() - 0.5) * 8;
-        const randomX = (Math.random() - 0.5) * 10;
-        const randomY = (Math.random() - 0.5) * 10;
-        portalButton.style.transform = `rotate(${randomRotation}deg) translate(${randomX}px, ${randomY}px)`;
+        portalButton.style.transform = `rotate(${randomRotation}deg)`;
         let innerHtml = '';
         if (portalItem.fields.portalImage?.fields?.file?.url) {
             innerHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-cover">`;
         }
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
-        portalButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openPortal(portalItem);
-        });
+        portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
         return portalButton;
     }
 }
 
-async function handleWeaverRequest(weaverName, inputId, resultId, buttonId) {
-    const inputElement = document.getElementById(inputId);
-    const resultElement = document.getElementById(resultId);
-    const buttonElement = document.getElementById(buttonId);
+// --- NEW/UPDATED: Weaver's Loom Dynamic Logic ---
+function createWeaversLoomPortal(portalItem) {
+    const portalButton = document.createElement('div');
+    portalButton.className = 'portal-book';
+    const randomRotation = (Math.random() - 0.5) * 8;
+    portalButton.style.transform = `rotate(${randomRotation}deg)`;
+    let innerHtml = '';
+    if (portalItem.fields.portalImage?.fields?.file?.url) {
+        innerHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-cover">`;
+    }
+    innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
+    portalButton.innerHTML = innerHtml;
+
+    portalButton.addEventListener('click', () => {
+        openWeaversLoom();
+    });
+    return portalButton;
+}
+
+function openWeaversLoom() {
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+
+    let loomHtml = `
+        <div class="text-center mb-8">
+            <h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2>
+        </div>
+        <div id="weaver-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    `;
+    modalBody.innerHTML = loomHtml;
+    
+    const cardsContainer = modalBody.querySelector('#weaver-cards-container');
+    aiPersonalities.forEach(personality => {
+        const card = document.createElement('div');
+        card.className = 'weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50';
+        card.innerHTML = `<h3 class="text-2xl font-serif text-amber-400">${personality.fields.weaverName}</h3>`;
+        card.addEventListener('click', () => openWeaverTool(personality));
+        cardsContainer.appendChild(card);
+    });
+
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
+function openWeaverTool(personality) {
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+    
+    modalBody.innerHTML = `
+        <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
+        <div class="modal-body text-gray-300">
+            <div class="flex flex-col md:flex-row gap-6 mb-6">
+                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
+                <div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
+            </div>
+            <div>
+                <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
+                <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
+                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden">
+                    <div class="weaver-result"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
+    submitBtn.addEventListener('click', () => handleWeaverRequest(
+        weaverName,
+        modalBody.querySelector('.weaver-input'),
+        modalBody.querySelector('.weaver-result')
+    ));
+
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
+async function handleWeaverRequest(weaverName, inputElement, resultElement) {
+    const buttonElement = inputElement.nextElementSibling;
     const prompt = inputElement.value;
     if (!prompt) return;
+
     resultElement.parentElement.style.display = 'block';
     resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
+
     try {
         const response = await fetch('/api/gemini', {
             method: 'POST',
@@ -220,69 +256,29 @@ async function handleWeaverRequest(weaverName, inputId, resultId, buttonId) {
     }
 }
 
-function initializeWeaversLoom() {
-    // This function wires up all the buttons inside the Weaver's Loom modals
-    document.body.addEventListener('click', function(event) {
-        const weaverCard = event.target.closest('.weaver-card');
-        if (weaverCard) {
-            const modalId = weaverCard.dataset.modalTarget;
-            document.getElementById(modalId).style.display = 'flex';
-        }
-    });
-    
-    document.getElementById('thread-weave-btn').addEventListener('click', () => handleWeaverRequest('Thread Weaver', 'thread-input', 'thread-result', 'thread-weave-btn'));
-    document.getElementById('ink-weave-btn').addEventListener('click', () => handleWeaverRequest('Ink Weaver', 'ink-input', 'ink-result', 'ink-weave-btn'));
-    document.getElementById('whisper-weave-btn').addEventListener('click', () => handleWeaverRequest('Whisper Weaver', 'whisper-input', 'whisper-result', 'whisper-weave-btn'));
-    
-    const copyBtn = document.querySelector('#ink-result-wrapper .copy-btn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', e => {
-            const textToCopy = e.target.parentElement.querySelector('#ink-result').innerText;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                e.target.textContent = 'Copied!';
-                setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
-            });
-        });
-    }
-
-    // Add close functionality to all modals, including the new Weaver ones
-    document.querySelectorAll('.modal-close-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.closest('.modal').style.display = 'none';
-        });
-    });
-
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', e => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-    });
-}
-
 async function initializeSite() {
     await loadHomepageContent();
     const portalGrid = document.getElementById('portal-grid');
+    portalGrid.className = 'portal-container';
     try {
         const response = await client.getEntries({
             content_type: 'lore',
             'fields.isTopLevel': true,
             include: 10
         });
+        // Also fetch AI personalities and cache them
+        const personalityResponse = await client.getEntries({ content_type: 'aiPersonality', include: 1 });
+        aiPersonalities = personalityResponse.items;
+        
         if (!response.items.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
-            response.items.forEach(item => {
-                const portalElement = createPortalElement(item);
-                if (portalElement) { portalGrid.appendChild(portalElement); }
-            });
+            response.items.forEach(item => { portalGrid.appendChild(createPortalElement(item)); });
         }
     } catch (error) {
         console.error(error);
         portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
     }
-    initializeWeaversLoom();
 }
 
 initializeSite();

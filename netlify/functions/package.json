@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@google/generative-ai": "^0.15.0",
+    "contentful": "^10.12.2",
+    "@contentful/rich-text-plain-text-renderer": "^16.6.1"
+  }
+}
