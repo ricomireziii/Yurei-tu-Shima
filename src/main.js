@@ -14,6 +14,7 @@ const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
+const ADMIN_PASSWORD = "yurei"; // The password for hidden portals
 
 async function loadHomepageContent() {
     try {
@@ -130,6 +131,9 @@ function createPortalElement(portalItem) {
         return portalWrapper;
     } else {
         portalButton.className = 'portal-book';
+        if (portalItem.fields.isHidden) {
+            portalButton.classList.add('locked-portal');
+        }
         const randomRotation = (Math.random() - 0.5) * 8;
         portalButton.style.transform = `rotate(${randomRotation}deg)`;
         let innerHtml = '';
@@ -138,9 +142,44 @@ function createPortalElement(portalItem) {
         }
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
-        portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
+        if (portalItem.fields.isHidden) {
+            portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
+        } else {
+            portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
+        }
         return portalButton;
     }
+}
+
+function openPasswordPrompt(portalItem) {
+    const passwordModal = document.getElementById('password-modal');
+    const passwordInput = document.getElementById('password-input');
+    const passwordSubmit = document.getElementById('password-submit-btn');
+    const passwordText = document.getElementById('password-prompt-text');
+    const passwordImage = document.getElementById('password-modal-image');
+    const closeButton = passwordModal.querySelector('.modal-close-btn');
+    if (portalItem.fields.portalImage?.fields?.file?.url) {
+        passwordImage.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
+        passwordImage.classList.remove('hidden');
+    } else {
+        passwordImage.classList.add('hidden');
+    }
+    passwordText.innerHTML = `You stand before the **${portalItem.fields.title}** portal. Unlike the others, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
+    passwordInput.value = '';
+    const handleSubmit = () => {
+        if (passwordInput.value === ADMIN_PASSWORD) {
+            passwordModal.style.display = 'none';
+            openPortal(portalItem);
+        } else {
+            alert('The word has no effect. The portal remains sealed.');
+        }
+    };
+    passwordSubmit.onclick = handleSubmit;
+    passwordInput.onkeyup = (e) => { if (e.key === 'Enter') handleSubmit(); };
+    closeButton.onclick = () => passwordModal.style.display = 'none';
+    passwordModal.onclick = (e) => { if (e.target === passwordModal) passwordModal.style.display = 'none'; };
+    passwordModal.style.display = 'flex';
+    passwordInput.focus();
 }
 
 function createWeaverCard(personality) {
@@ -163,24 +202,6 @@ function createWeaverCard(personality) {
     return card;
 }
 
-function openWeaverTool(personality) {
-    const newModal = modalTemplate.cloneNode(true);
-    newModal.removeAttribute('id');
-    newModal.style.zIndex = zIndexCounter++;
-    const modalBody = newModal.querySelector('#main-modal-body');
-    const closeButton = newModal.querySelector('.modal-close-btn');
-    const weaverName = personality.fields.weaverName;
-    modalBody.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6">${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}<div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div></div><div><textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea><button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button><div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div class="weaver-result"></div></div></div></div>`;
-    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
-    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
-    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
-    newModal.addEventListener('click', (e) => {
-        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
-    });
-    modalContainer.appendChild(newModal);
-    newModal.style.display = 'flex';
-}
-
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -192,7 +213,6 @@ function openCharacterGenerator(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
-
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
@@ -220,29 +240,22 @@ function openCharacterGenerator(personality) {
             </div>
         </div>
     `;
-
     const charGenBody = modalBody.querySelector('#char-gen-body');
-
     const populateSelect = (select, options) => {
         select.add(new Option('(Random)', 'RANDOM'));
         options.forEach(opt => select.add(new Option(opt, opt)));
     };
-    
     const addRow = (containerId, options, label, hasSub) => {
         const container = charGenBody.querySelector(containerId);
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
         let rowHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">${label}</label><select class="main-select w-full bg-gray-600 p-2.5"></select></div>`;
-        if (hasSub) {
-            rowHTML += `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-${label}</label><select class="sub-select w-full bg-gray-600 p-2.5"></select></div>`;
-        }
+        if (hasSub) { rowHTML += `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-${label}</label><select class="sub-select w-full bg-gray-600 p-2.5"></select></div>`; }
         rowHTML += `<button class="remove-btn text-red-400 font-bold text-xl">⊖</button>`;
         row.innerHTML = rowHTML;
         container.appendChild(row);
-
         const mainSelect = row.querySelector('.main-select');
         populateSelect(mainSelect, options.main);
-        
         if (hasSub) {
             const subSelect = row.querySelector('.sub-select');
             const updateSubOptions = () => {
@@ -259,13 +272,11 @@ function openCharacterGenerator(personality) {
             updateSubOptions();
         }
     };
-
     charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', { main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => { const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle); return kinship?.fields?.subkinships || []; } }, 'Kinship', true));
     charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow('#class-container', { main: (characterOptions.classes || []).map(c => c.fields.title), getSubs: (classTitle) => { const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle); return classPortal?.fields?.subclasses || []; } }, 'Class', true));
     charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { main: (characterOptions.spirits || []).map(s => s.fields.title) }, 'Spirit', false));
     charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false));
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
-
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
         let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima.`;
@@ -291,7 +302,6 @@ function openCharacterGenerator(personality) {
         const submitButton = modalBody.querySelector('#generate-char-button');
         handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton);
     });
-
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
         if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
@@ -327,31 +337,30 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
 }
 
 async function initializeSite() {
+    await loadHomepageContent();
+    const portalGrid = document.getElementById('portal-grid');
     try {
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
-            client.getEntries({ content_type: 'lore', 'fields.isHidden[ne]': 'true', include: 2 }),
+            // ** THE FIX IS HERE: Fetches all top-level portals, including hidden ones **
+            client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, include: 2 }),
             client.getEntries({ content_type: 'aiPersonality', include: 2 }),
             client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
         ]);
         
-        const allPortals = portalResponse.items;
+        const allTopLevelPortals = portalResponse.items;
         aiPersonalities = personalityResponse.items;
         if (optionsResponse.items.length > 0) {
             characterOptions = optionsResponse.items[0].fields;
         }
         
-        await loadHomepageContent();
-        const portalGrid = document.getElementById('portal-grid');
-        const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true);
-        
-        if (!topLevelPortals.length) {
+        if (!allTopLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
-            topLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
+            allTopLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
         }
     } catch (error) {
         console.error(error);
-        document.getElementById('portal-grid').innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
+        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
     }
 }
 
