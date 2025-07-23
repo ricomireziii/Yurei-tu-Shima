@@ -12,10 +12,10 @@ const client = contentful.createClient({
 const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
-let aiPersonalities = [];
 let characterOptions = null;
 
 async function loadHomepageContent() {
+    // This function remains the same
     try {
         const response = await client.getEntries({ content_type: 'homepage', limit: 1 });
         if (response.items.length > 0) {
@@ -51,34 +51,19 @@ function openPortal(portalItem) {
     if (portalItem.fields.introduction?.content) {
         modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
     }
+
+    // ** NEW DYNAMIC SUB-PORTAL/AI LOGIC **
     const subPortals = portalItem.fields.subPortals || [];
-    const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
-    const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
-    if (gridItems.length > 0) {
-        const gridContainer = document.createElement('div');
-        gridContainer.className = 'portal-container clear-both';
-        gridItems.forEach(item => { gridContainer.appendChild(createPortalElement(item)); });
-        modalBody.appendChild(gridContainer);
+    if (subPortals.length > 0) {
+        const subPortalContainer = document.createElement('div');
+        subPortalContainer.className = 'portal-container clear-both';
+        subPortals.forEach(item => {
+            const element = createGenericElement(item); // Use a new generic creation function
+            if (element) subPortalContainer.appendChild(element);
+        });
+        modalBody.appendChild(subPortalContainer);
     }
-    if (accordionItems.length > 0) {
-        const listContainer = document.createElement('div');
-        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'scroll-controls';
-        const expandButton = document.createElement('button');
-        expandButton.textContent = 'Expand All';
-        expandButton.className = 'scroll-button';
-        const collapseButton = document.createElement('button');
-        collapseButton.textContent = 'Collapse All';
-        collapseButton.className = 'scroll-button';
-        controlsDiv.appendChild(expandButton);
-        controlsDiv.appendChild(collapseButton);
-        modalBody.appendChild(controlsDiv);
-        accordionItems.forEach(item => { listContainer.appendChild(createPortalElement(item)); });
-        modalBody.appendChild(listContainer);
-        expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
-        collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
-    }
+    
     if (portalItem.fields.conclusion?.content) {
         modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
     }
@@ -90,17 +75,28 @@ function openPortal(portalItem) {
     newModal.style.display = 'flex';
 }
 
+
+// ** NEW GENERIC ELEMENT CREATION FUNCTION **
+function createGenericElement(item) {
+    if (!item || !item.sys || !item.fields) return null;
+
+    const contentType = item.sys.contentType.sys.id;
+
+    if (contentType === 'lore') { // Your Portal's ID
+        return createPortalElement(item);
+    }
+    if (contentType === 'aiPersonality') {
+        return createWeaverCard(item);
+    }
+    return null;
+}
+
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) return null;
-
-    if (portalItem.fields.isWeaversLoom) {
-        return createWeaversLoomPortal(portalItem);
-    }
     
     const isAccordion = portalItem.fields.displayType === 'Accordion';
     const portalButton = document.createElement('div');
     const portalWrapper = document.createElement('div');
-
     if (isAccordion) {
         portalWrapper.appendChild(portalButton);
         portalButton.className = 'portal-accordion-button group p-4 flex items-center text-left cursor-pointer';
@@ -137,52 +133,31 @@ function createPortalElement(portalItem) {
     }
 }
 
-function createWeaversLoomPortal(portalItem) {
-    const portalButton = document.createElement('div');
-    portalButton.className = 'portal-book';
+// ** NEW FUNCTION FOR CREATING AI CARDS **
+function createWeaverCard(personality) {
+    const weaverName = personality.fields.weaverName;
+    const card = document.createElement('div');
+    card.className = 'weaver-card portal-book'; // Use portal-book style for consistency
     const randomRotation = (Math.random() - 0.5) * 8;
-    portalButton.style.transform = `rotate(${randomRotation}deg)`;
-    let innerHtml = '';
-    if (portalItem.fields.portalImage?.fields?.file?.url) {
-        innerHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-cover">`;
-    }
-    innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
-    portalButton.innerHTML = innerHtml;
-    portalButton.addEventListener('click', () => { openWeaversLoom(); });
-    return portalButton;
-}
+    card.style.transform = `rotate(${randomRotation}deg)`;
 
-// ** THE FIX IS HERE: The logic inside this function was restored **
-function openWeaversLoom() {
-    const newModal = modalTemplate.cloneNode(true);
-    newModal.removeAttribute('id');
-    newModal.style.zIndex = zIndexCounter++;
-    const modalBody = newModal.querySelector('#main-modal-body');
-    const closeButton = newModal.querySelector('.modal-close-btn');
-    let loomHtml = `<div class="text-center mb-8"><h2 class="text-4xl font-serif text-amber-300 mb-2">The Weaver's Loom</h2></div><div id="weaver-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>`;
-    modalBody.innerHTML = loomHtml;
-    const cardsContainer = modalBody.querySelector('#weaver-cards-container');
-    aiPersonalities.forEach(personality => {
-        const weaverName = personality.fields.weaverName;
-        const card = document.createElement('div');
-        card.className = 'weaver-card bg-gray-800/50 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-800/80 transition-all border border-gray-700/50';
-        card.innerHTML = `<h3 class="text-2xl font-serif text-amber-400">${weaverName}</h3>`;
-        if (weaverName.toLowerCase().includes('character')) {
-            card.addEventListener('click', () => openCharacterGenerator(personality));
-        } else {
-            card.addEventListener('click', () => openWeaverTool(personality));
-        }
-        cardsContainer.appendChild(card);
-    });
-    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
-    newModal.addEventListener('click', (e) => {
-        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
-    });
-    modalContainer.appendChild(newModal);
-    newModal.style.display = 'flex';
+    let innerHtml = '';
+    if (personality.fields.weaverImage?.fields?.file?.url) {
+        innerHtml += `<img src="${'https:' + personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full h-full object-cover">`;
+    }
+    innerHtml += `<div class="overlay"></div><h4>${weaverName}</h4>`;
+    card.innerHTML = innerHtml;
+    
+    if (weaverName.toLowerCase().includes('character')) {
+        card.addEventListener('click', () => openCharacterGenerator(personality));
+    } else {
+        card.addEventListener('click', () => openWeaverTool(personality));
+    }
+    return card;
 }
 
 function openWeaverTool(personality) {
+    // This function remains the same
     const newModal = modalTemplate.cloneNode(true);
     newModal.removeAttribute('id');
     newModal.style.zIndex = zIndexCounter++;
@@ -279,52 +254,15 @@ function openCharacterGenerator(personality) {
         }
     };
 
-    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow(
-        '#kinship-container',
-        {
-            main: (characterOptions.kinships || []).map(k => k.fields.title),
-            getSubs: (kinshipTitle) => {
-                const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle);
-                return kinship?.fields?.subkinships || [];
-            }
-        },
-        'Kinship', true
-    ));
-
-    charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow(
-        '#class-container',
-        {
-            main: (characterOptions.classes || []).map(c => c.fields.title),
-            getSubs: (classTitle) => {
-                const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle);
-                return classPortal?.fields?.subclasses || [];
-            }
-        },
-        'Class', true
-    ));
-    
-    charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow(
-        '#spirit-container', 
-        { 
-            main: (characterOptions.spirits || []).map(s => s.fields.title)
-        }, 
-        'Spirit', false
-    ));
-    
-    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow(
-        '#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false
-    ));
-
-    charGenBody.addEventListener('click', e => {
-        if (e.target.classList.contains('remove-btn')) {
-            e.target.parentElement.remove();
-        }
-    });
+    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', { main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => { const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle); return kinship?.fields?.subkinships || []; } }, 'Kinship', true));
+    charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow('#class-container', { main: (characterOptions.classes || []).map(c => c.fields.title), getSubs: (classTitle) => { const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle); return classPortal?.fields?.subclasses || []; } }, 'Class', true));
+    charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { main: (characterOptions.spirits || []).map(s => s.fields.title) }, 'Spirit', false));
+    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false));
+    charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
 
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
         let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima.`;
-        
         const getSelections = (containerId, category) => {
             const selections = [];
             modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
@@ -334,23 +272,15 @@ function openCharacterGenerator(personality) {
                     selections.push(sub && sub.value && !sub.disabled ? `${main} (${sub.value})` : main);
                 }
             });
-            if (selections.length > 0) {
-                prompt += `\n- ${category}: ${selections.join(' and ')}`;
-            }
+            if (selections.length > 0) { prompt += `\n- ${category}: ${selections.join(' and ')}`; }
         };
-
         getSelections('#kinship-container', 'Kinship');
         getSelections('#class-container', 'Class');
         getSelections('#spirit-container', 'Spirit');
         getSelections('#background-container', 'Background');
-        
         const notes = modalBody.querySelector('#char-notes').value;
-        if (notes) {
-            prompt += `\n- Notes: "${notes}"`;
-        }
-
+        if (notes) { prompt += `\n- Notes: "${notes}"`; }
         prompt += `\n\nProvide a short concept including a name, personality, and plot hook.`;
-        
         const resultDiv = modalBody.querySelector('.weaver-result');
         const submitButton = modalBody.querySelector('#generate-char-button');
         handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton);
@@ -367,11 +297,9 @@ function openCharacterGenerator(personality) {
 async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
     const prompt = inputElement.value;
     if (!prompt) return;
-
     resultElement.parentElement.style.display = 'block';
     resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
-
     try {
         const response = await fetch('/api/gemini', {
             method: 'POST',
@@ -412,7 +340,7 @@ async function initializeSite() {
         if (!topLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
-            topLevelPortals.forEach(item => { portalGrid.appendChild(createPortalElement(item)); });
+            topLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
         }
     } catch (error) {
         console.error(error);
