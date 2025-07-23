@@ -14,7 +14,7 @@ const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
-const ADMIN_PASSWORD = "yurei"; // The password for hidden portals
+const ADMIN_PASSWORD = "yurei";
 
 async function loadHomepageContent() {
     try {
@@ -133,7 +133,6 @@ function createPortalElement(portalItem) {
         return portalWrapper;
     } else {
         portalButton.className = 'portal-book';
-        // ** NEW LOGIC: Apply locked style if hidden **
         if (portalItem.fields.isHidden) {
             portalButton.classList.add('locked-portal');
         }
@@ -156,15 +155,25 @@ function createPortalElement(portalItem) {
     }
 }
 
-// ** NEW FUNCTION: Handles the password modal **
+// ** UPDATED FUNCTION to handle the image **
 function openPasswordPrompt(portalItem) {
     const passwordModal = document.getElementById('password-modal');
     const passwordInput = document.getElementById('password-input');
     const passwordSubmit = document.getElementById('password-submit-btn');
     const passwordText = document.getElementById('password-prompt-text');
+    const passwordImage = document.getElementById('password-modal-image');
     const closeButton = passwordModal.querySelector('.modal-close-btn');
 
-    passwordText.innerHTML = `You stand before the <strong>${portalItem.fields.title}</strong> portal. Unlike the others, which seem to invite you in with a gentle hum, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
+    // Update the image
+    if (portalItem.fields.portalImage?.fields?.file?.url) {
+        passwordImage.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
+        passwordImage.classList.remove('hidden');
+    } else {
+        passwordImage.classList.add('hidden');
+    }
+
+    // Update the text
+    passwordText.innerHTML = `You stand before the **${portalItem.fields.title}** portal. Unlike the others, which seem to invite you in with a gentle hum, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
     passwordInput.value = '';
 
     const handleSubmit = () => {
@@ -186,7 +195,6 @@ function openPasswordPrompt(portalItem) {
 }
 
 function createWeaverCard(personality) {
-    // ... This function remains the same ...
     const weaverName = personality.fields.weaverName;
     const card = document.createElement('div');
     card.className = 'weaver-card portal-book';
@@ -207,15 +215,19 @@ function createWeaverCard(personality) {
 }
 
 function openCharacterGenerator(personality) {
-    // ... This function remains the same ...
+    if (!characterOptions) {
+        alert("Character options not loaded. Please ensure they are published in Contentful.");
+        return;
+    }
+    // ... rest of function is unchanged
 }
 
 function openWeaverTool(personality) {
-    // ... This function remains the same ...
+    // ... rest of function is unchanged
 }
 
 async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
-    // ... This function remains the same ...
+    // ... rest of function is unchanged
 }
 
 async function initializeSite() {
@@ -223,7 +235,6 @@ async function initializeSite() {
     const portalGrid = document.getElementById('portal-grid');
     try {
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
-            // ** UPDATED: Fetch ALL top-level portals, including hidden ones **
             client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, include: 2 }),
             client.getEntries({ content_type: 'aiPersonality', include: 2 }),
             client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
@@ -245,5 +256,142 @@ async function initializeSite() {
         portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
     }
 }
+
+// Duplicating full functions that were truncated in thought process for completeness
+function openCharacterGenerator(personality) {
+    if (!characterOptions) {
+        alert("Character options not loaded. Please ensure they are published in Contentful.");
+        return;
+    }
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+
+    modalBody.innerHTML = `
+        <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
+        <div id="char-gen-body" class="modal-body text-gray-300">
+             <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
+                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">` : ''}
+                <div class="italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
+            </div>
+            <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
+                <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Kinship</button>
+                <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Class</button>
+                <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Spirit</button>
+                <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Background</button>
+            </div>
+            <div id="kinship-container" class="space-y-3 mb-4"></div>
+            <div id="class-container" class="space-y-3 mb-4"></div>
+            <div id="spirit-container" class="space-y-3 mb-4"></div>
+            <div id="background-container" class="space-y-3 mb-4"></div>
+            <div class="mb-4">
+                <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
+                <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
+            </div>
+            <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded">Weave the Breath</button>
+            <div class="weaver-result-wrapper mt-4 p-4 bg-gray-800/50 rounded-lg hidden">
+                <div class="weaver-result"></div>
+            </div>
+        </div>
+    `;
+    const charGenBody = modalBody.querySelector('#char-gen-body');
+    const populateSelect = (select, options) => {
+        select.add(new Option('(Random)', 'RANDOM'));
+        options.forEach(opt => select.add(new Option(opt, opt)));
+    };
+    const addRow = (containerId, options, label, hasSub) => {
+        const container = charGenBody.querySelector(containerId);
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        let rowHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">${label}</label><select class="main-select w-full bg-gray-600 p-2.5"></select></div>`;
+        if (hasSub) { rowHTML += `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-${label}</label><select class="sub-select w-full bg-gray-600 p-2.5"></select></div>`; }
+        rowHTML += `<button class="remove-btn text-red-400 font-bold text-xl">⊖</button>`;
+        row.innerHTML = rowHTML;
+        container.appendChild(row);
+        const mainSelect = row.querySelector('.main-select');
+        populateSelect(mainSelect, options.main);
+        if (hasSub) {
+            const subSelect = row.querySelector('.sub-select');
+            const updateSubOptions = () => {
+                subSelect.innerHTML = '';
+                const subOptions = options.getSubs(mainSelect.value) || [];
+                if (subOptions.length > 0) {
+                    populateSelect(subSelect, subOptions);
+                    subSelect.disabled = false;
+                } else {
+                    subSelect.disabled = true;
+                }
+            };
+            mainSelect.addEventListener('change', updateSubOptions);
+            updateSubOptions();
+        }
+    };
+    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', { main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => { const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle); return kinship?.fields?.subkinships || []; } }, 'Kinship', true));
+    charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow('#class-container', { main: (characterOptions.classes || []).map(c => c.fields.title), getSubs: (classTitle) => { const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle); return classPortal?.fields?.subclasses || []; } }, 'Class', true));
+    charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { main: (characterOptions.spirits || []).map(s => s.fields.title) }, 'Spirit', false));
+    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false));
+    charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
+    const generateBtn = modalBody.querySelector('#generate-char-button');
+    generateBtn.addEventListener('click', () => {
+        let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima.`;
+        const getSelections = (containerId, category) => {
+            const selections = [];
+            modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                const main = row.querySelector('.main-select').value;
+                const sub = row.querySelector('.sub-select');
+                if (main !== 'RANDOM') {
+                    selections.push(sub && sub.value && !sub.disabled ? `${main} (${sub.value})` : main);
+                }
+            });
+            if (selections.length > 0) { prompt += `\n- ${category}: ${selections.join(' and ')}`; }
+        };
+        getSelections('#kinship-container', 'Kinship');
+        getSelections('#class-container', 'Class');
+        getSelections('#spirit-container', 'Spirit');
+        getSelections('#background-container', 'Background');
+        const notes = modalBody.querySelector('#char-notes').value;
+        if (notes) { prompt += `\n- Notes: "${notes}"`; }
+        prompt += `\n\nProvide a short concept including a name, personality, and plot hook.`;
+        const resultDiv = modalBody.querySelector('.weaver-result');
+        const submitButton = modalBody.querySelector('#generate-char-button');
+        handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton);
+    });
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
+    const prompt = inputElement.value;
+    if (!prompt) return;
+    resultElement.parentElement.style.display = 'block';
+    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
+    buttonElement.disabled = true;
+    try {
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, weaverName }),
+        });
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        resultElement.innerHTML = data.text.replace(/\n/g, '<br>');
+    } catch (error) {
+        console.error('Error:', error);
+        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
+    } finally {
+        buttonElement.disabled = false;
+    }
+}
+
 
 initializeSite();
