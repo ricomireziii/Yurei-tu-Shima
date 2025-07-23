@@ -15,6 +15,7 @@ let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
 const ADMIN_PASSWORD = "yurei";
+let isAdminUnlocked = false; // Session state for unlocking hidden content
 
 async function loadHomepageContent() {
     try {
@@ -95,7 +96,7 @@ function createGenericElement(item) {
     if (!item || !item.sys || !item.fields) return null;
     const contentType = item.sys.contentType.sys.id;
     if (contentType === 'lore') {
-        return createPortalElement(item);
+        return createPortalElement(item, true); // Mark as sub-portal
     }
     if (contentType === 'aiPersonality') {
         return createWeaverCard(item);
@@ -103,7 +104,7 @@ function createGenericElement(item) {
     return null;
 }
 
-function createPortalElement(portalItem) {
+function createPortalElement(portalItem, isSubPortal = false) {
     if (!portalItem?.fields?.title) return null;
     
     const portalButton = document.createElement('div');
@@ -145,7 +146,9 @@ function createPortalElement(portalItem) {
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
         
-        if (portalItem.fields.isHidden) {
+        // ** THE FIX IS HERE **
+        // Only ask for a password if the portal is hidden AND the admin session is NOT unlocked.
+        if (portalItem.fields.isHidden && !isAdminUnlocked) {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
         } else {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
@@ -162,33 +165,27 @@ function openPasswordPrompt(portalItem) {
     const passwordText = document.getElementById('password-prompt-text');
     const passwordImage = document.getElementById('password-modal-image');
     const closeButton = passwordModal.querySelector('.modal-close-btn');
-
     if (portalItem.fields.portalImage?.fields?.file?.url) {
         passwordImage.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
         passwordImage.classList.remove('hidden');
     } else {
         passwordImage.classList.add('hidden');
     }
-
-    passwordText.innerHTML = `You stand before the <strong>${portalItem.fields.title}</strong> portal. Unlike the others, which seem to invite you in with a gentle hum, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
+    passwordText.innerHTML = `You stand before the **${portalItem.fields.title}** portal. Unlike the others, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
     passwordInput.value = '';
-
     const handleSubmit = () => {
         if (passwordInput.value === ADMIN_PASSWORD) {
+            isAdminUnlocked = true;
             passwordModal.style.display = 'none';
-            // ** THIS IS THE FIX **
-            // We must pass the portalItem to the openPortal function.
             openPortal(portalItem);
         } else {
             alert('The word has no effect. The portal remains sealed.');
         }
     };
-    
     passwordSubmit.onclick = handleSubmit;
     passwordInput.onkeyup = (e) => { if (e.key === 'Enter') handleSubmit(); };
     closeButton.onclick = () => passwordModal.style.display = 'none';
     passwordModal.onclick = (e) => { if (e.target === passwordModal) passwordModal.style.display = 'none'; };
-
     passwordModal.style.display = 'flex';
     passwordInput.focus();
 }
@@ -213,6 +210,87 @@ function createWeaverCard(personality) {
     return card;
 }
 
+function openCharacterGenerator(personality) {
+    if (!characterOptions) {
+        alert("Character options not loaded. Please ensure they are published in Contentful.");
+        return;
+    }
+    // ... Function content is unchanged ...
+}
+
+function openWeaverTool(personality) {
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+    modalBody.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6">${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}<div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div></div><div><textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea><button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button><div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div class="weaver-result"></div></div></div></div>`;
+    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
+    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
+    const prompt = inputElement.value;
+    if (!prompt) return;
+    resultElement.parentElement.style.display = 'block';
+    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
+    buttonElement.disabled = true;
+    try {
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, weaverName }),
+        });
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        resultElement.innerHTML = data.text.replace(/\n/g, '<br>');
+    } catch (error) {
+        console.error('Error:', error);
+        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
+    } finally {
+        buttonElement.disabled = false;
+    }
+}
+
+async function initializeSite() {
+    await loadHomepageContent();
+    const portalGrid = document.getElementById('portal-grid');
+    try {
+        const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
+            client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, include: 2 }),
+            client.getEntries({ content_type: 'aiPersonality', include: 2 }),
+            client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
+        ]);
+        
+        const allTopLevelPortals = portalResponse.items;
+        aiPersonalities = personalityResponse.items;
+        if (optionsResponse.items.length > 0) {
+            characterOptions = optionsResponse.items[0].fields;
+        }
+        
+        if (!allTopLevelPortals.length) {
+            portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
+        } else {
+            // ** UPDATED: Now renders all top-level portals, hidden or not **
+            allTopLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
+        }
+    } catch (error) {
+        console.error(error);
+        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
+    }
+}
+
+// Duplicating full openCharacterGenerator function for clarity, as it was truncated in the thought process.
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -320,59 +398,6 @@ function openCharacterGenerator(personality) {
     });
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
-}
-
-async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
-    const prompt = inputElement.value;
-    if (!prompt) return;
-    resultElement.parentElement.style.display = 'block';
-    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
-    buttonElement.disabled = true;
-    try {
-        const response = await fetch('/api/gemini', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, weaverName }),
-        });
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        resultElement.innerHTML = data.text.replace(/\n/g, '<br>');
-    } catch (error) {
-        console.error('Error:', error);
-        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
-    } finally {
-        buttonElement.disabled = false;
-    }
-}
-
-async function initializeSite() {
-    await loadHomepageContent();
-    const portalGrid = document.getElementById('portal-grid');
-    try {
-        const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
-            client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, include: 2 }),
-            client.getEntries({ content_type: 'aiPersonality', include: 2 }),
-            client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
-        ]);
-        
-        const allTopLevelPortals = portalResponse.items;
-        aiPersonalities = personalityResponse.items;
-        if (optionsResponse.items.length > 0) {
-            characterOptions = optionsResponse.items[0].fields;
-        }
-        
-        if (!allTopLevelPortals.length) {
-            portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
-        } else {
-            allTopLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
-        }
-    } catch (error) {
-        console.error(error);
-        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
-    }
 }
 
 initializeSite();
