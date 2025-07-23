@@ -12,10 +12,11 @@ const client = contentful.createClient({
 const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
+let allPortals = []; // Cache for all portal entries
+let aiPersonalities = [];
 let characterOptions = null;
 
 async function loadHomepageContent() {
-    // This function remains the same
     try {
         const response = await client.getEntries({ content_type: 'homepage', limit: 1 });
         if (response.items.length > 0) {
@@ -51,19 +52,34 @@ function openPortal(portalItem) {
     if (portalItem.fields.introduction?.content) {
         modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
     }
-
-    // ** NEW DYNAMIC SUB-PORTAL/AI LOGIC **
     const subPortals = portalItem.fields.subPortals || [];
-    if (subPortals.length > 0) {
-        const subPortalContainer = document.createElement('div');
-        subPortalContainer.className = 'portal-container clear-both';
-        subPortals.forEach(item => {
-            const element = createGenericElement(item); // Use a new generic creation function
-            if (element) subPortalContainer.appendChild(element);
-        });
-        modalBody.appendChild(subPortalContainer);
+    const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
+    const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
+    if (gridItems.length > 0) {
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'portal-container clear-both';
+        gridItems.forEach(item => { gridContainer.appendChild(createGenericElement(item)); });
+        modalBody.appendChild(gridContainer);
     }
-    
+    if (accordionItems.length > 0) {
+        const listContainer = document.createElement('div');
+        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'scroll-controls';
+        const expandButton = document.createElement('button');
+        expandButton.textContent = 'Expand All';
+        expandButton.className = 'scroll-button';
+        const collapseButton = document.createElement('button');
+        collapseButton.textContent = 'Collapse All';
+        collapseButton.className = 'scroll-button';
+        controlsDiv.appendChild(expandButton);
+        controlsDiv.appendChild(collapseButton);
+        modalBody.appendChild(controlsDiv);
+        accordionItems.forEach(item => { listContainer.appendChild(createGenericElement(item)); });
+        modalBody.appendChild(listContainer);
+        expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
+        collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
+    }
     if (portalItem.fields.conclusion?.content) {
         modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
     }
@@ -75,14 +91,10 @@ function openPortal(portalItem) {
     newModal.style.display = 'flex';
 }
 
-
-// ** NEW GENERIC ELEMENT CREATION FUNCTION **
 function createGenericElement(item) {
     if (!item || !item.sys || !item.fields) return null;
-
     const contentType = item.sys.contentType.sys.id;
-
-    if (contentType === 'lore') { // Your Portal's ID
+    if (contentType === 'lore') {
         return createPortalElement(item);
     }
     if (contentType === 'aiPersonality') {
@@ -93,7 +105,6 @@ function createGenericElement(item) {
 
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) return null;
-    
     const isAccordion = portalItem.fields.displayType === 'Accordion';
     const portalButton = document.createElement('div');
     const portalWrapper = document.createElement('div');
@@ -133,21 +144,18 @@ function createPortalElement(portalItem) {
     }
 }
 
-// ** NEW FUNCTION FOR CREATING AI CARDS **
 function createWeaverCard(personality) {
     const weaverName = personality.fields.weaverName;
     const card = document.createElement('div');
-    card.className = 'weaver-card portal-book'; // Use portal-book style for consistency
+    card.className = 'weaver-card portal-book';
     const randomRotation = (Math.random() - 0.5) * 8;
     card.style.transform = `rotate(${randomRotation}deg)`;
-
     let innerHtml = '';
     if (personality.fields.weaverImage?.fields?.file?.url) {
         innerHtml += `<img src="${'https:' + personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full h-full object-cover">`;
     }
     innerHtml += `<div class="overlay"></div><h4>${weaverName}</h4>`;
     card.innerHTML = innerHtml;
-    
     if (weaverName.toLowerCase().includes('character')) {
         card.addEventListener('click', () => openCharacterGenerator(personality));
     } else {
@@ -157,7 +165,6 @@ function createWeaverCard(personality) {
 }
 
 function openWeaverTool(personality) {
-    // This function remains the same
     const newModal = modalTemplate.cloneNode(true);
     newModal.removeAttribute('id');
     newModal.style.zIndex = zIndexCounter++;
@@ -297,9 +304,11 @@ function openCharacterGenerator(personality) {
 async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
     const prompt = inputElement.value;
     if (!prompt) return;
+
     resultElement.parentElement.style.display = 'block';
     resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
+
     try {
         const response = await fetch('/api/gemini', {
             method: 'POST',
@@ -320,23 +329,29 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
     }
 }
 
+// ** THE FIX IS HERE **
+// This new version fetches all data first, then renders the page.
 async function initializeSite() {
-    await loadHomepageContent();
-    const portalGrid = document.getElementById('portal-grid');
     try {
+        // Fetch all necessary data in parallel
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
             client.getEntries({ content_type: 'lore', 'fields.isHidden[ne]': 'true', include: 2 }),
             client.getEntries({ content_type: 'aiPersonality', include: 2 }),
             client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
         ]);
         
-        const allPortals = portalResponse.items;
+        // Store the fetched data in our global variables
+        allPortals = portalResponse.items;
         aiPersonalities = personalityResponse.items;
         if (optionsResponse.items.length > 0) {
             characterOptions = optionsResponse.items[0].fields;
         }
-        
+
+        // Now that all data is loaded and ready, render the homepage content and portals
+        await loadHomepageContent();
+        const portalGrid = document.getElementById('portal-grid');
         const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true);
+        
         if (!topLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
@@ -344,7 +359,7 @@ async function initializeSite() {
         }
     } catch (error) {
         console.error(error);
-        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
+        document.getElementById('portal-grid').innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
     }
 }
 
