@@ -14,7 +14,10 @@ const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
-const ADMIN_PASSWORD = "yurei"; // The password for hidden portals
+const ADMIN_PASSWORD = "yurei";
+
+// ** NEW: A variable to track if the admin is "logged in" for the session **
+let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
     try {
@@ -105,10 +108,12 @@ function createGenericElement(item) {
 
 function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) return null;
-    const isAccordion = portalItem.fields.displayType === 'Accordion';
+    
     const portalButton = document.createElement('div');
-    const portalWrapper = document.createElement('div');
+    const isAccordion = portalItem.fields.displayType === 'Accordion';
+
     if (isAccordion) {
+        const portalWrapper = document.createElement('div');
         portalWrapper.appendChild(portalButton);
         portalButton.className = 'portal-accordion-button group p-4 flex items-center text-left cursor-pointer';
         if (portalItem.fields.portalImage?.fields?.file?.url) {
@@ -142,15 +147,26 @@ function createPortalElement(portalItem) {
         }
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
+        
+        // ** UPDATED LOGIC: Checks if already unlocked before prompting **
         if (portalItem.fields.isHidden) {
-            portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
+            portalButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isAdminUnlocked) {
+                    openPortal(portalItem);
+                } else {
+                    openPasswordPrompt(portalItem);
+                }
+            });
         } else {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
         }
+        
         return portalButton;
     }
 }
 
+// ** UPDATED FUNCTION: Sets the unlocked state on success **
 function openPasswordPrompt(portalItem) {
     const passwordModal = document.getElementById('password-modal');
     const passwordInput = document.getElementById('password-input');
@@ -168,6 +184,7 @@ function openPasswordPrompt(portalItem) {
     passwordInput.value = '';
     const handleSubmit = () => {
         if (passwordInput.value === ADMIN_PASSWORD) {
+            isAdminUnlocked = true; // Set the session to unlocked
             passwordModal.style.display = 'none';
             openPortal(portalItem);
         } else {
@@ -182,6 +199,7 @@ function openPasswordPrompt(portalItem) {
     passwordInput.focus();
 }
 
+// The rest of the functions (createWeaverCard, openWeaverTool, etc.) remain unchanged.
 function createWeaverCard(personality) {
     const weaverName = personality.fields.weaverName;
     const card = document.createElement('div');
@@ -341,7 +359,6 @@ async function initializeSite() {
     const portalGrid = document.getElementById('portal-grid');
     try {
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
-            // ** THE FIX IS HERE: Fetches all top-level portals, including hidden ones **
             client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, include: 2 }),
             client.getEntries({ content_type: 'aiPersonality', include: 2 }),
             client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
