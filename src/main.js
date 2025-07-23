@@ -16,9 +16,6 @@ let aiPersonalities = [];
 let characterOptions = null;
 const ADMIN_PASSWORD = "yurei";
 
-// ** NEW: A variable to track if the admin is "logged in" for the session **
-let isAdminUnlocked = false;
-
 async function loadHomepageContent() {
     try {
         const response = await client.getEntries({ content_type: 'homepage', limit: 1 });
@@ -148,16 +145,8 @@ function createPortalElement(portalItem) {
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
         
-        // ** UPDATED LOGIC: Checks if already unlocked before prompting **
         if (portalItem.fields.isHidden) {
-            portalButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (isAdminUnlocked) {
-                    openPortal(portalItem);
-                } else {
-                    openPasswordPrompt(portalItem);
-                }
-            });
+            portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
         } else {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
         }
@@ -166,7 +155,6 @@ function createPortalElement(portalItem) {
     }
 }
 
-// ** UPDATED FUNCTION: Sets the unlocked state on success **
 function openPasswordPrompt(portalItem) {
     const passwordModal = document.getElementById('password-modal');
     const passwordInput = document.getElementById('password-input');
@@ -174,32 +162,37 @@ function openPasswordPrompt(portalItem) {
     const passwordText = document.getElementById('password-prompt-text');
     const passwordImage = document.getElementById('password-modal-image');
     const closeButton = passwordModal.querySelector('.modal-close-btn');
+
     if (portalItem.fields.portalImage?.fields?.file?.url) {
         passwordImage.src = 'https:' + portalItem.fields.portalImage.fields.file.url;
         passwordImage.classList.remove('hidden');
     } else {
         passwordImage.classList.add('hidden');
     }
-    passwordText.innerHTML = `You stand before the **${portalItem.fields.title}** portal. Unlike the others, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
+
+    passwordText.innerHTML = `You stand before the <strong>${portalItem.fields.title}</strong> portal. Unlike the others, which seem to invite you in with a gentle hum, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
     passwordInput.value = '';
+
     const handleSubmit = () => {
         if (passwordInput.value === ADMIN_PASSWORD) {
-            isAdminUnlocked = true; // Set the session to unlocked
             passwordModal.style.display = 'none';
+            // ** THIS IS THE FIX **
+            // We must pass the portalItem to the openPortal function.
             openPortal(portalItem);
         } else {
             alert('The word has no effect. The portal remains sealed.');
         }
     };
+    
     passwordSubmit.onclick = handleSubmit;
     passwordInput.onkeyup = (e) => { if (e.key === 'Enter') handleSubmit(); };
     closeButton.onclick = () => passwordModal.style.display = 'none';
     passwordModal.onclick = (e) => { if (e.target === passwordModal) passwordModal.style.display = 'none'; };
+
     passwordModal.style.display = 'flex';
     passwordInput.focus();
 }
 
-// The rest of the functions (createWeaverCard, openWeaverTool, etc.) remain unchanged.
 function createWeaverCard(personality) {
     const weaverName = personality.fields.weaverName;
     const card = document.createElement('div');
@@ -231,6 +224,7 @@ function openCharacterGenerator(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
