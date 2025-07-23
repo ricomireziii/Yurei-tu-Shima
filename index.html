@@ -40,6 +40,15 @@
         </div>
     </div>
 
+    <div id="password-modal" class="modal">
+        <div class="modal-content bg-gray-800/90 backdrop-blur-md rounded-lg shadow-2xl m-auto p-6 md:p-8 max-w-md w-11/12 relative text-center">
+             <button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+             <div id="password-prompt-text" class="text-gray-300 mb-4"></div>
+             <input id="password-input" type="password" class="bg-gray-700 text-white text-center rounded p-2 w-full mb-4" placeholder="Speak a word of power...">
+             <button id="password-submit-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded">Proceed</button>
+        </div>
+    </div>
+
     <script type="module" src="./src/main.js"></script>
 </body>
 </html>
