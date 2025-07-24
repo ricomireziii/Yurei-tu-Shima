@@ -68,10 +68,10 @@ function openPortal(portalItem) {
         const controlsDiv = document.createElement('div');
         controlsDiv.className = 'scroll-controls';
         const expandButton = document.createElement('button');
-        expandButton.textContent = 'Expand All';
+        expandButton.textContent = 'Unfurl All'; // Changed text
         expandButton.className = 'scroll-button';
         const collapseButton = document.createElement('button');
-        collapseButton.textContent = 'Collapse All';
+        collapseButton.textContent = 'Furl All'; // Changed text
         collapseButton.className = 'scroll-button';
         controlsDiv.appendChild(expandButton);
         controlsDiv.appendChild(collapseButton);
@@ -169,7 +169,7 @@ function openPasswordPrompt(portalItem) {
     } else {
         passwordImage.classList.add('hidden');
     }
-    passwordText.innerHTML = `You stand before the **${portalItem.fields.title}** portal. Unlike the others, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
+    passwordText.innerHTML = `You stand before the <strong>${portalItem.fields.title}</strong> portal. Unlike the others, this one is unnervingly still. A single, ancient rune glows softly at its center, barring entry. To proceed, you must speak a word of power.`;
     passwordInput.value = '';
     const handleSubmit = () => {
         if (passwordInput.value === ADMIN_PASSWORD) {
@@ -208,6 +208,24 @@ function createWeaverCard(personality) {
     return card;
 }
 
+function openWeaverTool(personality) {
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+    modalBody.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6">${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}<div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div></div><div><textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea><button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button><div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div class="weaver-result"></div></div></div></div>`;
+    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
+    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -219,7 +237,6 @@ function openCharacterGenerator(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
-
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
@@ -359,13 +376,8 @@ async function initializeSite() {
         
         await loadHomepageContent();
         const portalGrid = document.getElementById('portal-grid');
+        const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true);
         
-        // ** THE FIX IS HERE **
-        // Fetches top-level portals and then sorts them based on the Sort Order field.
-        const topLevelPortals = allPortals
-            .filter(p => p.fields.isTopLevel === true)
-            .sort((a, b) => (a.fields.sortOrder || 999) - (b.fields.sortOrder || 999));
-
         if (!topLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
