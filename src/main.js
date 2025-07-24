@@ -15,7 +15,7 @@ let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
 const ADMIN_PASSWORD = "yurei";
-let isAdminUnlocked = false; // Session state for unlocking hidden content
+let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
     try {
@@ -96,7 +96,7 @@ function createGenericElement(item) {
     if (!item || !item.sys || !item.fields) return null;
     const contentType = item.sys.contentType.sys.id;
     if (contentType === 'lore') {
-        return createPortalElement(item, true); // Mark as sub-portal
+        return createPortalElement(item, true);
     }
     if (contentType === 'aiPersonality') {
         return createWeaverCard(item);
@@ -146,8 +146,6 @@ function createPortalElement(portalItem, isSubPortal = false) {
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
         
-        // ** THE FIX IS HERE **
-        // Only ask for a password if the portal is hidden AND the admin session is NOT unlocked.
         if (portalItem.fields.isHidden && !isAdminUnlocked) {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
         } else {
@@ -210,14 +208,6 @@ function createWeaverCard(personality) {
     return card;
 }
 
-function openCharacterGenerator(personality) {
-    if (!characterOptions) {
-        alert("Character options not loaded. Please ensure they are published in Contentful.");
-        return;
-    }
-    // ... Function content is unchanged ...
-}
-
 function openWeaverTool(personality) {
     const newModal = modalTemplate.cloneNode(true);
     newModal.removeAttribute('id');
@@ -236,61 +226,6 @@ function openWeaverTool(personality) {
     newModal.style.display = 'flex';
 }
 
-async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
-    const prompt = inputElement.value;
-    if (!prompt) return;
-    resultElement.parentElement.style.display = 'block';
-    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
-    buttonElement.disabled = true;
-    try {
-        const response = await fetch('/api/gemini', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, weaverName }),
-        });
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        resultElement.innerHTML = data.text.replace(/\n/g, '<br>');
-    } catch (error) {
-        console.error('Error:', error);
-        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
-    } finally {
-        buttonElement.disabled = false;
-    }
-}
-
-async function initializeSite() {
-    await loadHomepageContent();
-    const portalGrid = document.getElementById('portal-grid');
-    try {
-        const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
-            client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, include: 2 }),
-            client.getEntries({ content_type: 'aiPersonality', include: 2 }),
-            client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
-        ]);
-        
-        const allTopLevelPortals = portalResponse.items;
-        aiPersonalities = personalityResponse.items;
-        if (optionsResponse.items.length > 0) {
-            characterOptions = optionsResponse.items[0].fields;
-        }
-        
-        if (!allTopLevelPortals.length) {
-            portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
-        } else {
-            // ** UPDATED: Now renders all top-level portals, hidden or not **
-            allTopLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
-        }
-    } catch (error) {
-        console.error(error);
-        portalGrid.innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
-    }
-}
-
-// Duplicating full openCharacterGenerator function for clarity, as it was truncated in the thought process.
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -398,6 +333,61 @@ function openCharacterGenerator(personality) {
     });
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
+}
+
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
+    const prompt = inputElement.value;
+    if (!prompt) return;
+    resultElement.parentElement.style.display = 'block';
+    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
+    buttonElement.disabled = true;
+    try {
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, weaverName }),
+        });
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        resultElement.innerHTML = data.text.replace(/\n/g, '<br>');
+    } catch (error) {
+        console.error('Error:', error);
+        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
+    } finally {
+        buttonElement.disabled = false;
+    }
+}
+
+async function initializeSite() {
+    try {
+        const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
+            client.getEntries({ content_type: 'lore', include: 2 }), // Fetch all portals
+            client.getEntries({ content_type: 'aiPersonality', include: 2 }),
+            client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
+        ]);
+        
+        const allPortals = portalResponse.items;
+        aiPersonalities = personalityResponse.items;
+        if (optionsResponse.items.length > 0) {
+            characterOptions = optionsResponse.items[0].fields;
+        }
+        
+        await loadHomepageContent();
+        const portalGrid = document.getElementById('portal-grid');
+        const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true);
+        
+        if (!topLevelPortals.length) {
+            portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
+        } else {
+            topLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
+        }
+    } catch (error) {
+        console.error(error);
+        document.getElementById('portal-grid').innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
+    }
 }
 
 initializeSite();
