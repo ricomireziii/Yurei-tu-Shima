@@ -46,59 +46,44 @@ function openPortal(portalItem) {
     newModal.style.zIndex = zIndexCounter++;
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
-    
-    // ** THIS IS THE UPDATED LOGIC **
-    const hasText = (portalItem.fields.introduction?.content) || (portalItem.fields.conclusion?.content);
-
-    if (portalItem.fields.portalImage?.fields?.file?.url && !hasText) {
-        // If there's an image and NO text, create the image-only view
-        modalBody.innerHTML = `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-contain">`;
-        // Optional: you can add a class to the modal content for different styling
-        newModal.querySelector('.modal-content').style.background = 'none';
-        newModal.querySelector('.modal-content').style.boxShadow = 'none';
-
-    } else {
-        // Otherwise, build the standard portal layout
-        modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
-        if (portalItem.fields.portalImage?.fields?.file?.url) {
-            modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
-        }
-        if (portalItem.fields.introduction?.content) {
-            modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
-        }
-        const subPortals = portalItem.fields.subPortals || [];
-        const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
-        const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
-        if (gridItems.length > 0) {
-            const gridContainer = document.createElement('div');
-            gridContainer.className = 'portal-container clear-both';
-            gridItems.forEach(item => { gridContainer.appendChild(createGenericElement(item)); });
-            modalBody.appendChild(gridContainer);
-        }
-        if (accordionItems.length > 0) {
-            const listContainer = document.createElement('div');
-            listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
-            const controlsDiv = document.createElement('div');
-            controlsDiv.className = 'scroll-controls';
-            const expandButton = document.createElement('button');
-            expandButton.textContent = 'Unfurl All';
-            expandButton.className = 'scroll-button';
-            const collapseButton = document.createElement('button');
-            collapseButton.textContent = 'Furl All';
-            collapseButton.className = 'scroll-button';
-            controlsDiv.appendChild(expandButton);
-            controlsDiv.appendChild(collapseButton);
-            modalBody.appendChild(controlsDiv);
-            accordionItems.forEach(item => { listContainer.appendChild(createGenericElement(item)); });
-            modalBody.appendChild(listContainer);
-            expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
-            collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
-        }
-        if (portalItem.fields.conclusion?.content) {
-            modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
-        }
+    modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
+    if (portalItem.fields.portalImage?.fields?.file?.url) {
+        modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
     }
-
+    if (portalItem.fields.introduction?.content) {
+        modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
+    }
+    const subPortals = portalItem.fields.subPortals || [];
+    const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
+    const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
+    if (gridItems.length > 0) {
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'portal-container clear-both';
+        gridItems.forEach(item => { gridContainer.appendChild(createGenericElement(item)); });
+        modalBody.appendChild(gridContainer);
+    }
+    if (accordionItems.length > 0) {
+        const listContainer = document.createElement('div');
+        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'scroll-controls';
+        const expandButton = document.createElement('button');
+        expandButton.textContent = 'Unfurl All';
+        expandButton.className = 'scroll-button';
+        const collapseButton = document.createElement('button');
+        collapseButton.textContent = 'Furl All';
+        collapseButton.className = 'scroll-button';
+        controlsDiv.appendChild(expandButton);
+        controlsDiv.appendChild(collapseButton);
+        modalBody.appendChild(controlsDiv);
+        accordionItems.forEach(item => { listContainer.appendChild(createGenericElement(item)); });
+        modalBody.appendChild(listContainer);
+        expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
+        collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
+    }
+    if (portalItem.fields.conclusion?.content) {
+        modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
+    }
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
         if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
@@ -111,7 +96,7 @@ function createGenericElement(item) {
     if (!item || !item.sys || !item.fields) return null;
     const contentType = item.sys.contentType.sys.id;
     if (contentType === 'lore') {
-        return createPortalElement(item, true);
+        return createPortalElement(item);
     }
     if (contentType === 'aiPersonality') {
         return createWeaverCard(item);
@@ -119,7 +104,7 @@ function createGenericElement(item) {
     return null;
 }
 
-function createPortalElement(portalItem, isSubPortal = false) {
+function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) return null;
     
     const portalButton = document.createElement('div');
@@ -221,6 +206,24 @@ function createWeaverCard(personality) {
         card.addEventListener('click', () => openWeaverTool(personality));
     }
     return card;
+}
+
+function openWeaverTool(personality) {
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+    modalBody.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6">${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}<div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div></div><div><textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea><button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button><div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div class="weaver-result"></div></div></div></div>`;
+    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
+    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
 }
 
 function openCharacterGenerator(personality) {
