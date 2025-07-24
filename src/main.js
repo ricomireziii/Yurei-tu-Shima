@@ -15,8 +15,6 @@ let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
 const ADMIN_PASSWORD = "yurei";
-
-// ** THE FIX IS HERE: This variable is now in the global scope **
 let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
@@ -48,44 +46,59 @@ function openPortal(portalItem) {
     newModal.style.zIndex = zIndexCounter++;
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
-    modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
-    if (portalItem.fields.portalImage?.fields?.file?.url) {
-        modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
+    const modalContent = newModal.querySelector('.modal-content');
+
+    const hasText = (portalItem.fields.introduction?.content) || (portalItem.fields.conclusion?.content);
+
+    if (portalItem.fields.portalImage?.fields?.file?.url && !hasText) {
+        // Image-only view
+        modalBody.innerHTML = `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-contain">`;
+        modalContent.style.background = 'none';
+        modalContent.style.boxShadow = 'none';
+    } else {
+        // Standard view with text
+        modalContent.style.background = ''; // Reset style in case it was changed
+        modalContent.style.boxShadow = '';
+        modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
+        if (portalItem.fields.portalImage?.fields?.file?.url) {
+            modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
+        }
+        if (portalItem.fields.introduction?.content) {
+            modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
+        }
+        const subPortals = (portalItem.fields.subPortals || []).filter(Boolean);
+        const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
+        const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
+        if (gridItems.length > 0) {
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'portal-container clear-both';
+            gridItems.forEach(item => { gridContainer.appendChild(createGenericElement(item)); });
+            modalBody.appendChild(gridContainer);
+        }
+        if (accordionItems.length > 0) {
+            const listContainer = document.createElement('div');
+            listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'scroll-controls';
+            const expandButton = document.createElement('button');
+            expandButton.textContent = 'Unfurl All';
+            expandButton.className = 'scroll-button';
+            const collapseButton = document.createElement('button');
+            collapseButton.textContent = 'Furl All';
+            collapseButton.className = 'scroll-button';
+            controlsDiv.appendChild(expandButton);
+            controlsDiv.appendChild(collapseButton);
+            modalBody.appendChild(controlsDiv);
+            accordionItems.forEach(item => { listContainer.appendChild(createGenericElement(item)); });
+            modalBody.appendChild(listContainer);
+            expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
+            collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
+        }
+        if (portalItem.fields.conclusion?.content) {
+            modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
+        }
     }
-    if (portalItem.fields.introduction?.content) {
-        modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
-    }
-    const subPortals = (portalItem.fields.subPortals || []).filter(Boolean);
-    const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
-    const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
-    if (gridItems.length > 0) {
-        const gridContainer = document.createElement('div');
-        gridContainer.className = 'portal-container clear-both';
-        gridItems.forEach(item => { gridContainer.appendChild(createGenericElement(item)); });
-        modalBody.appendChild(gridContainer);
-    }
-    if (accordionItems.length > 0) {
-        const listContainer = document.createElement('div');
-        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'scroll-controls';
-        const expandButton = document.createElement('button');
-        expandButton.textContent = 'Unfurl All';
-        expandButton.className = 'scroll-button';
-        const collapseButton = document.createElement('button');
-        collapseButton.textContent = 'Furl All';
-        collapseButton.className = 'scroll-button';
-        controlsDiv.appendChild(expandButton);
-        controlsDiv.appendChild(collapseButton);
-        modalBody.appendChild(controlsDiv);
-        accordionItems.forEach(item => { listContainer.appendChild(createGenericElement(item)); });
-        modalBody.appendChild(listContainer);
-        expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
-        collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
-    }
-    if (portalItem.fields.conclusion?.content) {
-        modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
-    }
+
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
         if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
@@ -98,7 +111,7 @@ function createGenericElement(item) {
     if (!item || !item.sys || !item.fields) return null;
     const contentType = item.sys.contentType.sys.id;
     if (contentType === 'lore') {
-        return createPortalElement(item, true); // Mark as sub-portal
+        return createPortalElement(item);
     }
     if (contentType === 'aiPersonality') {
         return createWeaverCard(item);
@@ -106,7 +119,7 @@ function createGenericElement(item) {
     return null;
 }
 
-function createPortalElement(portalItem, isSubPortal = false) {
+function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) return null;
     
     const portalButton = document.createElement('div');
@@ -148,8 +161,7 @@ function createPortalElement(portalItem, isSubPortal = false) {
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
         
-        // This is the main logic for locking portals
-        if (portalItem.fields.isHidden && !isSubPortal && !isAdminUnlocked) {
+        if (portalItem.fields.isHidden && !isAdminUnlocked) {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
         } else {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
