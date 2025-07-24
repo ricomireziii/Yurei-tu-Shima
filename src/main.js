@@ -14,6 +14,10 @@ const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
+const ADMIN_PASSWORD = "yurei";
+
+// ** THE FIX IS HERE: This variable is now in the global scope **
+let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
     try {
@@ -51,11 +55,7 @@ function openPortal(portalItem) {
     if (portalItem.fields.introduction?.content) {
         modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
     }
-    
-    // ** THE FIX IS HERE **
-    // We add a filter to remove any undefined/null entries before processing.
     const subPortals = (portalItem.fields.subPortals || []).filter(Boolean);
-
     const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
     const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
     if (gridItems.length > 0) {
@@ -98,7 +98,7 @@ function createGenericElement(item) {
     if (!item || !item.sys || !item.fields) return null;
     const contentType = item.sys.contentType.sys.id;
     if (contentType === 'lore') {
-        return createPortalElement(item);
+        return createPortalElement(item, true); // Mark as sub-portal
     }
     if (contentType === 'aiPersonality') {
         return createWeaverCard(item);
@@ -106,7 +106,7 @@ function createGenericElement(item) {
     return null;
 }
 
-function createPortalElement(portalItem) {
+function createPortalElement(portalItem, isSubPortal = false) {
     if (!portalItem?.fields?.title) return null;
     
     const portalButton = document.createElement('div');
@@ -148,7 +148,8 @@ function createPortalElement(portalItem) {
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
         
-        if (portalItem.fields.isHidden && !isAdminUnlocked) {
+        // This is the main logic for locking portals
+        if (portalItem.fields.isHidden && !isSubPortal && !isAdminUnlocked) {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
         } else {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
@@ -210,6 +211,24 @@ function createWeaverCard(personality) {
     return card;
 }
 
+function openWeaverTool(personality) {
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+    modalBody.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6">${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}<div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div></div><div><textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea><button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button><div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div class="weaver-result"></div></div></div></div>`;
+    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
+    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -221,6 +240,7 @@ function openCharacterGenerator(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
