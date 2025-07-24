@@ -46,44 +46,59 @@ function openPortal(portalItem) {
     newModal.style.zIndex = zIndexCounter++;
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
-    modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
-    if (portalItem.fields.portalImage?.fields?.file?.url) {
-        modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
+    
+    // ** THIS IS THE UPDATED LOGIC **
+    const hasText = (portalItem.fields.introduction?.content) || (portalItem.fields.conclusion?.content);
+
+    if (portalItem.fields.portalImage?.fields?.file?.url && !hasText) {
+        // If there's an image and NO text, create the image-only view
+        modalBody.innerHTML = `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-contain">`;
+        // Optional: you can add a class to the modal content for different styling
+        newModal.querySelector('.modal-content').style.background = 'none';
+        newModal.querySelector('.modal-content').style.boxShadow = 'none';
+
+    } else {
+        // Otherwise, build the standard portal layout
+        modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
+        if (portalItem.fields.portalImage?.fields?.file?.url) {
+            modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
+        }
+        if (portalItem.fields.introduction?.content) {
+            modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
+        }
+        const subPortals = portalItem.fields.subPortals || [];
+        const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
+        const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
+        if (gridItems.length > 0) {
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'portal-container clear-both';
+            gridItems.forEach(item => { gridContainer.appendChild(createGenericElement(item)); });
+            modalBody.appendChild(gridContainer);
+        }
+        if (accordionItems.length > 0) {
+            const listContainer = document.createElement('div');
+            listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'scroll-controls';
+            const expandButton = document.createElement('button');
+            expandButton.textContent = 'Unfurl All';
+            expandButton.className = 'scroll-button';
+            const collapseButton = document.createElement('button');
+            collapseButton.textContent = 'Furl All';
+            collapseButton.className = 'scroll-button';
+            controlsDiv.appendChild(expandButton);
+            controlsDiv.appendChild(collapseButton);
+            modalBody.appendChild(controlsDiv);
+            accordionItems.forEach(item => { listContainer.appendChild(createGenericElement(item)); });
+            modalBody.appendChild(listContainer);
+            expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
+            collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
+        }
+        if (portalItem.fields.conclusion?.content) {
+            modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
+        }
     }
-    if (portalItem.fields.introduction?.content) {
-        modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
-    }
-    const subPortals = portalItem.fields.subPortals || [];
-    const accordionItems = subPortals.filter(p => p.fields.displayType === 'Accordion');
-    const gridItems = subPortals.filter(p => p.fields.displayType !== 'Accordion');
-    if (gridItems.length > 0) {
-        const gridContainer = document.createElement('div');
-        gridContainer.className = 'portal-container clear-both';
-        gridItems.forEach(item => { gridContainer.appendChild(createGenericElement(item)); });
-        modalBody.appendChild(gridContainer);
-    }
-    if (accordionItems.length > 0) {
-        const listContainer = document.createElement('div');
-        listContainer.className = 'sub-portal-container clear-both flex flex-col gap-2 mt-4';
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'scroll-controls';
-        const expandButton = document.createElement('button');
-        expandButton.textContent = 'Unfurl All';
-        expandButton.className = 'scroll-button';
-        const collapseButton = document.createElement('button');
-        collapseButton.textContent = 'Furl All';
-        collapseButton.className = 'scroll-button';
-        controlsDiv.appendChild(expandButton);
-        controlsDiv.appendChild(collapseButton);
-        modalBody.appendChild(controlsDiv);
-        accordionItems.forEach(item => { listContainer.appendChild(createGenericElement(item)); });
-        modalBody.appendChild(listContainer);
-        expandButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'block'));
-        collapseButton.addEventListener('click', () => listContainer.querySelectorAll('.accordion-panel').forEach(p => p.style.display = 'none'));
-    }
-    if (portalItem.fields.conclusion?.content) {
-        modalBody.insertAdjacentHTML('beforeend', `<div class="clear-both pt-4">${documentToHtmlString(portalItem.fields.conclusion)}</div>`);
-    }
+
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
         if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
@@ -345,12 +360,12 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
 async function initializeSite() {
     try {
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
-            client.getEntries({ content_type: 'lore', include: 2 }),
+            client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, order: 'fields.sortOrder', include: 2 }),
             client.getEntries({ content_type: 'aiPersonality', include: 2 }),
             client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
         ]);
         
-        const allPortals = portalResponse.items;
+        const allTopLevelPortals = portalResponse.items;
         aiPersonalities = personalityResponse.items;
         if (optionsResponse.items.length > 0) {
             characterOptions = optionsResponse.items[0].fields;
@@ -359,16 +374,10 @@ async function initializeSite() {
         await loadHomepageContent();
         const portalGrid = document.getElementById('portal-grid');
         
-        // ** THE FIX IS HERE **
-        // Fetches top-level portals and then sorts them by the Sort Order field.
-        const topLevelPortals = allPortals
-            .filter(p => p.fields.isTopLevel === true)
-            .sort((a, b) => (a.fields.sortOrder || 999) - (b.fields.sortOrder || 999));
-        
-        if (!topLevelPortals.length) {
+        if (!allTopLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
-            topLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
+            allTopLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
         }
     } catch (error) {
         console.error(error);
