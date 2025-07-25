@@ -15,8 +15,6 @@ let zIndexCounter = 100;
 let allPortals = []; // Cache for all portal entries
 let aiPersonalities = [];
 let characterOptions = null;
-const ADMIN_PASSWORD = "yurei";
-let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
     try {
@@ -27,15 +25,16 @@ async function loadHomepageContent() {
                 document.getElementById('app-container').querySelector('img').src = 'https:' + home.backgroundImage.fields.file.url;
             }
             const welcomeArea = document.getElementById('welcome-area');
+            let welcomeHtml = '';
+            if (home.welcomeImage?.fields?.file?.url) {
+                welcomeHtml += `<div class="w-full mb-6"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="w-full h-auto object-cover rounded-lg shadow-xl border-2 border-black/20"></div>`;
+            }
             let textHtml = '';
             if (home.welcomeTitle) { textHtml += `<h2 class="text-3xl lg:text-4xl font-serif text-gray-900">${home.welcomeTitle}</h2>`; }
             if (home.welcomeLetter) { textHtml += `<div class="font-caveat text-2xl lg:text-3xl text-gray-800 my-4">${documentToHtmlString(home.welcomeLetter)}</div>`; }
             if (home.professorsNote) { textHtml += `<hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><div class="text-sm">${documentToHtmlString(home.professorsNote)}</div></div>`; }
-            let imageHtml = '';
-            if (home.welcomeImage?.fields?.file?.url) {
-                imageHtml = `<div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>`;
-            }
-            welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
+            welcomeHtml += `<div class="w-full text-center bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>`;
+            welcomeArea.innerHTML = welcomeHtml;
         }
     } catch (error) { console.error("Failed to load homepage content:", error); }
 }
@@ -58,10 +57,13 @@ function openPortal(portalItem) {
     } else {
         modalContent.style.background = '';
         modalContent.style.boxShadow = '';
-        modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
+        
+        let modalHtml = `<h2 class="text-3xl font-serif text-amber-300 mb-4 text-center">${portalItem.fields.title}</h2>`;
         if (portalItem.fields.portalImage?.fields?.file?.url) {
-            modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
+            modalHtml += `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-auto object-contain rounded-lg mb-4">`;
         }
+        modalBody.innerHTML = modalHtml;
+
         if (portalItem.fields.introduction?.content) {
             modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
         }
@@ -106,11 +108,11 @@ function openPortal(portalItem) {
     newModal.style.display = 'flex';
 }
 
-function createGenericElement(item, isSub = false) {
+function createGenericElement(item) {
     if (!item || !item.sys || !item.fields) return null;
     const contentType = item.sys.contentType.sys.id;
     if (contentType === 'lore') {
-        return createPortalElement(item, isSub);
+        return createPortalElement(item);
     }
     if (contentType === 'aiPersonality') {
         return createWeaverCard(item);
@@ -118,7 +120,7 @@ function createGenericElement(item, isSub = false) {
     return null;
 }
 
-function createPortalElement(portalItem, isSubPortal = false) {
+function createPortalElement(portalItem) {
     if (!portalItem?.fields?.title) return null;
     
     const portalButton = document.createElement('div');
@@ -160,7 +162,7 @@ function createPortalElement(portalItem, isSubPortal = false) {
         innerHtml += `<div class="overlay"></div><h4>${portalItem.fields.title}</h4>`;
         portalButton.innerHTML = innerHtml;
         
-        if (portalItem.fields.isHidden && !isSubPortal && !isAdminUnlocked) {
+        if (portalItem.fields.isHidden && !isAdminUnlocked) {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPasswordPrompt(portalItem); });
         } else {
             portalButton.addEventListener('click', (e) => { e.stopPropagation(); openPortal(portalItem); });
@@ -436,7 +438,7 @@ async function initializeSite() {
         
         await loadHomepageContent();
         const portalGrid = document.getElementById('portal-grid');
-        const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true && !p.fields.isHidden);
+        const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true);
         
         if (!topLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
