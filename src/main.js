@@ -35,8 +35,9 @@ async function loadHomepageContent() {
                 // CHANGED: Removed width-restricting classes (md:w-2/5, lg:w-1/3) and md:mt-0 to make the image larger on desktops.
                 imageHtml = `<div class="w-full mt-6"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>`;
             }
+            // TWEAKED: Changed items-start to items-center to center the constrained text block.
             // CHANGED: Removed md:flex-row to enforce a stacked column layout on all screen sizes for the welcome area.
-            welcomeArea.innerHTML = `<div class="flex flex-col gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
+            welcomeArea.innerHTML = `<div class="flex flex-col gap-6 lg:gap-8 items-center"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
         }
     } catch (error) { console.error("Failed to load homepage content:", error); }
 }
@@ -231,11 +232,12 @@ function openWeaverTool(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
+    // TWEAKED: Removed md:flex-row from the container and md:w-1/3 from the image to make it stacked and full-width on all screen sizes.
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div class="modal-body text-gray-300">
-            <div class="flex flex-col md:flex-row gap-6 mb-6">
-                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
+            <div class="flex flex-col gap-6 mb-6">
+                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
                 <div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
             </div>
             <div>
