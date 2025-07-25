@@ -32,11 +32,8 @@ async function loadHomepageContent() {
             if (home.professorsNote) { textHtml += `<hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><div class="text-sm">${documentToHtmlString(home.professorsNote)}</div></div>`; }
             let imageHtml = '';
             if (home.welcomeImage?.fields?.file?.url) {
-                // CHANGED: Removed width-restricting classes (md:w-2/5, lg:w-1/3) and md:mt-0 to make the image larger on desktops.
                 imageHtml = `<div class="w-full mt-6"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>`;
             }
-            // TWEAKED: Changed items-start to items-center to center the constrained text block.
-            // CHANGED: Removed md:flex-row to enforce a stacked column layout on all screen sizes for the welcome area.
             welcomeArea.innerHTML = `<div class="flex flex-col gap-6 lg:gap-8 items-center"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
         }
     } catch (error) { console.error("Failed to load homepage content:", error); }
@@ -62,7 +59,6 @@ function openPortal(portalItem) {
         modalContent.style.boxShadow = '';
         modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
         if (portalItem.fields.portalImage?.fields?.file?.url) {
-            // CHANGED: Removed md:w-1/3 and float-left to make the image full-width inside the modal on all screen sizes.
             modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-auto object-contain rounded-lg mb-4">`);
         }
         if (portalItem.fields.introduction?.content) {
@@ -136,7 +132,8 @@ function createPortalElement(portalItem) {
         }
         portalButton.insertAdjacentHTML('beforeend', `<h4 class="font-serif text-stone-800 group-hover:text-black transition-colors">${portalItem.fields.title}</h4>`);
         const accordionPanel = document.createElement('div');
-        accordionPanel.className = 'accordion-panel ml-16';
+        // CHANGED: Added text-stone-800 to make text dark on the new light scroll background.
+        accordionPanel.className = 'accordion-panel ml-16 text-stone-800';
         accordionPanel.style.display = 'none';
         let contentHtml = '';
         if (portalItem.fields.introduction?.content) contentHtml += documentToHtmlString(portalItem.fields.introduction);
@@ -217,7 +214,8 @@ function createWeaverCard(personality) {
     }
     innerHtml += `<div class="overlay"></div><h4>${weaverName}</h4>`;
     card.innerHTML = innerHtml;
-    if (weaverName.toLowerCase().includes('character')) {
+    // CHANGED: Updated the trigger text from 'character' to 'breath weaver'.
+    if (weaverName.toLowerCase().includes('breath weaver')) {
         card.addEventListener('click', () => openCharacterGenerator(personality));
     } else {
         card.addEventListener('click', () => openWeaverTool(personality));
@@ -232,7 +230,6 @@ function openWeaverTool(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
-    // TWEAKED: Removed md:flex-row from the container and md:w-1/3 from the image to make it stacked and full-width on all screen sizes.
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div class="modal-body text-gray-300">
@@ -289,6 +286,7 @@ function openCharacterGenerator(personality) {
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
 
+    // CHANGED: Updated "Class" to "Calling" throughout this HTML block.
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
@@ -298,12 +296,12 @@ function openCharacterGenerator(personality) {
             </div>
             <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
                 <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Kinship</button>
-                <button id="add-class-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Class</button>
+                <button id="add-calling-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Calling</button>
                 <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Spirit</button>
                 <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Background</button>
             </div>
             <div id="kinship-container" class="space-y-3 mb-4"></div>
-            <div id="class-container" class="space-y-3 mb-4"></div>
+            <div id="calling-container" class="space-y-3 mb-4"></div>
             <div id="spirit-container" class="space-y-3 mb-4"></div>
             <div id="background-container" class="space-y-3 mb-4"></div>
             <div class="mb-4">
@@ -352,10 +350,9 @@ function openCharacterGenerator(personality) {
             updateSubOptions();
         }
     };
-    // CHANGED: Corrected kinship?.fields?.subkinships to kinship?.fields?.subKinships (capital K).
     charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', { main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => { const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle); return kinship?.fields?.subKinships || []; } }, 'Kinship', true));
-    // CHANGED: Corrected classPortal?.fields?.subclasses to classPortal?.fields?.subClasses (capital C).
-    charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow('#class-container', { main: (characterOptions.classes || []).map(c => c.fields.title), getSubs: (classTitle) => { const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle); return classPortal?.fields?.subClasses || []; } }, 'Class', true));
+    // CHANGED: Logic for "Class" has been updated to "Calling" and now points to the new field IDs from Contentful.
+    charGenBody.querySelector('#add-calling-btn').addEventListener('click', () => addRow('#calling-container', { main: (characterOptions.callings || []).map(c => c.fields.title), getSubs: (callingTitle) => { const callingPortal = (characterOptions.callings || []).find(c => c.fields.title === callingTitle); return callingPortal?.fields?.subCallings || []; } }, 'Calling', true));
     charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { main: (characterOptions.spirits || []).map(s => s.fields.title) }, 'Spirit', false));
     charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false));
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
@@ -374,7 +371,8 @@ function openCharacterGenerator(personality) {
             if (selections.length > 0) { prompt += `\n- ${category}: ${selections.join(' and ')}`; }
         };
         getSelections('#kinship-container', 'Kinship');
-        getSelections('#class-container', 'Class');
+        // CHANGED: Updated to get selections from the new "Calling" container.
+        getSelections('#calling-container', 'Calling');
         getSelections('#spirit-container', 'Spirit');
         getSelections('#background-container', 'Background');
         const notes = modalBody.querySelector('#char-notes').value;
