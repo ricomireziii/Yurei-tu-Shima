@@ -15,7 +15,7 @@ let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
 const ADMIN_PASSWORD = "yurei";
-let isAdminUnlocked = false; // Correctly defined in the global scope
+let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
     try {
@@ -221,6 +221,52 @@ function createWeaverCard(personality) {
     return card;
 }
 
+// ** THE FIX IS HERE: This function is now fully restored **
+function openWeaverTool(personality) {
+    const newModal = modalTemplate.cloneNode(true);
+    newModal.removeAttribute('id');
+    newModal.style.zIndex = zIndexCounter++;
+    const modalBody = newModal.querySelector('#main-modal-body');
+    const closeButton = newModal.querySelector('.modal-close-btn');
+    const weaverName = personality.fields.weaverName;
+    modalBody.innerHTML = `
+        <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
+        <div class="modal-body text-gray-300">
+            <div class="flex flex-col md:flex-row gap-6 mb-6">
+                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
+                <div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
+            </div>
+            <div>
+                <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
+                <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
+                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative">
+                    <button class="copy-btn absolute top-2 right-2 text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Copy</button>
+                    <div class="weaver-result"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    const submitBtn = modalBody.querySelector('.weaver-submit-btn');
+    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
+    
+    const copyBtn = modalBody.querySelector('.copy-btn');
+    copyBtn.addEventListener('click', e => {
+        const textToCopy = e.target.nextElementSibling.innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            e.target.textContent = 'Copied!';
+            setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
+        });
+    });
+
+    closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
+    newModal.addEventListener('click', (e) => {
+        if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
+    });
+    modalContainer.appendChild(newModal);
+    newModal.style.display = 'flex';
+}
+
+// ** THE FIX IS HERE: This function is now fully restored **
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -232,6 +278,7 @@ function openCharacterGenerator(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
@@ -386,7 +433,7 @@ async function initializeSite() {
         if (!allTopLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
-            allTopLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item, false)); }); // Pass false for top-level
+            allTopLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
         }
     } catch (error) {
         console.error(error);
