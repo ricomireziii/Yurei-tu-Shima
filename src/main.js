@@ -32,9 +32,11 @@ async function loadHomepageContent() {
             if (home.professorsNote) { textHtml += `<hr class="border-stone-400/50 my-4"><div class="text-gray-700"><h3 class="text-xl font-bold text-gray-800 font-serif mb-2">A Note from the Professor</h3><div class="text-sm">${documentToHtmlString(home.professorsNote)}</div></div>`; }
             let imageHtml = '';
             if (home.welcomeImage?.fields?.file?.url) {
-                imageHtml = `<div class="w-full md:w-2/5 lg:w-1/3 mt-6 md:mt-0"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>`;
+                // CHANGED: Removed width-restricting classes (md:w-2/5, lg:w-1/3) and md:mt-0 to make the image larger on desktops.
+                imageHtml = `<div class="w-full mt-6"><img src="${'https:' + home.welcomeImage.fields.file.url}" class="rounded-lg shadow-xl border-2 border-black/20 w-full h-auto"></div>`;
             }
-            welcomeArea.innerHTML = `<div class="flex flex-col md:flex-row gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
+            // CHANGED: Removed md:flex-row to enforce a stacked column layout on all screen sizes for the welcome area.
+            welcomeArea.innerHTML = `<div class="flex flex-col gap-6 lg:gap-8 items-start"><div class="w-full md:w-3/5 lg:w-2/3 text-left bg-stone-200/90 text-gray-800 p-6 rounded-lg shadow-inner border border-stone-400/50">${textHtml}</div>${imageHtml}</div>`;
         }
     } catch (error) { console.error("Failed to load homepage content:", error); }
 }
@@ -59,7 +61,8 @@ function openPortal(portalItem) {
         modalContent.style.boxShadow = '';
         modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
         if (portalItem.fields.portalImage?.fields?.file?.url) {
-            modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full md:w-1/3 h-auto object-contain rounded-lg float-left mr-6 mb-4">`);
+            // CHANGED: Removed md:w-1/3 and float-left to make the image full-width inside the modal on all screen sizes.
+            modalBody.insertAdjacentHTML('beforeend', `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-auto object-contain rounded-lg mb-4">`);
         }
         if (portalItem.fields.introduction?.content) {
             modalBody.insertAdjacentHTML('beforeend', documentToHtmlString(portalItem.fields.introduction));
@@ -347,8 +350,10 @@ function openCharacterGenerator(personality) {
             updateSubOptions();
         }
     };
-    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', { main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => { const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle); return kinship?.fields?.subkinships || []; } }, 'Kinship', true));
-    charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow('#class-container', { main: (characterOptions.classes || []).map(c => c.fields.title), getSubs: (classTitle) => { const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle); return classPortal?.fields?.subclasses || []; } }, 'Class', true));
+    // CHANGED: Corrected kinship?.fields?.subkinships to kinship?.fields?.subKinships (capital K).
+    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', { main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => { const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle); return kinship?.fields?.subKinships || []; } }, 'Kinship', true));
+    // CHANGED: Corrected classPortal?.fields?.subclasses to classPortal?.fields?.subClasses (capital C).
+    charGenBody.querySelector('#add-class-btn').addEventListener('click', () => addRow('#class-container', { main: (characterOptions.classes || []).map(c => c.fields.title), getSubs: (classTitle) => { const classPortal = (characterOptions.classes || []).find(c => c.fields.title === classTitle); return classPortal?.fields?.subClasses || []; } }, 'Class', true));
     charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { main: (characterOptions.spirits || []).map(s => s.fields.title) }, 'Spirit', false));
     charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false));
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
