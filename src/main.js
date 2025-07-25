@@ -14,8 +14,6 @@ const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
 let aiPersonalities = [];
 let characterOptions = null;
-const ADMIN_PASSWORD = "yurei";
-let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
     try {
@@ -51,13 +49,11 @@ function openPortal(portalItem) {
     const hasText = (portalItem.fields.introduction?.content) || (portalItem.fields.conclusion?.content);
 
     if (portalItem.fields.portalImage?.fields?.file?.url && !hasText) {
-        // Image-only view
         modalBody.innerHTML = `<img src="${'https:' + portalItem.fields.portalImage.fields.file.url}" alt="${portalItem.fields.title}" class="w-full h-full object-contain">`;
         modalContent.style.background = 'none';
         modalContent.style.boxShadow = 'none';
     } else {
-        // Standard view with text
-        modalContent.style.background = ''; // Reset style in case it was changed
+        modalContent.style.background = '';
         modalContent.style.boxShadow = '';
         modalBody.innerHTML = `<h2 class="text-3xl font-serif text-amber-300 mb-4">${portalItem.fields.title}</h2>`;
         if (portalItem.fields.portalImage?.fields?.file?.url) {
@@ -230,9 +226,35 @@ function openWeaverTool(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
-    modalBody.innerHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div><div class="modal-body text-gray-300"><div class="flex flex-col md:flex-row gap-6 mb-6">${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}<div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div></div><div><textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea><button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button><div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden"><div class="weaver-result"></div></div></div></div>`;
+    modalBody.innerHTML = `
+        <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
+        <div class="modal-body text-gray-300">
+            <div class="flex flex-col md:flex-row gap-6 mb-6">
+                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full md:w-1/3 h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
+                <div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
+            </div>
+            <div>
+                <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
+                <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
+                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative">
+                    <button class="copy-btn absolute top-2 right-2 text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Copy</button>
+                    <div class="weaver-result"></div>
+                </div>
+            </div>
+        </div>
+    `;
     const submitBtn = modalBody.querySelector('.weaver-submit-btn');
     submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
+    
+    const copyBtn = modalBody.querySelector('.copy-btn');
+    copyBtn.addEventListener('click', e => {
+        const textToCopy = e.target.nextElementSibling.innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            e.target.textContent = 'Copied!';
+            setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
+        });
+    });
+
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
         if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
@@ -275,7 +297,8 @@ function openCharacterGenerator(personality) {
                 <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
             </div>
             <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded">Weave the Breath</button>
-            <div class="weaver-result-wrapper mt-4 p-4 bg-gray-800/50 rounded-lg hidden">
+            <div class="weaver-result-wrapper mt-4 p-4 bg-gray-800/50 rounded-lg hidden relative">
+                <button class="copy-btn absolute top-2 right-2 text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Copy</button>
                 <div class="weaver-result"></div>
             </div>
         </div>
@@ -342,6 +365,16 @@ function openCharacterGenerator(personality) {
         const submitButton = modalBody.querySelector('#generate-char-button');
         handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton);
     });
+    
+    const copyBtn = modalBody.querySelector('.copy-btn');
+    copyBtn.addEventListener('click', e => {
+        const textToCopy = e.target.nextElementSibling.innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            e.target.textContent = 'Copied!';
+            setTimeout(() => { e.target.textContent = 'Copy'; }, 2000);
+        });
+    });
+
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
     newModal.addEventListener('click', (e) => {
         if (e.target === newModal) { newModal.remove(); zIndexCounter--; }
