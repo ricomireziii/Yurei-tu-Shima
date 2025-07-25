@@ -12,11 +12,12 @@ const client = contentful.createClient({
 const modalContainer = document.getElementById('modal-container');
 const modalTemplate = document.getElementById('modal-template');
 let zIndexCounter = 100;
+let allPortals = [];
 let aiPersonalities = [];
 let characterOptions = null;
 const ADMIN_PASSWORD = "yurei";
 
-// ** THE FIX IS HERE: The variable is now at the top level (global scope) **
+// ** THE FIX IS HERE: The variable is now at the top level, accessible to all functions. **
 let isAdminUnlocked = false;
 
 async function loadHomepageContent() {
@@ -264,6 +265,7 @@ function openCharacterGenerator(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
@@ -418,14 +420,15 @@ async function initializeSite() {
         
         await loadHomepageContent();
         const portalGrid = document.getElementById('portal-grid');
-        const topLevelPortals = allPortals.filter(p => p.fields.isTopLevel === true);
+        
+        const topLevelPortals = allPortals
+            .filter(p => p.fields.isTopLevel === true)
+            .sort((a, b) => (a.fields.sortOrder || 999) - (b.fields.sortOrder || 999));
         
         if (!topLevelPortals.length) {
             portalGrid.innerHTML = '<p class="text-center text-amber-200">No top-level portals found.</p>';
         } else {
-            topLevelPortals.sort((a, b) => (a.fields.sortOrder || 999) - (b.fields.sortOrder || 999)).forEach(item => {
-                portalGrid.appendChild(createGenericElement(item));
-            });
+            topLevelPortals.forEach(item => { portalGrid.appendChild(createGenericElement(item)); });
         }
     } catch (error) {
         console.error(error);
