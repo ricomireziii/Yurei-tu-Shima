@@ -132,7 +132,6 @@ function createPortalElement(portalItem) {
         }
         portalButton.insertAdjacentHTML('beforeend', `<h4 class="font-serif text-stone-800 group-hover:text-black transition-colors">${portalItem.fields.title}</h4>`);
         const accordionPanel = document.createElement('div');
-        // CHANGED: Added text-stone-800 to make text dark on the new light scroll background.
         accordionPanel.className = 'accordion-panel ml-16 text-stone-800';
         accordionPanel.style.display = 'none';
         let contentHtml = '';
@@ -214,7 +213,6 @@ function createWeaverCard(personality) {
     }
     innerHtml += `<div class="overlay"></div><h4>${weaverName}</h4>`;
     card.innerHTML = innerHtml;
-    // CHANGED: Updated the trigger text from 'character' to 'breath weaver'.
     if (weaverName.toLowerCase().includes('breath weaver')) {
         card.addEventListener('click', () => openCharacterGenerator(personality));
     } else {
@@ -286,7 +284,6 @@ function openCharacterGenerator(personality) {
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
 
-    // CHANGED: Updated "Class" to "Calling" throughout this HTML block.
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
@@ -320,58 +317,145 @@ function openCharacterGenerator(personality) {
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
     const populateSelect = (select, options) => {
+        select.innerHTML = ''; // Clear previous options
         select.add(new Option('(Random)', 'RANDOM'));
         options.forEach(opt => select.add(new Option(opt, opt)));
     };
-    const addRow = (containerId, options, label, hasSub) => {
+
+    // --- REBUILT SECTION START ---
+    const addRow = (containerId, optionsConfig) => {
         const container = charGenBody.querySelector(containerId);
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-        let rowHTML = `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">${label}</label><select class="main-select w-full bg-gray-600 p-2.5"></select></div>`;
-        if (hasSub) { rowHTML += `<div class="flex-1"><label class="block text-xs text-gray-400 mb-1">Sub-${label}</label><select class="sub-select w-full bg-gray-600 p-2.5"></select></div>`; }
-        rowHTML += `<button class="remove-btn text-red-400 font-bold text-xl">⊖</button>`;
-        row.innerHTML = rowHTML;
+
+        const mainWrapper = document.createElement('div');
+        mainWrapper.className = 'flex-1';
+        mainWrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">${optionsConfig.label}</label><select class="main-select w-full bg-gray-600 p-2.5"></select>`;
+        row.appendChild(mainWrapper);
+
+        const subWrapper = document.createElement('div');
+        subWrapper.className = 'flex-1 hidden';
+        subWrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">Sub-${optionsConfig.label}</label><select class="sub-select w-full bg-gray-600 p-2.5"></select>`;
+        row.appendChild(subWrapper);
+
+        const tertiaryWrapper = document.createElement('div');
+        tertiaryWrapper.className = 'flex-1 hidden';
+        tertiaryWrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">Type</label><select class="tertiary-select w-full bg-gray-600 p-2.5"></select>`;
+        row.appendChild(tertiaryWrapper);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn text-red-400 font-bold text-xl';
+        removeBtn.innerHTML = '⊖';
+        row.appendChild(removeBtn);
+        
         container.appendChild(row);
+
         const mainSelect = row.querySelector('.main-select');
-        populateSelect(mainSelect, options.main);
-        if (hasSub) {
-            const subSelect = row.querySelector('.sub-select');
-            const updateSubOptions = () => {
-                subSelect.innerHTML = '';
-                const subOptions = options.getSubs(mainSelect.value) || [];
-                if (subOptions.length > 0) {
-                    populateSelect(subSelect, subOptions);
+        const subSelect = row.querySelector('.sub-select');
+        const tertiarySelect = row.querySelector('.tertiary-select');
+
+        populateSelect(mainSelect, optionsConfig.main);
+
+        mainSelect.addEventListener('change', () => {
+            const selectedMain = mainSelect.value;
+            const subOptions = optionsConfig.getSubs(selectedMain);
+
+            tertiaryWrapper.classList.add('hidden');
+            tertiarySelect.innerHTML = '';
+            
+            if (subOptions && subOptions.length > 0) {
+                if (subOptions[0]?.sys?.contentType?.sys?.id === 'subTypeGroup') {
+                    populateSelect(subSelect, subOptions.map(s => s.fields.groupName));
+                    subWrapper.classList.remove('hidden');
                     subSelect.disabled = false;
+                    subSelect.dispatchEvent(new Event('change'));
                 } else {
-                    subSelect.disabled = true;
+                    populateSelect(subSelect, subOptions);
+                    subWrapper.classList.remove('hidden');
+                    subSelect.disabled = false;
                 }
-            };
-            mainSelect.addEventListener('change', updateSubOptions);
-            updateSubOptions();
+            } else {
+                subWrapper.classList.add('hidden');
+                subSelect.innerHTML = '';
+                subSelect.disabled = true;
+            }
+        });
+
+        subSelect.addEventListener('change', () => {
+            const selectedMain = mainSelect.value;
+            const selectedSub = subSelect.value;
+            const tertiaryOptions = optionsConfig.getTertiaries(selectedMain, selectedSub);
+
+            if (tertiaryOptions && tertiaryOptions.length > 0) {
+                populateSelect(tertiarySelect, tertiaryOptions);
+                tertiaryWrapper.classList.remove('hidden');
+                tertiarySelect.disabled = false;
+            } else {
+                tertiaryWrapper.classList.add('hidden');
+                tertiarySelect.innerHTML = '';
+                tertiarySelect.disabled = true;
+            }
+        });
+        mainSelect.dispatchEvent(new Event('change'));
+    };
+    
+    const kinshipConfig = {
+        label: 'Kinship',
+        main: (characterOptions.kinships || []).map(k => k.fields.title),
+        getSubs: (kinshipTitle) => {
+            const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle);
+            return kinship?.fields?.subKinshipGroups || [];
+        },
+        getTertiaries: (kinshipTitle, subGroupName) => {
+            const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle);
+            const subGroup = (kinship?.fields?.subKinshipGroups || []).find(s => s.fields.groupName === subGroupName);
+            return subGroup?.fields?.options || [];
         }
     };
-    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', { main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => { const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle); return kinship?.fields?.subKinships || []; } }, 'Kinship', true));
-    // CHANGED: Logic for "Class" has been updated to "Calling" and now points to the new field IDs from Contentful.
-    charGenBody.querySelector('#add-calling-btn').addEventListener('click', () => addRow('#calling-container', { main: (characterOptions.callings || []).map(c => c.fields.title), getSubs: (callingTitle) => { const callingPortal = (characterOptions.callings || []).find(c => c.fields.title === callingTitle); return callingPortal?.fields?.subCallings || []; } }, 'Calling', true));
-    charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { main: (characterOptions.spirits || []).map(s => s.fields.title) }, 'Spirit', false));
-    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { main: characterOptions.backgrounds || [] }, 'Background', false));
+    const callingConfig = {
+        label: 'Calling',
+        main: (characterOptions.callings || []).map(c => c.fields.title),
+        getSubs: (callingTitle) => {
+            const calling = (characterOptions.callings || []).find(c => c.fields.title === callingTitle);
+            return calling?.fields?.subCallings || [];
+        },
+        getTertiaries: () => []
+    };
+
+    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', kinshipConfig));
+    charGenBody.querySelector('#add-calling-btn').addEventListener('click', () => addRow('#calling-container', callingConfig));
+    charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { label: 'Spirit', main: (characterOptions.spirits || []).map(s => s.fields.title), getSubs: () => [], getTertiaries: () => [] }));
+    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { label: 'Background', main: characterOptions.backgrounds || [], getSubs: () => [], getTertiaries: () => [] }));
+    
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
+    
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
         let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima.`;
         const getSelections = (containerId, category) => {
             const selections = [];
             modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
-                const main = row.querySelector('.main-select').value;
+                const main = row.querySelector('.main-select')?.value;
                 const sub = row.querySelector('.sub-select');
-                if (main !== 'RANDOM') {
-                    selections.push(sub && sub.value && !sub.disabled ? `${main} (${sub.value})` : main);
+                const tertiary = row.querySelector('.tertiary-select');
+                
+                if (main && main !== 'RANDOM') {
+                    let selectionText = main;
+                    if (sub && sub.value && !sub.disabled && sub.value !== 'RANDOM') {
+                        if (tertiary && tertiary.value && !tertiary.disabled && tertiary.value !== 'RANDOM') {
+                            selectionText = `${main} (${sub.value} - ${tertiary.value})`;
+                        } else {
+                            selectionText = `${main} (${sub.value})`;
+                        }
+                    }
+                    selections.push(selectionText);
                 }
             });
             if (selections.length > 0) { prompt += `\n- ${category}: ${selections.join(' and ')}`; }
         };
+        // --- REBUILT SECTION END ---
+
         getSelections('#kinship-container', 'Kinship');
-        // CHANGED: Updated to get selections from the new "Calling" container.
         getSelections('#calling-container', 'Calling');
         getSelections('#spirit-container', 'Spirit');
         getSelections('#background-container', 'Background');
@@ -435,7 +519,7 @@ async function initializeSite() {
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
             client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, order: 'fields.sortOrder', include: 10 }),
             client.getEntries({ content_type: 'aiPersonality', include: 2 }),
-            client.getEntries({ content_type: 'characterOptions', limit: 1, include: 2 })
+            client.getEntries({ content_type: 'characterOptions', limit: 1, include: 10 })
         ]);
         
         const allTopLevelPortals = portalResponse.items;
