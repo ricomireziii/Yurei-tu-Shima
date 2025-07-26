@@ -317,12 +317,11 @@ function openCharacterGenerator(personality) {
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
     const populateSelect = (select, options) => {
-        select.innerHTML = ''; // Clear previous options
+        select.innerHTML = '';
         select.add(new Option('(Random)', 'RANDOM'));
         options.forEach(opt => select.add(new Option(opt, opt)));
     };
 
-    // --- REBUILT SECTION START ---
     const addRow = (containerId, optionsConfig) => {
         const container = charGenBody.querySelector(containerId);
         const row = document.createElement('div');
@@ -412,14 +411,20 @@ function openCharacterGenerator(personality) {
             return subGroup?.fields?.options || [];
         }
     };
+    
+    // FINAL CHANGE: Updated callingConfig to use the same 3-level logic as kinships.
     const callingConfig = {
         label: 'Calling',
         main: (characterOptions.callings || []).map(c => c.fields.title),
         getSubs: (callingTitle) => {
             const calling = (characterOptions.callings || []).find(c => c.fields.title === callingTitle);
-            return calling?.fields?.subCallings || [];
+            return calling?.fields?.subCallingGroups || [];
         },
-        getTertiaries: () => []
+        getTertiaries: (callingTitle, subGroupName) => {
+            const calling = (characterOptions.callings || []).find(c => c.fields.title === callingTitle);
+            const subGroup = (calling?.fields?.subCallingGroups || []).find(s => s.fields.groupName === subGroupName);
+            return subGroup?.fields?.options || [];
+        }
     };
 
     charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', kinshipConfig));
@@ -453,7 +458,6 @@ function openCharacterGenerator(personality) {
             });
             if (selections.length > 0) { prompt += `\n- ${category}: ${selections.join(' and ')}`; }
         };
-        // --- REBUILT SECTION END ---
 
         getSelections('#kinship-container', 'Kinship');
         getSelections('#calling-container', 'Calling');
