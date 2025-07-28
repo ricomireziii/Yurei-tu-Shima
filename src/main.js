@@ -412,7 +412,6 @@ function openCharacterGenerator(personality) {
         }
     };
     
-    // FINAL CHANGE: Updated callingConfig to use the same 3-level logic as kinships.
     const callingConfig = {
         label: 'Calling',
         main: (characterOptions.callings || []).map(c => c.fields.title),
@@ -436,7 +435,8 @@ function openCharacterGenerator(personality) {
     
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
-        let prompt = `Generate a character concept for a D&D 5e campaign set in Yurei-tu-Shima.`;
+        // CORRECTED: This line now de-emphasizes D&D and prioritizes the setting.
+        let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting, using D&D 5e as the ruleset.`;
         const getSelections = (containerId, category) => {
             const selections = [];
             modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
@@ -465,7 +465,8 @@ function openCharacterGenerator(personality) {
         getSelections('#background-container', 'Background');
         const notes = modalBody.querySelector('#char-notes').value;
         if (notes) { prompt += `\n- Notes: "${notes}"`; }
-        prompt += `\n\nProvide a short concept including a name, personality, and plot hook.`;
+        
+        prompt += `\n\nProvide a character concept including a name, detailed physical and personality descriptions, and a plot hook.`;
         const resultDiv = modalBody.querySelector('.weaver-result');
         const submitButton = modalBody.querySelector('#generate-char-button');
         handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton);
