@@ -316,10 +316,13 @@ function openCharacterGenerator(personality) {
         </div>
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
+    
+    // --- REBUILT SECTION START (for Custom Inputs) ---
     const populateSelect = (select, options) => {
         select.innerHTML = '';
         select.add(new Option('(Random)', 'RANDOM'));
         options.forEach(opt => select.add(new Option(opt, opt)));
+        select.add(new Option('(Custom...)', 'CUSTOM_ENTRY'));
     };
 
     const addRow = (containerId, optionsConfig) => {
@@ -327,35 +330,47 @@ function openCharacterGenerator(personality) {
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
 
-        const mainWrapper = document.createElement('div');
-        mainWrapper.className = 'flex-1';
-        mainWrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">${optionsConfig.label}</label><select class="main-select w-full bg-gray-600 p-2.5"></select>`;
-        row.appendChild(mainWrapper);
+        const createSelectWrapper = (label, selectClass, inputClass) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex-1 hidden';
+            wrapper.innerHTML = `
+                <label class="block text-xs text-gray-400 mb-1">${label}</label>
+                <select class="${selectClass} w-full bg-gray-600 p-2.5"></select>
+                <input type="text" class="${inputClass} hidden w-full bg-gray-800 p-2.5 text-white rounded" placeholder="Enter custom...">
+            `;
+            return wrapper;
+        };
 
-        const subWrapper = document.createElement('div');
-        subWrapper.className = 'flex-1 hidden';
-        subWrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">Sub-${optionsConfig.label}</label><select class="sub-select w-full bg-gray-600 p-2.5"></select>`;
-        row.appendChild(subWrapper);
-
-        const tertiaryWrapper = document.createElement('div');
-        tertiaryWrapper.className = 'flex-1 hidden';
-        tertiaryWrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">Type</label><select class="tertiary-select w-full bg-gray-600 p-2.5"></select>`;
-        row.appendChild(tertiaryWrapper);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn text-red-400 font-bold text-xl';
-        removeBtn.innerHTML = '⊖';
-        row.appendChild(removeBtn);
+        const mainWrapper = createSelectWrapper(optionsConfig.label, 'main-select', 'main-custom-input');
+        mainWrapper.classList.remove('hidden');
+        const subWrapper = createSelectWrapper(`Sub-${optionsConfig.label}`, 'sub-select', 'sub-custom-input');
+        const tertiaryWrapper = createSelectWrapper('Type', 'tertiary-select', 'tertiary-custom-input');
         
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn text-red-400 font-bold text-xl self-end pb-1';
+        removeBtn.innerHTML = '⊖';
+
+        row.append(mainWrapper, subWrapper, tertiaryWrapper, removeBtn);
         container.appendChild(row);
 
         const mainSelect = row.querySelector('.main-select');
+        const mainCustomInput = row.querySelector('.main-custom-input');
         const subSelect = row.querySelector('.sub-select');
+        const subCustomInput = row.querySelector('.sub-custom-input');
         const tertiarySelect = row.querySelector('.tertiary-select');
+        const tertiaryCustomInput = row.querySelector('.tertiary-custom-input');
 
+        const handleCustomToggle = (selectEl, inputEl) => {
+            const isCustom = selectEl.value === 'CUSTOM_ENTRY';
+            selectEl.classList.toggle('hidden', isCustom);
+            inputEl.classList.toggle('hidden', !isCustom);
+            if (isCustom) inputEl.focus();
+        };
+        
         populateSelect(mainSelect, optionsConfig.main);
 
         mainSelect.addEventListener('change', () => {
+            handleCustomToggle(mainSelect, mainCustomInput);
             const selectedMain = mainSelect.value;
             const subOptions = optionsConfig.getSubs(selectedMain);
 
@@ -365,14 +380,12 @@ function openCharacterGenerator(personality) {
             if (subOptions && subOptions.length > 0) {
                 if (subOptions[0]?.sys?.contentType?.sys?.id === 'subTypeGroup') {
                     populateSelect(subSelect, subOptions.map(s => s.fields.groupName));
-                    subWrapper.classList.remove('hidden');
-                    subSelect.disabled = false;
-                    subSelect.dispatchEvent(new Event('change'));
                 } else {
                     populateSelect(subSelect, subOptions);
-                    subWrapper.classList.remove('hidden');
-                    subSelect.disabled = false;
                 }
+                subWrapper.classList.remove('hidden');
+                subSelect.disabled = false;
+                subSelect.dispatchEvent(new Event('change'));
             } else {
                 subWrapper.classList.add('hidden');
                 subSelect.innerHTML = '';
@@ -381,6 +394,7 @@ function openCharacterGenerator(personality) {
         });
 
         subSelect.addEventListener('change', () => {
+            handleCustomToggle(subSelect, subCustomInput);
             const selectedMain = mainSelect.value;
             const selectedSub = subSelect.value;
             const tertiaryOptions = optionsConfig.getTertiaries(selectedMain, selectedSub);
@@ -395,6 +409,9 @@ function openCharacterGenerator(personality) {
                 tertiarySelect.disabled = true;
             }
         });
+
+        tertiarySelect.addEventListener('change', () => handleCustomToggle(tertiarySelect, tertiaryCustomInput));
+        
         mainSelect.dispatchEvent(new Event('change'));
     };
     
@@ -435,22 +452,30 @@ function openCharacterGenerator(personality) {
     
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
-        // CORRECTED: This line now de-emphasizes D&D and prioritizes the setting.
         let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting, using D&D 5e as the ruleset.`;
+        
         const getSelections = (containerId, category) => {
             const selections = [];
             modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
-                const main = row.querySelector('.main-select')?.value;
-                const sub = row.querySelector('.sub-select');
-                const tertiary = row.querySelector('.tertiary-select');
-                
-                if (main && main !== 'RANDOM') {
-                    let selectionText = main;
-                    if (sub && sub.value && !sub.disabled && sub.value !== 'RANDOM') {
-                        if (tertiary && tertiary.value && !tertiary.disabled && tertiary.value !== 'RANDOM') {
-                            selectionText = `${main} (${sub.value} - ${tertiary.value})`;
+                const getVal = (type) => {
+                    const sel = row.querySelector(`.${type}-select`);
+                    if (!sel || sel.disabled) return null;
+                    if (sel.value === 'CUSTOM_ENTRY') {
+                        return row.querySelector(`.${type}-custom-input`).value.trim();
+                    }
+                    return sel.value === 'RANDOM' ? null : sel.value;
+                };
+
+                const mainVal = getVal('main');
+                if (mainVal) {
+                    const subVal = getVal('sub');
+                    const tertiaryVal = getVal('tertiary');
+                    let selectionText = mainVal;
+                    if (subVal) {
+                        if (tertiaryVal) {
+                            selectionText = `${mainVal} (${subVal} - ${tertiaryVal})`;
                         } else {
-                            selectionText = `${main} (${sub.value})`;
+                            selectionText = `${mainVal} (${subVal})`;
                         }
                     }
                     selections.push(selectionText);
@@ -458,6 +483,7 @@ function openCharacterGenerator(personality) {
             });
             if (selections.length > 0) { prompt += `\n- ${category}: ${selections.join(' and ')}`; }
         };
+        // --- REBUILT SECTION END ---
 
         getSelections('#kinship-container', 'Kinship');
         getSelections('#calling-container', 'Calling');
