@@ -7,7 +7,6 @@ const contentfulClient = createClient({
     accessToken: process.env.VITE_CONTENTFUL_ACCESS_TOKEN,
 });
 
-// UPDATED: This function now extracts all relevant details from a single portal.
 function getPortalText(portal) {
     if (!portal || !portal.fields) return '';
     let text = `Title: ${portal.fields.title}\n`;
@@ -24,20 +23,24 @@ function getPortalText(portal) {
         }
     }
     
+    // CHANGED: Added a check to ensure group.fields.options exists before using .join()
     if (portal.fields.subKinshipGroups && portal.fields.subKinshipGroups.length > 0) {
         text += "Sub-Kinship Groups:\n";
         portal.fields.subKinshipGroups.forEach(group => {
             if(group?.fields) {
-                text += `- ${group.fields.groupName}: ${group.fields.options.join(', ')}\n`;
+                const optionsText = Array.isArray(group.fields.options) ? group.fields.options.join(', ') : '';
+                text += `- ${group.fields.groupName}: ${optionsText}\n`;
             }
         });
     }
 
+    // CHANGED: Added a check to ensure group.fields.options exists before using .join()
     if (portal.fields.subCallingGroups && portal.fields.subCallingGroups.length > 0) {
         text += "Sub-Calling Groups:\n";
         portal.fields.subCallingGroups.forEach(group => {
             if(group?.fields) {
-                text += `- ${group.fields.groupName}: ${group.fields.options.join(', ')}\n`;
+                const optionsText = Array.isArray(group.fields.options) ? group.fields.options.join(', ') : '';
+                text += `- ${group.fields.groupName}: ${optionsText}\n`;
             }
         });
     }
@@ -52,14 +55,13 @@ function getPortalText(portal) {
     return text;
 }
 
-// NEW: This function recursively gathers text from a portal and all its sub-portals.
 function getAllPortalTextRecursive(portal, visitedIds = new Set()) {
     if (!portal || !portal.sys || !portal.fields || visitedIds.has(portal.sys.id)) {
         return '';
     }
     visitedIds.add(portal.sys.id);
 
-    let combinedText = getPortalText(portal) + '\n---\n'; // Use a separator for clarity
+    let combinedText = getPortalText(portal) + '\n---\n';
 
     if (portal.fields.subPortals && portal.fields.subPortals.length > 0) {
         portal.fields.subPortals.forEach(subPortal => {
@@ -82,7 +84,6 @@ export default async (req, context) => {
             throw new Error("Missing prompt or weaver name");
         }
         
-        // CHANGED: Increased include depth to 10 for recursive lore fetching.
         const personalityEntries = await contentfulClient.getEntries({
             content_type: 'aiPersonality',
             'fields.weaverName': weaverName,
@@ -109,12 +110,10 @@ export default async (req, context) => {
             });
             if (allPortals.items.length > 0) {
                 allPortals.items.forEach(portal => {
-                    // Uses the new comprehensive extractor for each portal.
                     knowledgeBase += getPortalText(portal) + '\n---\n';
                 });
             }
         } else {
-            // CHANGED: Logic now uses the recursive function for linked portals.
             if (personality.coreKnowledgePortals && personality.coreKnowledgePortals.length > 0) {
                 knowledgeBase += "--- CORE KNOWLEDGE (Answer with confidence as facts) ---\n";
                 personality.coreKnowledgePortals.forEach(portal => {
