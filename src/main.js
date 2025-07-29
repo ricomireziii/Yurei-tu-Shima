@@ -317,7 +317,6 @@ function openCharacterGenerator(personality) {
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
     
-    // --- REBUILT SECTION START (for Custom Inputs) ---
     const populateSelect = (select, options) => {
         select.innerHTML = '';
         select.add(new Option('(Random)', 'RANDOM'));
@@ -452,11 +451,13 @@ function openCharacterGenerator(personality) {
     
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
-        let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting, using D&D 5e as the ruleset.`;
-        
-        const getSelections = (containerId, category) => {
-            const selections = [];
-            modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+        // CHANGED: This function now gets a structured object of selections for the targeted search.
+        const getSelectionsObject = () => {
+            const selections = {};
+            const processContainer = (containerId, category) => {
+                const row = modalBody.querySelector(`${containerId} > div`);
+                if (!row) return;
+
                 const getVal = (type) => {
                     const sel = row.querySelector(`.${type}-select`);
                     if (!sel || sel.disabled) return null;
@@ -468,34 +469,42 @@ function openCharacterGenerator(personality) {
 
                 const mainVal = getVal('main');
                 if (mainVal) {
+                    selections[category] = mainVal;
                     const subVal = getVal('sub');
-                    const tertiaryVal = getVal('tertiary');
-                    let selectionText = mainVal;
                     if (subVal) {
+                        const tertiaryVal = getVal('tertiary');
                         if (tertiaryVal) {
-                            selectionText = `${mainVal} (${subVal} - ${tertiaryVal})`;
+                            selections[category] += ` (${subVal} - ${tertiaryVal})`;
                         } else {
-                            selectionText = `${mainVal} (${subVal})`;
+                            selections[category] += ` (${subVal})`;
                         }
                     }
-                    selections.push(selectionText);
                 }
-            });
-            if (selections.length > 0) { prompt += `\n- ${category}: ${selections.join(' and ')}`; }
-        };
-        // --- REBUILT SECTION END ---
+            };
 
-        getSelections('#kinship-container', 'Kinship');
-        getSelections('#calling-container', 'Calling');
-        getSelections('#spirit-container', 'Spirit');
-        getSelections('#background-container', 'Background');
-        const notes = modalBody.querySelector('#char-notes').value;
-        if (notes) { prompt += `\n- Notes: "${notes}"`; }
+            processContainer('#kinship-container', 'Kinship');
+            processContainer('#calling-container', 'Calling');
+            processContainer('#spirit-container', 'Spirit');
+            processContainer('#background-container', 'Background');
+            
+            const notes = modalBody.querySelector('#char-notes').value;
+            if(notes) selections['Notes'] = notes;
+
+            return selections;
+        };
         
+        const selectionsObject = getSelectionsObject();
+        
+        let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting, using D&D 5e as the ruleset.`;
+        for (const [category, value] of Object.entries(selectionsObject)) {
+            prompt += `\n- ${category}: ${value}`;
+        }
         prompt += `\n\nProvide a character concept including a name, detailed physical and personality descriptions, and a plot hook.`;
+
         const resultDiv = modalBody.querySelector('.weaver-result');
         const submitButton = modalBody.querySelector('#generate-char-button');
-        handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton);
+        // CHANGED: Now passing the selectionsObject to the request handler.
+        handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton, selectionsObject);
     });
     
     const copyBtn = modalBody.querySelector('.copy-icon-btn');
@@ -519,7 +528,8 @@ function openCharacterGenerator(personality) {
     newModal.style.display = 'flex';
 }
 
-async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement) {
+// CHANGED: Function now accepts an optional 'selections' object for targeted RAG.
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null) {
     const prompt = inputElement.value;
     if (!prompt) return;
     resultElement.parentElement.style.display = 'block';
@@ -529,7 +539,7 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         const response = await fetch('/api/gemini', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, weaverName }),
+            body: JSON.stringify({ prompt, weaverName, selections }),
         });
         if (!response.ok) {
             const errData = await response.json();

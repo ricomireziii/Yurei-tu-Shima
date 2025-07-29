@@ -20,12 +20,12 @@ const generativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export default async (req, context) => {
     try {
-        const { prompt, weaverName } = await req.json();
+        // CHANGED: Now receives a 'selections' object for targeted searching.
+        const { prompt, weaverName, selections } = await req.json();
         if (!prompt || !weaverName) {
             throw new Error("Missing prompt or weaver name");
         }
         
-        // Step 1: Still fetch the AI Personality to get the System Prompt
         const personalityEntries = await contentfulClient.getEntries({
             content_type: 'aiPersonality',
             'fields.weaverName': weaverName,
@@ -39,25 +39,24 @@ export default async (req, context) => {
         const systemPrompt = personality.systemPrompt || '';
         let knowledgeBase = '';
 
-        // Step 2: If the AI "Knows All Lore", perform the RAG process
         if (personality.knowsAllLore === true) {
-            // A. Convert the user's question into an embedding
-            const embeddingResult = await embeddingModel.embedContent(prompt);
+            // CHANGED: Creates a targeted search query from the 'selections' object.
+            // If 'selections' is not provided, it falls back to the original prompt text.
+            const searchQuery = selections ? Object.values(selections).join(' ') + ' Yurei-tu-Shima' : prompt;
+
+            const embeddingResult = await embeddingModel.embedContent(searchQuery);
             const queryEmbedding = embeddingResult.embedding.values;
 
-            // B. Use the embedding to search for relevant documents in Supabase
             const { data: documents, error: matchError } = await supabaseClient.rpc('match_documents', {
                 query_embedding: queryEmbedding,
-                match_threshold: 0.75, // Adjust this for more/less strict matching
-                // CHANGED: Increased from 7 to 9
-                match_count: 9, 
+                match_threshold: 0.75,
+                match_count: 9,
             });
 
             if (matchError) {
                 throw new Error(`Error matching documents: ${matchError.message}`);
             }
 
-            // C. Build the knowledge base from the retrieved documents
             knowledgeBase = "--- RELEVANT LORE ---\n" + documents.map(doc => doc.content).join('\n\n---\n\n');
         }
         
