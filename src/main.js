@@ -284,11 +284,12 @@ function openCharacterGenerator(personality) {
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
 
+    // CHANGED: The container div and the img tag below have been updated.
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
-             <div class="flex flex-col md:flex-row items-center gap-6 mb-6 text-left">
-                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="rounded-full border-2 border-gray-600 shadow-lg flex-shrink-0 w-36 h-36 object-cover">` : ''}
+             <div class="flex flex-col gap-6 mb-6 text-left">
+                ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
                 <div class="italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
             </div>
             <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
