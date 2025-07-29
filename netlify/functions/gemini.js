@@ -49,7 +49,8 @@ export default async (req, context) => {
             const { data: documents, error: matchError } = await supabaseClient.rpc('match_documents', {
                 query_embedding: queryEmbedding,
                 match_threshold: 0.75, // Adjust this for more/less strict matching
-                match_count: 5, // Get the top 5 most relevant chunks
+                // CHANGED: Increased from 7 to 9
+                match_count: 9, 
             });
 
             if (matchError) {
