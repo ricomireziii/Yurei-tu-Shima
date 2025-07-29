@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Initialize Clients with VITE_ prefix for Contentful variables
+// Initialize Clients
 const contentfulClient = createContentfulClient({
     space: process.env.VITE_CONTENTFUL_SPACE_ID,
     accessToken: process.env.VITE_CONTENTFUL_ACCESS_TOKEN,
@@ -20,9 +20,53 @@ const supabaseClient = createSupabaseClient(
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
+// This comprehensive function extracts all relevant details from a single portal.
+function getPortalText(portal) {
+    if (!portal || !portal.fields) return '';
+    let text = `Title: ${portal.fields.title}\n`;
+
+    if (portal.fields.introduction) {
+        text += `Introduction: ${documentToPlainTextString(portal.fields.introduction)}\n`;
+    }
+
+    if (portal.fields.portalImage?.fields) {
+        const imgTitle = portal.fields.portalImage.fields.title || '';
+        const imgDesc = portal.fields.portalImage.fields.description || '';
+        if (imgTitle || imgDesc) {
+            text += `Image Description: ${imgTitle}${imgTitle && imgDesc ? ' - ' : ''}${imgDesc}\n`;
+        }
+    }
+    
+    if (portal.fields.subKinshipGroups && portal.fields.subKinshipGroups.length > 0) {
+        text += "Sub-Kinship Groups:\n";
+        portal.fields.subKinshipGroups.forEach(group => {
+            if(group?.fields) {
+                const optionsText = Array.isArray(group.fields.options) ? group.fields.options.join(', ') : '';
+                text += `- ${group.fields.groupName}: ${optionsText}\n`;
+            }
+        });
+    }
+
+    if (portal.fields.subCallingGroups && portal.fields.subCallingGroups.length > 0) {
+        text += "Sub-Calling Groups:\n";
+        portal.fields.subCallingGroups.forEach(group => {
+            if(group?.fields) {
+                const optionsText = Array.isArray(group.fields.options) ? group.fields.options.join(', ') : '';
+                text += `- ${group.fields.groupName}: ${optionsText}\n`;
+            }
+        });
+    }
+
+    if (portal.fields.conclusion) {
+        text += `Conclusion: ${documentToPlainTextString(portal.fields.conclusion)}\n`;
+    }
+    return text;
+}
+
 // Function to break down large texts into smaller, overlapping chunks
 function chunkText(text, chunkSize = 500, overlap = 100) {
     const chunks = [];
+    if (!text) return chunks;
     for (let i = 0; i < text.length; i += (chunkSize - overlap)) {
         chunks.push(text.substring(i, i + chunkSize));
     }
@@ -32,7 +76,6 @@ function chunkText(text, chunkSize = 500, overlap = 100) {
 async function main() {
     console.log("Starting lore indexing process...");
 
-    // 1. Clear existing documents from the table to avoid duplicates
     console.log("Clearing existing documents from Supabase...");
     const { error: deleteError } = await supabaseClient.from('documents').delete().neq('id', 0);
     if (deleteError) {
@@ -41,28 +84,20 @@ async function main() {
     }
     console.log("Existing documents cleared.");
 
-    // 2. Fetch all lore from Contentful
     console.log("Fetching all lore entries from Contentful...");
+    // Fetch all lore with deep includes to get linked item data
     const allPortals = await contentfulClient.getEntries({
         content_type: 'lore',
         limit: 1000,
+        include: 10,
     });
     console.log(`Found ${allPortals.items.length} portal entries.`);
 
     const documentsToInsert = [];
 
-    // 3. Process each portal into chunks
     for (const portal of allPortals.items) {
-        if (!portal.fields.title) continue;
-
-        let portalText = `Title: ${portal.fields.title}\n`;
-        if (portal.fields.introduction) {
-            portalText += documentToPlainTextString(portal.fields.introduction);
-        }
-        if (portal.fields.conclusion) {
-            portalText += '\n' + documentToPlainTextString(portal.fields.conclusion);
-        }
-
+        // Use the new comprehensive function to get all text
+        const portalText = getPortalText(portal);
         const textChunks = chunkText(portalText);
         
         for (const chunk of textChunks) {
@@ -71,26 +106,35 @@ async function main() {
     }
     console.log(`Created ${documentsToInsert.length} text chunks to be embedded.`);
 
-    // 4. Generate embeddings and insert into Supabase in batches
-    const batchSize = 50; // Process in batches to avoid overwhelming the API
+    // Generate embeddings and insert into Supabase in batches
+    const batchSize = 50;
     for (let i = 0; i < documentsToInsert.length; i += batchSize) {
         const batch = documentsToInsert.slice(i, i + batchSize);
         const contentBatch = batch.map(doc => doc.content);
         
         console.log(`Generating embeddings for batch ${Math.floor(i / batchSize) + 1}...`);
-        const result = await embeddingModel.batchEmbedContents({
-            requests: contentBatch.map(text => ({ model: "models/text-embedding-004", content: { parts: [{ text }] } })),
-        });
+        try {
+            const result = await embeddingModel.batchEmbedContents({
+                requests: contentBatch.map(text => ({ model: "models/text-embedding-004", content: { parts: [{ text }] } })),
+            });
 
-        const embeddings = result.embeddings;
-        for (let j = 0; j < embeddings.length; j++) {
-            batch[j].embedding = embeddings[j].values;
-        }
+            const embeddings = result.embeddings;
+            if (embeddings.length !== batch.length) {
+                console.error(`Mismatch in batch size and embeddings returned. Batch: ${batch.length}, Embeddings: ${embeddings.length}`);
+                continue;
+            }
 
-        console.log(`Inserting batch ${Math.floor(i / batchSize) + 1} into Supabase...`);
-        const { error } = await supabaseClient.from('documents').insert(batch);
-        if (error) {
-            console.error("Error inserting batch:", error);
+            for (let j = 0; j < embeddings.length; j++) {
+                batch[j].embedding = embeddings[j].values;
+            }
+
+            console.log(`Inserting batch ${Math.floor(i / batchSize) + 1} into Supabase...`);
+            const { error } = await supabaseClient.from('documents').insert(batch);
+            if (error) {
+                console.error("Error inserting batch:", error);
+            }
+        } catch (e) {
+            console.error("Error generating embeddings for batch:", e);
         }
     }
 
