@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "index-lore": "node scripts/index-lore.js"
   },
   "devDependencies": {
     "vite": "^5.3.4"
@@ -15,6 +16,8 @@
     "@contentful/rich-text-html-renderer": "*",
     "@contentful/rich-text-plain-text-renderer": "*",
     "@google/generative-ai": "^0.15.0",
-    "contentful": "*"
+    "@supabase/supabase-js": "^2.53.0",
+    "contentful": "*",
+    "dotenv": "^17.2.1"
   }
 }

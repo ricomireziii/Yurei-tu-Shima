@@ -1,136 +1,68 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createClient } from 'contentful';
-import { documentToPlainTextString } from '@contentful/rich-text-plain-text-renderer';
+import { createClient as createContentfulClient } from 'contentful';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-const contentfulClient = createClient({
+// Initialize all necessary clients
+const contentfulClient = createContentfulClient({
     space: process.env.VITE_CONTENTFUL_SPACE_ID,
     accessToken: process.env.VITE_CONTENTFUL_ACCESS_TOKEN,
 });
 
-function getPortalText(portal) {
-    if (!portal || !portal.fields) return '';
-    let text = `Title: ${portal.fields.title}\n`;
+const supabaseClient = createSupabaseClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+);
 
-    if (portal.fields.introduction) {
-        text += `Introduction: ${documentToPlainTextString(portal.fields.introduction)}\n`;
-    }
-
-    if (portal.fields.portalImage?.fields) {
-        const imgTitle = portal.fields.portalImage.fields.title || '';
-        const imgDesc = portal.fields.portalImage.fields.description || '';
-        if (imgTitle || imgDesc) {
-            text += `Image Description: ${imgTitle}${imgTitle && imgDesc ? ' - ' : ''}${imgDesc}\n`;
-        }
-    }
-    
-    // CHANGED: Added a check to ensure group.fields.options exists before using .join()
-    if (portal.fields.subKinshipGroups && portal.fields.subKinshipGroups.length > 0) {
-        text += "Sub-Kinship Groups:\n";
-        portal.fields.subKinshipGroups.forEach(group => {
-            if(group?.fields) {
-                const optionsText = Array.isArray(group.fields.options) ? group.fields.options.join(', ') : '';
-                text += `- ${group.fields.groupName}: ${optionsText}\n`;
-            }
-        });
-    }
-
-    // CHANGED: Added a check to ensure group.fields.options exists before using .join()
-    if (portal.fields.subCallingGroups && portal.fields.subCallingGroups.length > 0) {
-        text += "Sub-Calling Groups:\n";
-        portal.fields.subCallingGroups.forEach(group => {
-            if(group?.fields) {
-                const optionsText = Array.isArray(group.fields.options) ? group.fields.options.join(', ') : '';
-                text += `- ${group.fields.groupName}: ${optionsText}\n`;
-            }
-        });
-    }
-
-    if (portal.fields.conclusion) {
-        text += `Conclusion: ${documentToPlainTextString(portal.fields.conclusion)}\n`;
-    }
-
-    if (portal.fields.isHidden) {
-        text += `(Note: This is hidden lore, not on the public website)\n`;
-    }
-    return text;
-}
-
-function getAllPortalTextRecursive(portal, visitedIds = new Set()) {
-    if (!portal || !portal.sys || !portal.fields || visitedIds.has(portal.sys.id)) {
-        return '';
-    }
-    visitedIds.add(portal.sys.id);
-
-    let combinedText = getPortalText(portal) + '\n---\n';
-
-    if (portal.fields.subPortals && portal.fields.subPortals.length > 0) {
-        portal.fields.subPortals.forEach(subPortal => {
-            if (subPortal && subPortal.sys && subPortal.fields) {
-                 combinedText += getAllPortalTextRecursive(subPortal, visitedIds);
-            }
-        });
-    }
-    return combinedText;
-}
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+const generativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 
 export default async (req, context) => {
     try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
         const { prompt, weaverName } = await req.json();
         if (!prompt || !weaverName) {
             throw new Error("Missing prompt or weaver name");
         }
         
+        // Step 1: Still fetch the AI Personality to get the System Prompt
         const personalityEntries = await contentfulClient.getEntries({
             content_type: 'aiPersonality',
             'fields.weaverName': weaverName,
             limit: 1,
-            include: 10 
         });
 
         if (personalityEntries.items.length === 0) {
             throw new Error(`Personality for ${weaverName} not found.`);
         }
-
         const personality = personalityEntries.items[0].fields;
         const systemPrompt = personality.systemPrompt || '';
         let knowledgeBase = '';
 
-        const visitedIds = new Set();
-        
+        // Step 2: If the AI "Knows All Lore", perform the RAG process
         if (personality.knowsAllLore === true) {
-            knowledgeBase += "--- COMPLETE KNOWLEDGE BASE (Public and Hidden Lore) ---\n";
-            const allPortals = await contentfulClient.getEntries({
-                content_type: 'lore',
-                limit: 1000,
-                include: 10
+            // A. Convert the user's question into an embedding
+            const embeddingResult = await embeddingModel.embedContent(prompt);
+            const queryEmbedding = embeddingResult.embedding.values;
+
+            // B. Use the embedding to search for relevant documents in Supabase
+            const { data: documents, error: matchError } = await supabaseClient.rpc('match_documents', {
+                query_embedding: queryEmbedding,
+                match_threshold: 0.75, // Adjust this for more/less strict matching
+                match_count: 5, // Get the top 5 most relevant chunks
             });
-            if (allPortals.items.length > 0) {
-                allPortals.items.forEach(portal => {
-                    knowledgeBase += getPortalText(portal) + '\n---\n';
-                });
+
+            if (matchError) {
+                throw new Error(`Error matching documents: ${matchError.message}`);
             }
-        } else {
-            if (personality.coreKnowledgePortals && personality.coreKnowledgePortals.length > 0) {
-                knowledgeBase += "--- CORE KNOWLEDGE (Answer with confidence as facts) ---\n";
-                personality.coreKnowledgePortals.forEach(portal => {
-                    knowledgeBase += getAllPortalTextRecursive(portal, visitedIds);
-                });
-            }
-            if (personality.hiddenLorePortals && personality.hiddenLorePortals.length > 0) {
-                knowledgeBase += "\n--- HIDDEN LORE (Secret information not on the website) ---\n";
-                personality.hiddenLorePortals.forEach(portal => {
-                    knowledgeBase += getAllPortalTextRecursive(portal, visitedIds);
-                });
-            }
+
+            // C. Build the knowledge base from the retrieved documents
+            knowledgeBase = "--- RELEVANT LORE ---\n" + documents.map(doc => doc.content).join('\n\n---\n\n');
         }
         
         const fullPrompt = `${systemPrompt}\n\n${knowledgeBase}\n\nUser Question: "${prompt}"`;
         
-        const result = await model.generateContent(fullPrompt);
+        const result = await generativeModel.generateContent(fullPrompt);
         const response = await result.response;
         const text = response.text();
 
