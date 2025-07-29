@@ -20,7 +20,6 @@ const generativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export default async (req, context) => {
     try {
-        // CHANGED: Now receives a 'selections' object for targeted searching.
         const { prompt, weaverName, selections } = await req.json();
         if (!prompt || !weaverName) {
             throw new Error("Missing prompt or weaver name");
@@ -40,8 +39,6 @@ export default async (req, context) => {
         let knowledgeBase = '';
 
         if (personality.knowsAllLore === true) {
-            // CHANGED: Creates a targeted search query from the 'selections' object.
-            // If 'selections' is not provided, it falls back to the original prompt text.
             const searchQuery = selections ? Object.values(selections).join(' ') + ' Yurei-tu-Shima' : prompt;
 
             const embeddingResult = await embeddingModel.embedContent(searchQuery);
@@ -73,7 +70,7 @@ export default async (req, context) => {
 
     } catch (error) {
         console.error("Error in Gemini function:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
         });

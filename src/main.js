@@ -451,59 +451,91 @@ function openCharacterGenerator(personality) {
     
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
-        // CHANGED: This function now gets a structured object of selections for the targeted search.
-        const getSelectionsObject = () => {
-            const selections = {};
+        const getSelectionsForPrompt = () => {
+            let promptText = '';
             const processContainer = (containerId, category) => {
-                const row = modalBody.querySelector(`${containerId} > div`);
-                if (!row) return;
-
-                const getVal = (type) => {
-                    const sel = row.querySelector(`.${type}-select`);
-                    if (!sel || sel.disabled) return null;
-                    if (sel.value === 'CUSTOM_ENTRY') {
-                        return row.querySelector(`.${type}-custom-input`).value.trim();
-                    }
-                    return sel.value === 'RANDOM' ? null : sel.value;
-                };
-
-                const mainVal = getVal('main');
-                if (mainVal) {
-                    selections[category] = mainVal;
-                    const subVal = getVal('sub');
-                    if (subVal) {
-                        const tertiaryVal = getVal('tertiary');
-                        if (tertiaryVal) {
-                            selections[category] += ` (${subVal} - ${tertiaryVal})`;
-                        } else {
-                            selections[category] += ` (${subVal})`;
+                const selections = [];
+                modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                    const getVal = (type) => {
+                        const sel = row.querySelector(`.${type}-select`);
+                        if (!sel || sel.disabled) return null;
+                        if (sel.value === 'CUSTOM_ENTRY') {
+                            return row.querySelector(`.${type}-custom-input`).value.trim();
                         }
+                        return sel.value === 'RANDOM' ? null : sel.value;
+                    };
+
+                    const mainVal = getVal('main');
+                    if (mainVal) {
+                        const subVal = getVal('sub');
+                        const tertiaryVal = getVal('tertiary');
+                        let selectionText = mainVal;
+                        if (subVal) {
+                            if (tertiaryVal) {
+                                selectionText = `${mainVal} (${subVal} - ${tertiaryVal})`;
+                            } else {
+                                selectionText = `${mainVal} (${subVal})`;
+                            }
+                        }
+                        selections.push(selectionText);
                     }
+                });
+                if (selections.length > 0) {
+                    promptText += `\n- ${category}: ${selections.join(' and ')}`;
                 }
             };
-
             processContainer('#kinship-container', 'Kinship');
             processContainer('#calling-container', 'Calling');
             processContainer('#spirit-container', 'Spirit');
             processContainer('#background-container', 'Background');
-            
-            const notes = modalBody.querySelector('#char-notes').value;
-            if(notes) selections['Notes'] = notes;
+            return promptText;
+        }
 
+        const getSelectionsForRag = () => {
+            const selections = {};
+            const processContainer = (containerId, category) => {
+                const selectionValues = [];
+                modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                    const getVal = (type) => {
+                        const sel = row.querySelector(`.${type}-select`);
+                        if (!sel || sel.disabled) return null;
+                        if (sel.value === 'CUSTOM_ENTRY') {
+                            return row.querySelector(`.${type}-custom-input`).value.trim();
+                        }
+                        return sel.value === 'RANDOM' ? null : sel.value;
+                    };
+                    const mainVal = getVal('main');
+                    if(mainVal) selectionValues.push(mainVal);
+                    const subVal = getVal('sub');
+                    if(subVal) selectionValues.push(subVal);
+                    const tertiaryVal = getVal('tertiary');
+                    if(tertiaryVal) selectionValues.push(tertiaryVal);
+                });
+                if (selectionValues.length > 0) {
+                    selections[category] = selectionValues.join(' ');
+                }
+            };
+            processContainer('#kinship-container', 'Kinship');
+            processContainer('#calling-container', 'Calling');
+            processContainer('#spirit-container', 'Spirit');
+            processContainer('#background-container', 'Background');
             return selections;
-        };
-        
-        const selectionsObject = getSelectionsObject();
-        
+        }
+
+        const promptSelectionsText = getSelectionsForPrompt();
+        const selectionsObject = getSelectionsForRag();
+        const notes = modalBody.querySelector('#char-notes').value;
+
         let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting, using D&D 5e as the ruleset.`;
-        for (const [category, value] of Object.entries(selectionsObject)) {
-            prompt += `\n- ${category}: ${value}`;
+        prompt += promptSelectionsText;
+        if (notes) {
+            prompt += `\n- Notes: "${notes}"`;
+            selectionsObject['Notes'] = notes;
         }
         prompt += `\n\nProvide a character concept including a name, detailed physical and personality descriptions, and a plot hook.`;
 
         const resultDiv = modalBody.querySelector('.weaver-result');
         const submitButton = modalBody.querySelector('#generate-char-button');
-        // CHANGED: Now passing the selectionsObject to the request handler.
         handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton, selectionsObject);
     });
     
@@ -528,7 +560,6 @@ function openCharacterGenerator(personality) {
     newModal.style.display = 'flex';
 }
 
-// CHANGED: Function now accepts an optional 'selections' object for targeted RAG.
 async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null) {
     const prompt = inputElement.value;
     if (!prompt) return;
