@@ -17,6 +17,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
 const generativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+
 export default async (req, context) => {
     try {
         const { prompt, weaverName, selections } = await req.json();
@@ -38,8 +39,14 @@ export default async (req, context) => {
         let knowledgeBase = '';
 
         if (personality.knowsAllLore === true) {
-            // REVERTED: The search query is now simpler and more robust.
-            const searchQuery = selections ? Object.values(selections).join(' ') : prompt;
+            let searchQuery = prompt; // Default search query
+
+            // CHANGED: Creates a simple but highly-focused search query for lore weavers.
+            if (personality.isLoreWeaver === true) {
+                 searchQuery = `Title: ${prompt}`;
+            } else if (selections) {
+                searchQuery = Object.values(selections).join(' ');
+            }
 
             const embeddingResult = await embeddingModel.embedContent(searchQuery);
             const queryEmbedding = embeddingResult.embedding.values;
