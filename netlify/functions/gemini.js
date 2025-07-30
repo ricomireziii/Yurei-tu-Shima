@@ -39,7 +39,14 @@ export default async (req, context) => {
         let knowledgeBase = '';
 
         if (personality.knowsAllLore === true) {
-            const searchQuery = selections ? Object.values(selections).join(' ') + ' Yurei-tu-Shima' : prompt;
+            let searchQuery = prompt; // Default search query
+
+            // CHANGED: Logic now checks for the 'isLoreWeaver' field.
+            if (personality.isLoreWeaver === true) {
+                 searchQuery = `Detailed information about ${prompt} in Yurei-tu-Shima`;
+            } else if (selections) {
+                searchQuery = Object.values(selections).join(' ') + ' Yurei-tu-Shima';
+            }
 
             const embeddingResult = await embeddingModel.embedContent(searchQuery);
             const queryEmbedding = embeddingResult.embedding.values;
@@ -70,7 +77,7 @@ export default async (req, context) => {
 
     } catch (error) {
         console.error("Error in Gemini function:", error);
-        return new Response(JSON.stringify({ error: message }), {
+        return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
         });
