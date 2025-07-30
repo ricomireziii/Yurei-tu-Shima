@@ -41,9 +41,9 @@ export default async (req, context) => {
         if (personality.knowsAllLore === true) {
             let searchQuery = prompt; // Default search query
 
-            // CHANGED: Logic now checks for the 'isLoreWeaver' field.
+            // CHANGED: This creates an even more precise search query for lore weavers.
             if (personality.isLoreWeaver === true) {
-                 searchQuery = `Detailed information about ${prompt} in Yurei-tu-Shima`;
+                 searchQuery = `A direct, factual description of the present-day nature and culture of ${prompt} in the world of Yurei-tu-Shima.`;
             } else if (selections) {
                 searchQuery = Object.values(selections).join(' ') + ' Yurei-tu-Shima';
             }
