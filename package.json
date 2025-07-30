@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/index-lore.js && vite build",
     "preview": "vite preview",
     "index-lore": "node scripts/index-lore.js"
   },
