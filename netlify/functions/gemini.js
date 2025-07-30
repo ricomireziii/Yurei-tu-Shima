@@ -5,7 +5,6 @@ const generativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export default async (req, context) => {
     try {
-        // Now only receives the final, fully-formed prompt
         const { fullPrompt } = await req.json();
         if (!fullPrompt) {
             throw new Error("Missing fullPrompt");

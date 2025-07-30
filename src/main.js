@@ -567,12 +567,15 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
     resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
     try {
-        const { isLoreWeaver } = aiPersonalities.find(p => p.fields.weaverName === weaverName)?.fields || {};
+        const personality = aiPersonalities.find(p => p.fields.weaverName === weaverName);
+        if (!personality) throw new Error("Could not find AI personality.");
+        
         let searchQuery = prompt;
-        if (isLoreWeaver) {
+        if (personality.fields.isLoreWeaver) {
             searchQuery = `Title: ${prompt}`;
         } else if (selections) {
-            searchQuery = Object.values(selections).join(' ');
+            const searchTerms = Object.values(selections).join(' ');
+            searchQuery = searchTerms.trim() ? searchTerms : prompt; // Fallback to prompt if selections are empty
         }
         
         const searchResponse = await fetch('/api/search', {
@@ -581,13 +584,15 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
             body: JSON.stringify({ searchQuery }),
         });
 
-        if (!searchResponse.ok) throw new Error(`Search failed: ${await searchResponse.text()}`);
+        if (!searchResponse.ok) {
+            const err = await searchResponse.json();
+            throw new Error(`Search failed: ${err.error || 'Unknown error'}`);
+        }
 
         const { documents } = await searchResponse.json();
         const knowledgeBase = "--- RELEVANT LORE ---\n" + documents.map(doc => doc.content).join('\n\n---\n\n');
         
-        const personality = aiPersonalities.find(p => p.fields.weaverName === weaverName);
-        const systemPrompt = personality?.fields?.systemPrompt || '';
+        const systemPrompt = personality.fields.systemPrompt || '';
         const fullPrompt = `${systemPrompt}\n\n${knowledgeBase}\n\nUser Question: "${prompt}"`;
 
         const geminiResponse = await fetch('/api/gemini', {
@@ -596,7 +601,10 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
             body: JSON.stringify({ fullPrompt }),
         });
         
-        if (!geminiResponse.ok) throw new Error(`Generation failed: ${await geminiResponse.text()}`);
+        if (!geminiResponse.ok) {
+            const err = await geminiResponse.json();
+            throw new Error(`Generation failed: ${err.error || 'Unknown error'}`);
+        }
 
         const { text } = await geminiResponse.json();
         resultElement.innerHTML = text.replace(/\n/g, '<br>');

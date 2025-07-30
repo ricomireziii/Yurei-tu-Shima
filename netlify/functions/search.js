@@ -1,7 +1,6 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize only the clients needed for searching
 const supabaseClient = createSupabaseClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY
@@ -17,11 +16,9 @@ export default async (req, context) => {
             throw new Error("Missing search query");
         }
 
-        // Step 1: Convert the search query into an embedding
         const embeddingResult = await embeddingModel.embedContent(searchQuery);
         const queryEmbedding = embeddingResult.embedding.values;
 
-        // Step 2: Use the embedding to search for relevant documents in Supabase
         const { data: documents, error: matchError } = await supabaseClient.rpc('match_documents', {
             query_embedding: queryEmbedding,
             match_threshold: 0.75,
@@ -32,7 +29,6 @@ export default async (req, context) => {
             throw new Error(`Error matching documents: ${matchError.message}`);
         }
 
-        // Step 3: Return the found documents as a JSON response
         return new Response(JSON.stringify({ documents }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
