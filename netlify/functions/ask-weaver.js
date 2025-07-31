@@ -39,7 +39,8 @@ export default async (req, context) => {
         });
 
         if (matchError) throw new Error(`Error matching documents: ${matchError.message}`);
-        
+        console.log("Retrieved Documents:", JSON.stringify(documents, null, 2));
+
         // 3. Construct the knowledge base for the prompt
         const knowledgeBase = documents.map(doc => 
             `Source: ${doc.metadata?.source || 'General Lore'}\nContent: ${doc.content}`
@@ -47,7 +48,8 @@ export default async (req, context) => {
 
         // 4. Construct the full prompt using the ORIGINAL query meant for generation
         const fullPrompt = `${systemPrompt}\n\n--- RELEVANT LORE ---\n${knowledgeBase}\n\nUser Question: "${query}"`;
-        
+        console.log("Final Prompt Sent to AI:", fullPrompt);
+
         // 5. Call the generative model
         const result = await generativeModel.generateContent(fullPrompt);
         const response = await result.response;
