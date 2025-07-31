@@ -560,53 +560,46 @@ function openCharacterGenerator(personality) {
     newModal.style.display = 'flex';
 }
 
+// replacement function in: src/main.js
 async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null) {
-    const prompt = inputElement.value;
-    if (!prompt) return;
+    const query = inputElement.value; // This is the full prompt for the LLM
+    if (!query) return;
+
     resultElement.parentElement.style.display = 'block';
     resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
+
     try {
         const personality = aiPersonalities.find(p => p.fields.weaverName === weaverName);
         if (!personality) throw new Error("Could not find AI personality.");
         
-        let searchQuery = prompt;
-        if (personality.fields.isLoreWeaver) {
-            searchQuery = `Title: ${prompt}`;
-        } else if (selections) {
+        const systemPrompt = personality.fields.systemPrompt || 'You are a helpful assistant.';
+
+        // Determine if a separate search query is needed for the character generator
+        let searchQueryOverride = null;
+        if (selections) {
             const searchTerms = Object.values(selections).join(' ');
-            searchQuery = searchTerms.trim() ? searchTerms : prompt; // Fallback to prompt if selections are empty
+            if (searchTerms.trim()) {
+                searchQueryOverride = searchTerms.trim();
+            }
         }
         
-        const searchResponse = await fetch('/api/search', {
+        const response = await fetch('/api/ask-weaver', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ searchQuery }),
+            body: JSON.stringify({ 
+                query,                // The full prompt for generation
+                systemPrompt,
+                searchQueryOverride   // The specific keywords for RAG search (or null)
+            }),
         });
 
-        if (!searchResponse.ok) {
-            const err = await searchResponse.json();
-            throw new Error(`Search failed: ${err.error || 'Unknown error'}`);
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || `Request failed with status ${response.status}`);
         }
 
-        const { documents } = await searchResponse.json();
-        const knowledgeBase = "--- RELEVANT LORE ---\n" + documents.map(doc => doc.content).join('\n\n---\n\n');
-        
-        const systemPrompt = personality.fields.systemPrompt || '';
-        const fullPrompt = `${systemPrompt}\n\n${knowledgeBase}\n\nUser Question: "${prompt}"`;
-
-        const geminiResponse = await fetch('/api/gemini', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fullPrompt }),
-        });
-        
-        if (!geminiResponse.ok) {
-            const err = await geminiResponse.json();
-            throw new Error(`Generation failed: ${err.error || 'Unknown error'}`);
-        }
-
-        const { text } = await geminiResponse.json();
+        const { text } = await response.json();
         resultElement.innerHTML = text.replace(/\n/g, '<br>');
 
     } catch (error) {

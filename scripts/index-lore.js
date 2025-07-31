@@ -1,3 +1,4 @@
+// updated: index-lore.js
 import { createClient as createContentfulClient } from 'contentful';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -85,7 +86,6 @@ async function main() {
     console.log("Existing documents cleared.");
 
     console.log("Fetching all lore entries from Contentful...");
-    // Fetch all lore with deep includes to get linked item data
     const allPortals = await contentfulClient.getEntries({
         content_type: 'lore',
         limit: 1000,
@@ -96,12 +96,19 @@ async function main() {
     const documentsToInsert = [];
 
     for (const portal of allPortals.items) {
-        // Use the new comprehensive function to get all text
         const portalText = getPortalText(portal);
         const textChunks = chunkText(portalText);
         
+        // **NEW**: Add metadata to each chunk
+        const portalMetadata = {
+            source: portal.fields.title || 'Untitled Document'
+        };
+
         for (const chunk of textChunks) {
-            documentsToInsert.push({ content: chunk });
+            documentsToInsert.push({ 
+                content: chunk,
+                metadata: portalMetadata 
+            });
         }
     }
     console.log(`Created ${documentsToInsert.length} text chunks to be embedded.`);
@@ -125,7 +132,9 @@ async function main() {
             }
 
             for (let j = 0; j < embeddings.length; j++) {
-                batch[j].embedding = embeddings[j].values;
+                // Ensure embedding is attached to the correct object in the batch
+                const doc = batch[j];
+                doc.embedding = embeddings[j].values;
             }
 
             console.log(`Inserting batch ${Math.floor(i / batchSize) + 1} into Supabase...`);
