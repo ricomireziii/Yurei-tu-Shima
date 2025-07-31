@@ -34,7 +34,7 @@ export default async (req, context) => {
         // 2. Query Supabase for relevant lore documents
         const { data: documents, error: matchError } = await supabaseClient.rpc('match_documents', {
             query_embedding: queryEmbedding,
-            match_threshold: 0.75,
+            match_threshold: 0.5,
             match_count: 10,
         });
 
