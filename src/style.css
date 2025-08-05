@@ -47,18 +47,36 @@ main#portal-area { display: flex; flex-direction: column; align-items: center; }
 .scroll-button { background-color: #c9b79c; color: #583c20; border: 1px solid #8c6f4f; padding: 0.25rem 0.75rem; border-radius: 5px; font-size: 0.8rem; cursor: pointer; transition: background-color 0.2s; }
 .scroll-button:hover { background-color: #8c6f4f; color: #fdf6e3; }
 
+/* Add this to your src/style.css file */
+
 .copy-icon-btn {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
+    top: 0.75rem;
+    right: 0.75rem;
     background: none;
     border: none;
     cursor: pointer;
-    opacity: 0.6;
+    opacity: 0.4;
     transition: opacity 0.2s;
-    padding: 0;
 }
+
 .copy-icon-btn:hover {
+    opacity: 1;
+}
+
+.copy-icon-btn .copy-tooltip-text {
+    visibility: hidden;
+    width: 60px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -30px;
     opacity: 1;
 }
 .copy-icon-btn svg {

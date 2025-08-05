@@ -568,19 +568,17 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
     if (!query) return;
 
     buttonElement.disabled = true;
-    inputElement.value = ''; // Clear the input box immediately
+    inputElement.value = '';
 
     // Add user's message to the UI
-    resultElement.innerHTML += `<div class="mb-2"><strong class="text-sky-300">You:</strong><br>${query.replace(/\n/g, '<br>')}</div>`;
-    resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight; // Auto-scroll
+    resultElement.innerHTML += `<div class="mb-4"><strong class="text-sky-300">You:</strong><br>${query.replace(/\n/g, '<br>')}</div>`;
+    resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
 
-    // Add a temporary "typing..." indicator
     const thinkingIndicator = document.createElement('div');
     thinkingIndicator.innerHTML = `<em class="text-amber-300">The Weaver is thinking...</em>`;
     resultElement.appendChild(thinkingIndicator);
     resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
 
-    // Add user's message to the history array
     chatHistory.push({ role: 'User', text: query });
 
     try {
@@ -601,11 +599,11 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
                 query,
                 systemPrompt,
                 searchQueryOverride,
-                chatHistory // Send the history to the backend
+                chatHistory
             }),
         });
 
-        thinkingIndicator.remove(); // Remove the "thinking" message
+        thinkingIndicator.remove();
 
         if (!response.ok) {
             const errData = await response.json();
@@ -613,13 +611,41 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         }
 
         const { text } = await response.json();
-        
-        // Add AI's response to the UI
-        resultElement.innerHTML += `<div class="mb-4"><strong class="text-amber-200">${weaverName}:</strong><br>${text.replace(/\n/g, '<br>')}</div>`;
-        
-        // Add AI's response to the history array
         chatHistory.push({ role: 'AI', text });
 
+        // --- NEW: Create the response element with a copy button ---
+        const responseWrapper = document.createElement('div');
+        responseWrapper.className = 'mb-4 p-4 rounded-lg bg-black/20 relative'; // Added padding and relative positioning
+
+        // The AI's response text
+        const responseText = document.createElement('div');
+        responseText.innerHTML = `<strong class="text-amber-200">${weaverName}:</strong><br>${text.replace(/\n/g, '<br>')}`;
+        
+        // The copy button
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-icon-btn'; // Use the CSS class from your original style.css
+        copyBtn.title = 'Copy response';
+        copyBtn.innerHTML = `
+            <svg class="icon-pen" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>
+            <span class="copy-tooltip-text">Copied!</span>
+        `;
+        
+        // Add the click functionality to the button
+        copyBtn.addEventListener('click', (e) => {
+            navigator.clipboard.writeText(text).then(() => {
+                const tooltip = e.currentTarget.querySelector('.copy-tooltip-text');
+                tooltip.style.visibility = 'visible';
+                setTimeout(() => {
+                    tooltip.style.visibility = 'hidden';
+                }, 1500);
+            });
+        });
+
+        // Assemble the final response block
+        responseWrapper.appendChild(responseText);
+        responseWrapper.appendChild(copyBtn);
+        resultElement.appendChild(responseWrapper);
+        
     } catch (error) {
         console.error('Error:', error);
         resultElement.innerHTML += `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
