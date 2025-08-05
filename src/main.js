@@ -563,6 +563,7 @@ function openCharacterGenerator(personality) {
 }
 
 // Final replacement function in: src/main.js
+// Final replacement function with "unfurling scroll" copy effect in: src/main.js
 async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null, chatHistory = []) {
     const query = inputElement.value;
     if (!query) return;
@@ -622,31 +623,34 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         copyBtn.className = 'copy-icon-btn';
         copyBtn.title = 'Copy response';
         
-        // --- REVISED AND BULLETPROOF LOGIC ---
-        
-        // Create the icon and tooltip elements directly
-        const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        iconSvg.setAttribute('viewBox', '0 0 24 24');
-        iconSvg.setAttribute('fill', 'currentColor');
-        iconSvg.setAttribute('width', '20px');
-        iconSvg.setAttribute('height', '20px');
-        iconSvg.innerHTML = `<path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path>`;
+        // --- REVISED LOGIC FOR ICON SWAPPING ---
 
-        const tooltip = document.createElement('span');
-        tooltip.className = 'copy-tooltip-text';
-        tooltip.textContent = 'Copied!';
+        // Create both icons
+        const iconPen = document.createElement('div');
+        iconPen.innerHTML = `<svg class="icon-pen" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>`;
 
-        // Add them to the button
-        copyBtn.appendChild(iconSvg);
-        copyBtn.appendChild(tooltip);
+        const iconScroll = document.createElement('div');
+        iconScroll.innerHTML = `<svg class="icon-scroll" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M19,2H5C3.9,2,3,2.9,3,4v16c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V4C21,2.9,20.1,2,19,2z M15,8H9C8.4,8,8,7.6,8,7 s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,8,15,8z M15,12H9c-0.6,0-1-0.4-1-1s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,12,15,12z M12,16H9 c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S12.6,16,12,16z"></path></svg>`;
         
-        // Add the click functionality, now referencing the tooltip variable directly
+        // Hide the scroll icon initially
+        iconScroll.classList.add('hidden');
+
+        // Add both icons to the button
+        copyBtn.appendChild(iconPen);
+        copyBtn.appendChild(iconScroll);
+        
+        // Add the click functionality to swap the icons
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(text).then(() => {
-                tooltip.style.visibility = 'visible';
+                // Hide pen, show scroll
+                iconPen.classList.add('hidden');
+                iconScroll.classList.remove('hidden');
+                
+                // After 2 seconds, swap them back
                 setTimeout(() => {
-                    tooltip.style.visibility = 'hidden';
-                }, 1500);
+                    iconScroll.classList.add('hidden');
+                    iconPen.classList.remove('hidden');
+                }, 2000);
             }).catch(err => {
                 console.error('Clipboard write failed: ', err);
             });
