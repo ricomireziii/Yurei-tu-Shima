@@ -221,6 +221,7 @@ function createWeaverCard(personality) {
     return card;
 }
 
+// replacement function in: src/main.js
 function openWeaverTool(personality) {
     const newModal = modalTemplate.cloneNode(true);
     newModal.removeAttribute('id');
@@ -228,6 +229,10 @@ function openWeaverTool(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
+
+    // NEW: Initialize an empty chat history for this session
+    let chatHistory = [];
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div class="modal-body text-gray-300">
@@ -236,32 +241,30 @@ function openWeaverTool(personality) {
                 <div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
             </div>
             <div>
-                <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
-                <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
-                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative">
-                    <button class="copy-icon-btn">
-                        <svg class="icon-pen" viewBox="0 0 24 24"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>
-                        <svg class="icon-scroll hidden" viewBox="0 0 24 24"><path d="M19,2H5C3.9,2,3,2.9,3,4v16c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V4C21,2.9,20.1,2,19,2z M15,8H9C8.4,8,8,7.6,8,7 s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,8,15,8z M15,12H9c-0.6,0-1-0.4-1-1s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,12,15,12z M12,16H9 c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S12.6,16,12,16z"></path></svg>
-                    </button>
+                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg min-h-[100px]">
                     <div class="weaver-result"></div>
+                </div>
+                 <div class="mt-4">
+                    <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
+                    <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
                 </div>
             </div>
         </div>
     `;
+
+    const inputElement = modalBody.querySelector('.weaver-input');
+    const resultElement = modalBody.querySelector('.weaver-result');
     const submitBtn = modalBody.querySelector('.weaver-submit-btn');
-    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
     
-    const copyBtn = modalBody.querySelector('.copy-icon-btn');
-    copyBtn.addEventListener('click', e => {
-        const textToCopy = copyBtn.nextElementSibling.innerText;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            copyBtn.querySelector('.icon-pen').classList.add('hidden');
-            copyBtn.querySelector('.icon-scroll').classList.remove('hidden');
-            setTimeout(() => {
-                copyBtn.querySelector('.icon-pen').classList.remove('hidden');
-                copyBtn.querySelector('.icon-scroll').classList.add('hidden');
-            }, 2000);
-        });
+    // Pass the chatHistory array to the handler
+    const handleRequest = () => handleWeaverRequest(weaverName, inputElement, resultElement, submitBtn, null, chatHistory);
+
+    submitBtn.addEventListener('click', handleRequest);
+    inputElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleRequest();
+        }
     });
 
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
@@ -271,7 +274,6 @@ function openWeaverTool(personality) {
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
 }
-
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -561,38 +563,49 @@ function openCharacterGenerator(personality) {
 }
 
 // replacement function in: src/main.js
-async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null) {
-    const query = inputElement.value; // This is the full prompt for the LLM
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null, chatHistory = []) {
+    const query = inputElement.value;
     if (!query) return;
 
-    resultElement.parentElement.style.display = 'block';
-    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
+    inputElement.value = ''; // Clear the input box immediately
+
+    // Add user's message to the UI
+    resultElement.innerHTML += `<div class="mb-2"><strong class="text-sky-300">You:</strong><br>${query.replace(/\n/g, '<br>')}</div>`;
+    resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight; // Auto-scroll
+
+    // Add a temporary "typing..." indicator
+    const thinkingIndicator = document.createElement('div');
+    thinkingIndicator.innerHTML = `<em class="text-amber-300">The Weaver is thinking...</em>`;
+    resultElement.appendChild(thinkingIndicator);
+    resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
+
+    // Add user's message to the history array
+    chatHistory.push({ role: 'User', text: query });
 
     try {
         const personality = aiPersonalities.find(p => p.fields.weaverName === weaverName);
         if (!personality) throw new Error("Could not find AI personality.");
         
         const systemPrompt = personality.fields.systemPrompt || 'You are a helpful assistant.';
-
-        // Determine if a separate search query is needed for the character generator
         let searchQueryOverride = null;
         if (selections) {
             const searchTerms = Object.values(selections).join(' ');
-            if (searchTerms.trim()) {
-                searchQueryOverride = searchTerms.trim();
-            }
+            if (searchTerms.trim()) searchQueryOverride = searchTerms.trim();
         }
         
         const response = await fetch('/api/ask-weaver', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                query,                // The full prompt for generation
+                query,
                 systemPrompt,
-                searchQueryOverride   // The specific keywords for RAG search (or null)
+                searchQueryOverride,
+                chatHistory // Send the history to the backend
             }),
         });
+
+        thinkingIndicator.remove(); // Remove the "thinking" message
 
         if (!response.ok) {
             const errData = await response.json();
@@ -600,16 +613,22 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         }
 
         const { text } = await response.json();
-        resultElement.innerHTML = text.replace(/\n/g, '<br>');
+        
+        // Add AI's response to the UI
+        resultElement.innerHTML += `<div class="mb-4"><strong class="text-amber-200">${weaverName}:</strong><br>${text.replace(/\n/g, '<br>')}</div>`;
+        
+        // Add AI's response to the history array
+        chatHistory.push({ role: 'AI', text });
 
     } catch (error) {
         console.error('Error:', error);
-        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
+        resultElement.innerHTML += `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
     } finally {
         buttonElement.disabled = false;
+        inputElement.focus();
+        resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
     }
 }
-
 async function initializeSite() {
     try {
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
