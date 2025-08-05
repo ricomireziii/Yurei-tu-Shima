@@ -562,7 +562,7 @@ function openCharacterGenerator(personality) {
     newModal.style.display = 'flex';
 }
 
-// replacement function in: src/main.js
+// Final replacement function in: src/main.js
 async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null, chatHistory = []) {
     const query = inputElement.value;
     if (!query) return;
@@ -570,7 +570,6 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
     buttonElement.disabled = true;
     inputElement.value = '';
 
-    // Add user's message to the UI
     resultElement.innerHTML += `<div class="mb-4"><strong class="text-sky-300">You:</strong><br>${query.replace(/\n/g, '<br>')}</div>`;
     resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
 
@@ -613,7 +612,6 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         const { text } = await response.json();
         chatHistory.push({ role: 'AI', text });
 
-        // Create the response element with a copy button
         const responseWrapper = document.createElement('div');
         responseWrapper.className = 'mb-4 p-4 rounded-lg bg-black/20 relative';
         
@@ -623,21 +621,34 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copy-icon-btn';
         copyBtn.title = 'Copy response';
-        copyBtn.innerHTML = `
-            <svg class="icon-pen" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>
-            <span class="copy-tooltip-text">Copied!</span>
-        `;
         
-        // Add the click functionality to the button
-        copyBtn.addEventListener('click', (e) => {
+        // --- REVISED AND BULLETPROOF LOGIC ---
+        
+        // Create the icon and tooltip elements directly
+        const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        iconSvg.setAttribute('viewBox', '0 0 24 24');
+        iconSvg.setAttribute('fill', 'currentColor');
+        iconSvg.setAttribute('width', '20px');
+        iconSvg.setAttribute('height', '20px');
+        iconSvg.innerHTML = `<path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path>`;
+
+        const tooltip = document.createElement('span');
+        tooltip.className = 'copy-tooltip-text';
+        tooltip.textContent = 'Copied!';
+
+        // Add them to the button
+        copyBtn.appendChild(iconSvg);
+        copyBtn.appendChild(tooltip);
+        
+        // Add the click functionality, now referencing the tooltip variable directly
+        copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(text).then(() => {
-                const tooltip = e.currentTarget.querySelector('.copy-tooltip-text');
                 tooltip.style.visibility = 'visible';
                 setTimeout(() => {
                     tooltip.style.visibility = 'hidden';
                 }, 1500);
             }).catch(err => {
-                console.error('Failed to copy text: ', err);
+                console.error('Clipboard write failed: ', err);
             });
         });
         
