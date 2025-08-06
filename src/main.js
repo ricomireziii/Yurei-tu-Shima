@@ -669,16 +669,66 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
     }
 }
+
+// Final replacement function in: src/main.js
+
 async function initializeSite() {
     try {
+        const isTestBranch = window.location.hostname.includes('--');
+
+        // --- NEW: API-level filtering ---
+        let personalityRequest;
+        if (isTestBranch) {
+            // On a test branch, fetch ALL personalities so we can prioritize test versions
+            personalityRequest = client.getEntries({ content_type: 'aiPersonality', include: 2 });
+        } else {
+            // On the LIVE site, only fetch personalities that are NOT test versions
+            personalityRequest = client.getEntries({
+                content_type: 'aiPersonality',
+                'fields.isTestVersion[ne]': 'true', // This tells Contentful to filter out test versions
+                include: 2
+            });
+        }
+
         const [portalResponse, personalityResponse, optionsResponse] = await Promise.all([
             client.getEntries({ content_type: 'lore', 'fields.isTopLevel': true, order: 'fields.sortOrder', include: 10 }),
-            client.getEntries({ content_type: 'aiPersonality', include: 2 }),
+            personalityRequest, // Use our new conditional request
             client.getEntries({ content_type: 'characterOptions', limit: 1, include: 10 })
         ]);
+
+        const allPersonalities = personalityResponse.items;
         
+        if (isTestBranch) {
+            // This logic now only runs on a test branch, as the live site has already been filtered
+            const personalityMap = new Map();
+            for (const p of allPersonalities) {
+                const name = p.fields.weaverName;
+                if (!personalityMap.has(name)) {
+                    personalityMap.set(name, {});
+                }
+                if (p.fields.isTestVersion) {
+                    personalityMap.get(name).test = p;
+                } else {
+                    personalityMap.get(name).live = p;
+                }
+            }
+
+            const finalPersonalities = [];
+            for (const versions of personalityMap.values()) {
+                if (versions.test) {
+                    finalPersonalities.push(versions.test);
+                } else if (versions.live) {
+                    finalPersonalities.push(versions.live);
+                }
+            }
+            aiPersonalities = finalPersonalities;
+        } else {
+            // On the live site, we already got the filtered list, so just use it
+            aiPersonalities = allPersonalities;
+        }
+        // --- END NEW LOGIC ---
+
         const allTopLevelPortals = portalResponse.items;
-        aiPersonalities = personalityResponse.items;
         if (optionsResponse.items.length > 0) {
             characterOptions = optionsResponse.items[0].fields;
         }
@@ -698,3 +748,6 @@ async function initializeSite() {
 }
 
 initializeSite(); 
+=======
+initializeSite();
+>>>>>>> main
