@@ -274,7 +274,7 @@ function openWeaverTool(personality) {
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
 }
-// The complete and final version for: src/main.js
+// The complete, final, and unabridged version for: src/main.js
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -330,7 +330,6 @@ function openCharacterGenerator(personality) {
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
     
-    // --- START HELPER FUNCTIONS ---
     const populateSelect = (select, options) => {
         select.innerHTML = '';
         select.add(new Option('(Random)', 'RANDOM'));
@@ -420,7 +419,7 @@ function openCharacterGenerator(personality) {
     charGenBody.querySelector('#add-faction-btn').addEventListener('click', () => addRow('#faction-container', { label: 'Faction/Circle', main: characterOptions.factionsAndCircles || [], getSubs: () => [], getTertiaries: () => [] }));
     
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
-    
+
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
         const getSelectionsForPrompt = () => {
@@ -510,9 +509,8 @@ function openCharacterGenerator(personality) {
         const submitButton = chatInterface.querySelector('.weaver-submit-btn');
 
         const tempInput = { value: fullMechanicalPrompt };
-        handleWeaverRequest(weaverName, tempInput, resultElement, submitButton, selectionsObject, chatHistory);
+        handleWeaverRequest(weaverName, tempInput, resultElement, submitButton, selectionsObject, chatHistory, true);
         
-        // This is a new element for displaying the initial user request in the chat log
         const initialRequestDiv = document.createElement('div');
         initialRequestDiv.className = 'mb-4';
         initialRequestDiv.innerHTML = `<strong class="text-sky-300">You:</strong><br>${transcriptSummary.replace(/\n/g, '<br>')}`;
@@ -538,22 +536,25 @@ function openCharacterGenerator(personality) {
 
 // Final replacement function in: src/main.js
 // Final replacement function with "unfurling scroll" copy effect in: src/main.js
-async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null, chatHistory = []) {
+// replacement function in: src/main.js
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null, chatHistory = [], isInitialGeneration = false) {
     const query = inputElement.value;
     if (!query) return;
 
     buttonElement.disabled = true;
-    inputElement.value = '';
-
-    resultElement.innerHTML += `<div class="mb-4"><strong class="text-sky-300">You:</strong><br>${query.replace(/\n/g, '<br>')}</div>`;
-    resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
+    
+    // This logic now only runs for conversational tweaks, not the initial generation
+    if (!isInitialGeneration) {
+        inputElement.value = '';
+        resultElement.innerHTML += `<div class="mb-4"><strong class="text-sky-300">You:</strong><br>${query.replace(/\n/g, '<br>')}</div>`;
+        resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
+        chatHistory.push({ role: 'User', text: query });
+    }
 
     const thinkingIndicator = document.createElement('div');
     thinkingIndicator.innerHTML = `<em class="text-amber-300">The Weaver is thinking...</em>`;
     resultElement.appendChild(thinkingIndicator);
     resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
-
-    chatHistory.push({ role: 'User', text: query });
 
     try {
         const personality = aiPersonalities.find(p => p.fields.weaverName === weaverName);
@@ -596,31 +597,18 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copy-icon-btn';
         copyBtn.title = 'Copy response';
-        
-        // --- REVISED LOGIC FOR ICON SWAPPING ---
-
-        // Create both icons
         const iconPen = document.createElement('div');
         iconPen.innerHTML = `<svg class="icon-pen" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>`;
-
         const iconScroll = document.createElement('div');
         iconScroll.innerHTML = `<svg class="icon-scroll" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M19,2H5C3.9,2,3,2.9,3,4v16c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V4C21,2.9,20.1,2,19,2z M15,8H9C8.4,8,8,7.6,8,7 s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,8,15,8z M15,12H9c-0.6,0-1-0.4-1-1s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,12,15,12z M12,16H9 c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S12.6,16,12,16z"></path></svg>`;
-        
-        // Hide the scroll icon initially
         iconScroll.classList.add('hidden');
-
-        // Add both icons to the button
         copyBtn.appendChild(iconPen);
         copyBtn.appendChild(iconScroll);
         
-        // Add the click functionality to swap the icons
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(text).then(() => {
-                // Hide pen, show scroll
                 iconPen.classList.add('hidden');
                 iconScroll.classList.remove('hidden');
-                
-                // After 2 seconds, swap them back
                 setTimeout(() => {
                     iconScroll.classList.add('hidden');
                     iconPen.classList.remove('hidden');
@@ -639,7 +627,9 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         resultElement.innerHTML += `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
     } finally {
         buttonElement.disabled = false;
-        inputElement.focus();
+        if (!isInitialGeneration) {
+            inputElement.focus();
+        }
         resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
     }
 }
