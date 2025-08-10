@@ -692,7 +692,7 @@ async function initializeSite() {
             // On the live site, we already got the filtered list, so just use it
             aiPersonalities = allPersonalities;
         }
-        // --- END NEW LOGIC ---
+        // --- END NEW LOGIC and again ---
 
         const allTopLevelPortals = portalResponse.items;
         if (optionsResponse.items.length > 0) {
