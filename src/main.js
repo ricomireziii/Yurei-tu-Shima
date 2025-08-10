@@ -323,21 +323,92 @@ function openCharacterGenerator(personality) {
                 </div>
                 <div class="mt-4">
                     <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Now, how shall we refine this spark? (e.g., 'Make their hair black')"></textarea>
-                    <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Weave a Tweak</button>
+                    <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Refine the Weave</button>
                 </div>
             </div>
         </div>
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
     
-    const populateSelect = (select, options) => { /* ... full function definition ... */ };
-    const addRow = (containerId, optionsConfig) => { /* ... full function definition ... */ };
-    const getSelectionsForPrompt = () => { /* ... full function definition ... */ };
-    const getSelectionsForRag = () => { /* ... full function definition ... */ };
+    // --- START HELPER FUNCTIONS ---
+    const populateSelect = (select, options) => {
+        select.innerHTML = '';
+        select.add(new Option('(Random)', 'RANDOM'));
+        options.forEach(opt => select.add(new Option(opt, opt)));
+        select.add(new Option('(Custom...)', 'CUSTOM_ENTRY'));
+    };
 
-    // Paste the full helper functions here if they are not globally defined
-    // For brevity, assuming they are defined as in the previous complete code block.
-    // If you get a ReferenceError again, we will paste the full text of the helpers right here.
+    const addRow = (containerId, optionsConfig) => {
+        const container = charGenBody.querySelector(containerId);
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        const createSelectWrapper = (label, selectClass, inputClass) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex-1 hidden';
+            wrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">${label}</label><select class="${selectClass} w-full bg-gray-600 p-2.5 rounded"></select><input type="text" class="${inputClass} hidden w-full bg-gray-800 p-2.5 text-white rounded" placeholder="Enter custom...">`;
+            return wrapper;
+        };
+        const mainWrapper = createSelectWrapper(optionsConfig.label, 'main-select', 'main-custom-input');
+        mainWrapper.classList.remove('hidden');
+        const subWrapper = createSelectWrapper(`Sub-${optionsConfig.label}`, 'sub-select', 'sub-custom-input');
+        const tertiaryWrapper = createSelectWrapper('Type', 'tertiary-select', 'tertiary-custom-input');
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn text-red-400 font-bold text-xl self-end pb-1';
+        removeBtn.innerHTML = '⊖';
+        row.append(mainWrapper, subWrapper, tertiaryWrapper, removeBtn);
+        container.appendChild(row);
+        const mainSelect = row.querySelector('.main-select');
+        const mainCustomInput = row.querySelector('.main-custom-input');
+        const subSelect = row.querySelector('.sub-select');
+        const subCustomInput = row.querySelector('.sub-custom-input');
+        const tertiarySelect = row.querySelector('.tertiary-select');
+        const tertiaryCustomInput = row.querySelector('.tertiary-custom-input');
+        const handleCustomToggle = (selectEl, inputEl) => {
+            const isCustom = selectEl.value === 'CUSTOM_ENTRY';
+            selectEl.classList.toggle('hidden', isCustom);
+            inputEl.classList.toggle('hidden', !isCustom);
+            if (isCustom) inputEl.focus();
+        };
+        populateSelect(mainSelect, optionsConfig.main);
+        mainSelect.addEventListener('change', () => {
+            handleCustomToggle(mainSelect, mainCustomInput);
+            const selectedMain = mainSelect.value;
+            const subOptions = optionsConfig.getSubs(selectedMain);
+            tertiaryWrapper.classList.add('hidden');
+            tertiarySelect.innerHTML = '';
+            if (subOptions && subOptions.length > 0) {
+                if (subOptions[0]?.sys?.contentType?.sys?.id === 'subTypeGroup') {
+                    populateSelect(subSelect, subOptions.map(s => s.fields.groupName));
+                } else {
+                    populateSelect(subSelect, subOptions);
+                }
+                subWrapper.classList.remove('hidden');
+                subSelect.disabled = false;
+                subSelect.dispatchEvent(new Event('change'));
+            } else {
+                subWrapper.classList.add('hidden');
+                subSelect.innerHTML = '';
+                subSelect.disabled = true;
+            }
+        });
+        subSelect.addEventListener('change', () => {
+            handleCustomToggle(subSelect, subCustomInput);
+            const selectedMain = mainSelect.value;
+            const selectedSub = subSelect.value;
+            const tertiaryOptions = optionsConfig.getTertiaries(selectedMain, selectedSub);
+            if (tertiaryOptions && tertiaryOptions.length > 0) {
+                populateSelect(tertiarySelect, tertiaryOptions);
+                tertiaryWrapper.classList.remove('hidden');
+                tertiarySelect.disabled = false;
+            } else {
+                tertiaryWrapper.classList.add('hidden');
+                tertiarySelect.innerHTML = '';
+                tertiarySelect.disabled = true;
+            }
+        });
+        tertiarySelect.addEventListener('change', () => handleCustomToggle(tertiarySelect, tertiaryCustomInput));
+        mainSelect.dispatchEvent(new Event('change'));
+    };
 
     const kinshipConfig = { label: 'Kinship', main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups || [], getTertiaries: (kinshipTitle, subGroupName) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
     const callingConfig = { label: 'Calling', main: (characterOptions.callings || []).map(c => c.fields.title), getSubs: (callingTitle) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups || [], getTertiaries: (callingTitle, subGroupName) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
@@ -349,19 +420,87 @@ function openCharacterGenerator(personality) {
     charGenBody.querySelector('#add-faction-btn').addEventListener('click', () => addRow('#faction-container', { label: 'Faction/Circle', main: characterOptions.factionsAndCircles || [], getSubs: () => [], getTertiaries: () => [] }));
     
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
-
+    
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
+        const getSelectionsForPrompt = () => {
+            let promptText = '';
+            const processContainer = (containerId, category) => {
+                const selections = [];
+                modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                    const getVal = (type) => {
+                        const sel = row.querySelector(`.${type}-select`);
+                        if (!sel || sel.disabled) return null;
+                        if (sel.value === 'CUSTOM_ENTRY') { return row.querySelector(`.${type}-custom-input`).value.trim(); }
+                        return sel.value === 'RANDOM' ? null : sel.value;
+                    };
+                    const mainVal = getVal('main');
+                    if (mainVal) {
+                        const subVal = getVal('sub');
+                        const tertiaryVal = getVal('tertiary');
+                        let selectionText = mainVal;
+                        if (subVal) {
+                            selectionText += ` (${subVal}${tertiaryVal ? ` - ${tertiaryVal}` : ''})`;
+                        }
+                        selections.push(selectionText);
+                    }
+                });
+                if (selections.length > 0) {
+                    promptText += `\n- ${category}: ${selections.join(' and ')}`;
+                }
+            };
+            processContainer('#kinship-container', 'Kinship');
+            processContainer('#calling-container', 'Calling');
+            processContainer('#spirit-container', 'Spirit');
+            processContainer('#echo-root-container', 'Echo Root');
+            processContainer('#faction-container', 'Faction/Circle');
+            return promptText;
+        };
+        const getSelectionsForRag = () => {
+            const selections = {};
+            const processContainer = (containerId, category) => {
+                const values = [];
+                modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                    const getVal = (type) => {
+                        const sel = row.querySelector(`.${type}-select`);
+                        if (!sel || sel.disabled) return null;
+                        if (sel.value === 'CUSTOM_ENTRY') { return row.querySelector(`.${type}-custom-input`).value.trim(); }
+                        return sel.value === 'RANDOM' ? null : sel.value;
+                    };
+                    const mainVal = getVal('main');
+                    if(mainVal) values.push(mainVal);
+                    const subVal = getVal('sub');
+                    if(subVal) values.push(subVal);
+                    const tertiaryVal = getVal('tertiary');
+                    if(tertiaryVal) values.push(tertiaryVal);
+                });
+                if (values.length > 0) {
+                    selections[category] = values.join(' ');
+                }
+            };
+            processContainer('#kinship-container', 'Kinship');
+            processContainer('#calling-container', 'Calling');
+            processContainer('#spirit-container', 'Spirit');
+            processContainer('#echo-root-container', 'Echo Root');
+            processContainer('#faction-container', 'Faction/Circle');
+            return selections;
+        };
+
         const promptSelectionsText = getSelectionsForPrompt();
         const selectionsObject = getSelectionsForRag();
         const notes = modalBody.querySelector('#char-notes').value;
-        let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting.`;
-        prompt += promptSelectionsText;
+
+        let fullMechanicalPrompt = `Generate a character concept for the Yurei-tu-Shima campaign setting.`;
+        fullMechanicalPrompt += promptSelectionsText;
         if (notes) {
-            prompt += `\n- Notes: "${notes}"`;
-            selectionsObject['Notes'] = notes;
+            fullMechanicalPrompt += `\n- Notes: "${notes}"`;
         }
         
+        let transcriptSummary = "Weave a character with the following threads:" + promptSelectionsText;
+        if (notes) {
+            transcriptSummary += `\n- Additional Notes: "${notes}"`;
+        }
+
         modalBody.querySelector('#initial-generator-form').classList.add('hidden');
         const chatInterface = modalBody.querySelector('#chat-interface');
         chatInterface.classList.remove('hidden');
@@ -370,9 +509,14 @@ function openCharacterGenerator(personality) {
         const inputElement = chatInterface.querySelector('.weaver-input');
         const submitButton = chatInterface.querySelector('.weaver-submit-btn');
 
-        inputElement.value = prompt; // Temporarily place the generated prompt in the input
-        handleWeaverRequest(weaverName, inputElement, resultElement, submitButton, selectionsObject, chatHistory);
-        // The handleWeaverRequest function will clear the input value after it runs
+        const tempInput = { value: fullMechanicalPrompt };
+        handleWeaverRequest(weaverName, tempInput, resultElement, submitButton, selectionsObject, chatHistory);
+        
+        // This is a new element for displaying the initial user request in the chat log
+        const initialRequestDiv = document.createElement('div');
+        initialRequestDiv.className = 'mb-4';
+        initialRequestDiv.innerHTML = `<strong class="text-sky-300">You:</strong><br>${transcriptSummary.replace(/\n/g, '<br>')}`;
+        resultElement.appendChild(initialRequestDiv);
         
         const handleTweak = () => handleWeaverRequest(weaverName, inputElement, resultElement, submitButton, null, chatHistory);
         submitButton.addEventListener('click', handleTweak);
