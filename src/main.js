@@ -274,7 +274,7 @@ function openWeaverTool(personality) {
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
 }
-// Final replacement function in: src/main.js
+// Final complete replacement function in: src/main.js
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -287,7 +287,6 @@ function openCharacterGenerator(personality) {
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
 
-    // This will hold the conversation for tweaks
     let chatHistory = [];
 
     modalBody.innerHTML = `
@@ -317,11 +316,11 @@ function openCharacterGenerator(personality) {
             </div>
 
             <div id="chat-interface" class="hidden">
-                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg min-h-[100px]">
+                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg min-h-[100px] max-h-[40vh] overflow-y-auto custom-scrollbar">
                     <div class="weaver-result"></div>
                 </div>
                 <div class="mt-4">
-                    <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Now, how shall we refine this spark? (e.g., 'Make their hair black' or 'Give them a different plot hook')"></textarea>
+                    <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Now, how shall we refine this spark? (e.g., 'Make their hair black')"></textarea>
                     <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Weave a Tweak</button>
                 </div>
             </div>
@@ -329,17 +328,104 @@ function openCharacterGenerator(personality) {
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
     
-    // --- All the helper functions for populating the form (populateSelect, addRow, etc.) go here ---
-    // (This part of the code is long and doesn't need to be changed, so it's omitted for brevity. 
-    // Just make sure it's present in your file.)
+    // --- START HELPER FUNCTIONS (These were missing) ---
+    const populateSelect = (select, options) => {
+        select.innerHTML = '';
+        select.add(new Option('(Random)', 'RANDOM'));
+        options.forEach(opt => select.add(new Option(opt, opt)));
+        select.add(new Option('(Custom...)', 'CUSTOM_ENTRY'));
+    };
 
-    // --- We only need to update the button's event listener ---
+    const addRow = (containerId, optionsConfig) => {
+        const container = charGenBody.querySelector(containerId);
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
+        const createSelectWrapper = (label, selectClass, inputClass) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex-1 hidden';
+            wrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">${label}</label><select class="${selectClass} w-full bg-gray-600 p-2.5"></select><input type="text" class="${inputClass} hidden w-full bg-gray-800 p-2.5 text-white rounded" placeholder="Enter custom...">`;
+            return wrapper;
+        };
+        const mainWrapper = createSelectWrapper(optionsConfig.label, 'main-select', 'main-custom-input');
+        mainWrapper.classList.remove('hidden');
+        const subWrapper = createSelectWrapper(`Sub-${optionsConfig.label}`, 'sub-select', 'sub-custom-input');
+        const tertiaryWrapper = createSelectWrapper('Type', 'tertiary-select', 'tertiary-custom-input');
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn text-red-400 font-bold text-xl self-end pb-1';
+        removeBtn.innerHTML = '⊖';
+        row.append(mainWrapper, subWrapper, tertiaryWrapper, removeBtn);
+        container.appendChild(row);
+        const mainSelect = row.querySelector('.main-select');
+        const mainCustomInput = row.querySelector('.main-custom-input');
+        const subSelect = row.querySelector('.sub-select');
+        const subCustomInput = row.querySelector('.sub-custom-input');
+        const tertiarySelect = row.querySelector('.tertiary-select');
+        const tertiaryCustomInput = row.querySelector('.tertiary-custom-input');
+        const handleCustomToggle = (selectEl, inputEl) => {
+            const isCustom = selectEl.value === 'CUSTOM_ENTRY';
+            selectEl.classList.toggle('hidden', isCustom);
+            inputEl.classList.toggle('hidden', !isCustom);
+            if (isCustom) inputEl.focus();
+        };
+        populateSelect(mainSelect, optionsConfig.main);
+        mainSelect.addEventListener('change', () => {
+            handleCustomToggle(mainSelect, mainCustomInput);
+            const selectedMain = mainSelect.value;
+            const subOptions = optionsConfig.getSubs(selectedMain);
+            tertiaryWrapper.classList.add('hidden');
+            tertiarySelect.innerHTML = '';
+            if (subOptions && subOptions.length > 0) {
+                if (subOptions[0]?.sys?.contentType?.sys?.id === 'subTypeGroup') {
+                    populateSelect(subSelect, subOptions.map(s => s.fields.groupName));
+                } else {
+                    populateSelect(subSelect, subOptions);
+                }
+                subWrapper.classList.remove('hidden');
+                subSelect.disabled = false;
+                subSelect.dispatchEvent(new Event('change'));
+            } else {
+                subWrapper.classList.add('hidden');
+                subSelect.innerHTML = '';
+                subSelect.disabled = true;
+            }
+        });
+        subSelect.addEventListener('change', () => {
+            handleCustomToggle(subSelect, subCustomInput);
+            const selectedMain = mainSelect.value;
+            const selectedSub = subSelect.value;
+            const tertiaryOptions = optionsConfig.getTertiaries(selectedMain, selectedSub);
+            if (tertiaryOptions && tertiaryOptions.length > 0) {
+                populateSelect(tertiarySelect, tertiaryOptions);
+                tertiaryWrapper.classList.remove('hidden');
+                tertiarySelect.disabled = false;
+            } else {
+                tertiaryWrapper.classList.add('hidden');
+                tertiarySelect.innerHTML = '';
+                tertiarySelect.disabled = true;
+            }
+        });
+        tertiarySelect.addEventListener('change', () => handleCustomToggle(tertiarySelect, tertiaryCustomInput));
+        mainSelect.dispatchEvent(new Event('change'));
+    };
+
+    const kinshipConfig = { label: 'Kinship', main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups || [], getTertiaries: (kinshipTitle, subGroupName) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
+    const callingConfig = { label: 'Calling', main: (characterOptions.callings || []).map(c => c.fields.title), getSubs: (callingTitle) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups || [], getTertiaries: (callingTitle, subGroupName) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
+    
+    charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', kinshipConfig));
+    charGenBody.querySelector('#add-calling-btn').addEventListener('click', () => addRow('#calling-container', callingConfig));
+    charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { label: 'Spirit', main: (characterOptions.spirits || []).map(s => s.fields.title), getSubs: () => [], getTertiaries: () => [] }));
+    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { label: 'Background', main: characterOptions.backgrounds || [], getSubs: () => [], getTertiaries: () => [] }));
+    charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
+    
+    const getSelectionsForPrompt = () => { let promptText = ''; const processContainer = (containerId, category) => { const selections = []; modalBody.querySelectorAll(`${containerId} > div`).forEach(row => { const getVal = (type) => { const sel = row.querySelector(`.${type}-select`); if (!sel || sel.disabled) return null; if (sel.value === 'CUSTOM_ENTRY') { return row.querySelector(`.${type}-custom-input`).value.trim(); } return sel.value === 'RANDOM' ? null : sel.value; }; const mainVal = getVal('main'); if (mainVal) { const subVal = getVal('sub'); const tertiaryVal = getVal('tertiary'); let selectionText = mainVal; if (subVal) { if (tertiaryVal) { selectionText = `${mainVal} (${subVal} - ${tertiaryVal})`; } else { selectionText = `${mainVal} (${subVal})`; } } selections.push(selectionText); } }); if (selections.length > 0) { promptText += `\n- ${category}: ${selections.join(' and ')}`; } }; processContainer('#kinship-container', 'Kinship'); processContainer('#calling-container', 'Calling'); processContainer('#spirit-container', 'Spirit'); processContainer('#background-container', 'Background'); return promptText; }
+    const getSelectionsForRag = () => { const selections = {}; const processContainer = (containerId, category) => { const selectionValues = []; modalBody.querySelectorAll(`${containerId} > div`).forEach(row => { const getVal = (type) => { const sel = row.querySelector(`.${type}-select`); if (!sel || sel.disabled) return null; if (sel.value === 'CUSTOM_ENTRY') { return row.querySelector(`.${type}-custom-input`).value.trim(); } return sel.value === 'RANDOM' ? null : sel.value; }; const mainVal = getVal('main'); if(mainVal) selectionValues.push(mainVal); const subVal = getVal('sub'); if(subVal) selectionValues.push(subVal); const tertiaryVal = getVal('tertiary'); if(tertiaryVal) selectionValues.push(tertiaryVal); }); if (selectionValues.length > 0) { selections[category] = selectionValues.join(' '); } }; processContainer('#kinship-container', 'Kinship'); processContainer('#calling-container', 'Calling'); processContainer('#spirit-container', 'Spirit'); processContainer('#background-container', 'Background'); return selections; }
+    // --- END HELPER FUNCTIONS ---
+
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
         const promptSelectionsText = getSelectionsForPrompt();
         const selectionsObject = getSelectionsForRag();
         const notes = modalBody.querySelector('#char-notes').value;
-
         let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting.`;
         prompt += promptSelectionsText;
         if (notes) {
@@ -347,7 +433,6 @@ function openCharacterGenerator(personality) {
             selectionsObject['Notes'] = notes;
         }
         
-        // Hide the initial form and show the chat interface
         modalBody.querySelector('#initial-generator-form').classList.add('hidden');
         const chatInterface = modalBody.querySelector('#chat-interface');
         chatInterface.classList.remove('hidden');
@@ -356,12 +441,9 @@ function openCharacterGenerator(personality) {
         const inputElement = chatInterface.querySelector('.weaver-input');
         const submitButton = chatInterface.querySelector('.weaver-submit-btn');
 
-        // Make the initial generation call using the conversational handler
-        inputElement.value = prompt; // Temporarily put the full prompt in the input
+        inputElement.value = prompt;
         handleWeaverRequest(weaverName, inputElement, resultElement, submitButton, selectionsObject, chatHistory);
-        inputElement.value = ''; // Clear it after the call
         
-        // Set up the chat for follow-up tweaks
         const handleTweak = () => handleWeaverRequest(weaverName, inputElement, resultElement, submitButton, null, chatHistory);
         submitButton.addEventListener('click', handleTweak);
         inputElement.addEventListener('keydown', (e) => {
