@@ -221,6 +221,7 @@ function createWeaverCard(personality) {
     return card;
 }
 
+// replacement function in: src/main.js
 function openWeaverTool(personality) {
     const newModal = modalTemplate.cloneNode(true);
     newModal.removeAttribute('id');
@@ -228,6 +229,10 @@ function openWeaverTool(personality) {
     const modalBody = newModal.querySelector('#main-modal-body');
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
+
+    // NEW: Initialize an empty chat history for this session
+    let chatHistory = [];
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div class="modal-body text-gray-300">
@@ -236,32 +241,30 @@ function openWeaverTool(personality) {
                 <div class="flex-1 italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
             </div>
             <div>
-                <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
-                <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
-                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg hidden relative">
-                    <button class="copy-icon-btn">
-                        <svg class="icon-pen" viewBox="0 0 24 24"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>
-                        <svg class="icon-scroll hidden" viewBox="0 0 24 24"><path d="M19,2H5C3.9,2,3,2.9,3,4v16c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V4C21,2.9,20.1,2,19,2z M15,8H9C8.4,8,8,7.6,8,7 s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,8,15,8z M15,12H9c-0.6,0-1-0.4-1-1s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,12,15,12z M12,16H9 c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S12.6,16,12,16z"></path></svg>
-                    </button>
+                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg min-h-[100px]">
                     <div class="weaver-result"></div>
+                </div>
+                 <div class="mt-4">
+                    <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="..."></textarea>
+                    <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">${personality.fields.buttonLabel || 'Submit'}</button>
                 </div>
             </div>
         </div>
     `;
+
+    const inputElement = modalBody.querySelector('.weaver-input');
+    const resultElement = modalBody.querySelector('.weaver-result');
     const submitBtn = modalBody.querySelector('.weaver-submit-btn');
-    submitBtn.addEventListener('click', () => handleWeaverRequest(weaverName, modalBody.querySelector('.weaver-input'), modalBody.querySelector('.weaver-result'), submitBtn));
     
-    const copyBtn = modalBody.querySelector('.copy-icon-btn');
-    copyBtn.addEventListener('click', e => {
-        const textToCopy = copyBtn.nextElementSibling.innerText;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            copyBtn.querySelector('.icon-pen').classList.add('hidden');
-            copyBtn.querySelector('.icon-scroll').classList.remove('hidden');
-            setTimeout(() => {
-                copyBtn.querySelector('.icon-pen').classList.remove('hidden');
-                copyBtn.querySelector('.icon-scroll').classList.add('hidden');
-            }, 2000);
-        });
+    // Pass the chatHistory array to the handler
+    const handleRequest = () => handleWeaverRequest(weaverName, inputElement, resultElement, submitBtn, null, chatHistory);
+
+    submitBtn.addEventListener('click', handleRequest);
+    inputElement.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleRequest();
+        }
     });
 
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
@@ -271,7 +274,7 @@ function openWeaverTool(personality) {
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
 }
-
+// The complete, final, and unabridged version for: src/main.js
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -284,6 +287,8 @@ function openCharacterGenerator(personality) {
     const closeButton = newModal.querySelector('.modal-close-btn');
     const weaverName = personality.fields.weaverName;
 
+    let chatHistory = [];
+
     modalBody.innerHTML = `
         <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-serif text-amber-300">${weaverName}</h2></div>
         <div id="char-gen-body" class="modal-body text-gray-300">
@@ -291,27 +296,35 @@ function openCharacterGenerator(personality) {
                 ${personality.fields.weaverImage ? `<img src="https:${personality.fields.weaverImage.fields.file.url}" alt="${weaverName}" class="w-full h-auto object-cover rounded-lg border-2 border-gray-600">` : ''}
                 <div class="italic">${documentToHtmlString(personality.fields.introductoryText)}</div>
             </div>
-            <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
-                <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Kinship</button>
-                <button id="add-calling-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Calling</button>
-                <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Spirit</button>
-                <button id="add-background-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Background</button>
+            
+            <div id="initial-generator-form">
+                <div class="flex flex-wrap gap-4 mb-6 border-t border-b border-gray-700 py-4">
+                    <button id="add-kinship-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Kinship</button>
+                    <button id="add-calling-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Calling</button>
+                    <button id="add-spirit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Spirit</button>
+                    <button id="add-echo-root-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Echo Root</button>
+                    <button id="add-faction-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm">⊕ Add Faction/Circle</button>
+                </div>
+                <div id="kinship-container" class="space-y-3 mb-4"></div>
+                <div id="calling-container" class="space-y-3 mb-4"></div>
+                <div id="spirit-container" class="space-y-3 mb-4"></div>
+                <div id="echo-root-container" class="space-y-3 mb-4"></div>
+                <div id="faction-container" class="space-y-3 mb-4"></div>
+                <div class="mb-4">
+                    <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
+                    <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
+                </div>
+                <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded">Weave the Breath</button>
             </div>
-            <div id="kinship-container" class="space-y-3 mb-4"></div>
-            <div id="calling-container" class="space-y-3 mb-4"></div>
-            <div id="spirit-container" class="space-y-3 mb-4"></div>
-            <div id="background-container" class="space-y-3 mb-4"></div>
-            <div class="mb-4">
-                <label for="char-notes" class="block mb-2 text-sm font-medium text-gray-300">Optional Notes</label>
-                <textarea id="char-notes" rows="2" class="block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" placeholder="e.g., 'Wears a broken mask', 'Loves spicy ramen'..."></textarea>
-            </div>
-            <button id="generate-char-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded">Weave the Breath</button>
-            <div class="weaver-result-wrapper mt-4 p-4 bg-gray-800/50 rounded-lg hidden relative">
-                <button class="copy-icon-btn">
-                    <svg class="icon-pen" viewBox="0 0 24 24"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>
-                    <svg class="icon-scroll hidden" viewBox="0 0 24 24"><path d="M19,2H5C3.9,2,3,2.9,3,4v16c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V4C21,2.9,20.1,2,19,2z M15,8H9C8.4,8,8,7.6,8,7 s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,8,15,8z M15,12H9c-0.6,0-1-0.4-1-1s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,12,15,12z M12,16H9 c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S12.6,16,12,16z"></path></svg>
-                </button>
-                <div class="weaver-result"></div>
+
+            <div id="chat-interface" class="hidden">
+                <div class="weaver-result-wrapper mt-4 p-4 bg-gray-900/50 rounded-lg min-h-[100px] max-h-[40vh] overflow-y-auto custom-scrollbar">
+                    <div class="weaver-result"></div>
+                </div>
+                <div class="mt-4">
+                    <textarea class="weaver-input block p-2.5 w-full text-sm text-white bg-gray-700 rounded-lg border border-gray-600" rows="3" placeholder="Now, how shall we refine this spark? (e.g., 'Make their hair black')"></textarea>
+                    <button class="weaver-submit-btn mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded">Refine the Weave</button>
+                </div>
             </div>
         </div>
     `;
@@ -328,54 +341,40 @@ function openCharacterGenerator(personality) {
         const container = charGenBody.querySelector(containerId);
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 p-2 rounded-md bg-black/20';
-
         const createSelectWrapper = (label, selectClass, inputClass) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'flex-1 hidden';
-            wrapper.innerHTML = `
-                <label class="block text-xs text-gray-400 mb-1">${label}</label>
-                <select class="${selectClass} w-full bg-gray-600 p-2.5"></select>
-                <input type="text" class="${inputClass} hidden w-full bg-gray-800 p-2.5 text-white rounded" placeholder="Enter custom...">
-            `;
+            wrapper.innerHTML = `<label class="block text-xs text-gray-400 mb-1">${label}</label><select class="${selectClass} w-full bg-gray-600 p-2.5 rounded"></select><input type="text" class="${inputClass} hidden w-full bg-gray-800 p-2.5 text-white rounded" placeholder="Enter custom...">`;
             return wrapper;
         };
-
         const mainWrapper = createSelectWrapper(optionsConfig.label, 'main-select', 'main-custom-input');
         mainWrapper.classList.remove('hidden');
         const subWrapper = createSelectWrapper(`Sub-${optionsConfig.label}`, 'sub-select', 'sub-custom-input');
         const tertiaryWrapper = createSelectWrapper('Type', 'tertiary-select', 'tertiary-custom-input');
-        
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn text-red-400 font-bold text-xl self-end pb-1';
         removeBtn.innerHTML = '⊖';
-
         row.append(mainWrapper, subWrapper, tertiaryWrapper, removeBtn);
         container.appendChild(row);
-
         const mainSelect = row.querySelector('.main-select');
         const mainCustomInput = row.querySelector('.main-custom-input');
         const subSelect = row.querySelector('.sub-select');
         const subCustomInput = row.querySelector('.sub-custom-input');
         const tertiarySelect = row.querySelector('.tertiary-select');
         const tertiaryCustomInput = row.querySelector('.tertiary-custom-input');
-
         const handleCustomToggle = (selectEl, inputEl) => {
             const isCustom = selectEl.value === 'CUSTOM_ENTRY';
             selectEl.classList.toggle('hidden', isCustom);
             inputEl.classList.toggle('hidden', !isCustom);
             if (isCustom) inputEl.focus();
         };
-        
         populateSelect(mainSelect, optionsConfig.main);
-
         mainSelect.addEventListener('change', () => {
             handleCustomToggle(mainSelect, mainCustomInput);
             const selectedMain = mainSelect.value;
             const subOptions = optionsConfig.getSubs(selectedMain);
-
             tertiaryWrapper.classList.add('hidden');
             tertiarySelect.innerHTML = '';
-            
             if (subOptions && subOptions.length > 0) {
                 if (subOptions[0]?.sys?.contentType?.sys?.id === 'subTypeGroup') {
                     populateSelect(subSelect, subOptions.map(s => s.fields.groupName));
@@ -391,13 +390,11 @@ function openCharacterGenerator(personality) {
                 subSelect.disabled = true;
             }
         });
-
         subSelect.addEventListener('change', () => {
             handleCustomToggle(subSelect, subCustomInput);
             const selectedMain = mainSelect.value;
             const selectedSub = subSelect.value;
             const tertiaryOptions = optionsConfig.getTertiaries(selectedMain, selectedSub);
-
             if (tertiaryOptions && tertiaryOptions.length > 0) {
                 populateSelect(tertiarySelect, tertiaryOptions);
                 tertiaryWrapper.classList.remove('hidden');
@@ -408,47 +405,21 @@ function openCharacterGenerator(personality) {
                 tertiarySelect.disabled = true;
             }
         });
-
         tertiarySelect.addEventListener('change', () => handleCustomToggle(tertiarySelect, tertiaryCustomInput));
-        
         mainSelect.dispatchEvent(new Event('change'));
     };
-    
-    const kinshipConfig = {
-        label: 'Kinship',
-        main: (characterOptions.kinships || []).map(k => k.fields.title),
-        getSubs: (kinshipTitle) => {
-            const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle);
-            return kinship?.fields?.subKinshipGroups || [];
-        },
-        getTertiaries: (kinshipTitle, subGroupName) => {
-            const kinship = (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle);
-            const subGroup = (kinship?.fields?.subKinshipGroups || []).find(s => s.fields.groupName === subGroupName);
-            return subGroup?.fields?.options || [];
-        }
-    };
-    
-    const callingConfig = {
-        label: 'Calling',
-        main: (characterOptions.callings || []).map(c => c.fields.title),
-        getSubs: (callingTitle) => {
-            const calling = (characterOptions.callings || []).find(c => c.fields.title === callingTitle);
-            return calling?.fields?.subCallingGroups || [];
-        },
-        getTertiaries: (callingTitle, subGroupName) => {
-            const calling = (characterOptions.callings || []).find(c => c.fields.title === callingTitle);
-            const subGroup = (calling?.fields?.subCallingGroups || []).find(s => s.fields.groupName === subGroupName);
-            return subGroup?.fields?.options || [];
-        }
-    };
 
+    const kinshipConfig = { label: 'Kinship', main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups || [], getTertiaries: (kinshipTitle, subGroupName) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
+    const callingConfig = { label: 'Calling', main: (characterOptions.callings || []).map(c => c.fields.title), getSubs: (callingTitle) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups || [], getTertiaries: (callingTitle, subGroupName) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
+    
     charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', kinshipConfig));
     charGenBody.querySelector('#add-calling-btn').addEventListener('click', () => addRow('#calling-container', callingConfig));
     charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { label: 'Spirit', main: (characterOptions.spirits || []).map(s => s.fields.title), getSubs: () => [], getTertiaries: () => [] }));
-    charGenBody.querySelector('#add-background-btn').addEventListener('click', () => addRow('#background-container', { label: 'Background', main: characterOptions.backgrounds || [], getSubs: () => [], getTertiaries: () => [] }));
+    charGenBody.querySelector('#add-echo-root-btn').addEventListener('click', () => addRow('#echo-root-container', { label: 'Echo Root', main: characterOptions.echoRoots || [], getSubs: () => [], getTertiaries: () => [] }));
+    charGenBody.querySelector('#add-faction-btn').addEventListener('click', () => addRow('#faction-container', { label: 'Faction/Circle', main: characterOptions.factionsAndCircles || [], getSubs: () => [], getTertiaries: () => [] }));
     
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
-    
+
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
         const getSelectionsForPrompt = () => {
@@ -459,23 +430,16 @@ function openCharacterGenerator(personality) {
                     const getVal = (type) => {
                         const sel = row.querySelector(`.${type}-select`);
                         if (!sel || sel.disabled) return null;
-                        if (sel.value === 'CUSTOM_ENTRY') {
-                            return row.querySelector(`.${type}-custom-input`).value.trim();
-                        }
+                        if (sel.value === 'CUSTOM_ENTRY') { return row.querySelector(`.${type}-custom-input`).value.trim(); }
                         return sel.value === 'RANDOM' ? null : sel.value;
                     };
-
                     const mainVal = getVal('main');
                     if (mainVal) {
                         const subVal = getVal('sub');
                         const tertiaryVal = getVal('tertiary');
                         let selectionText = mainVal;
                         if (subVal) {
-                            if (tertiaryVal) {
-                                selectionText = `${mainVal} (${subVal} - ${tertiaryVal})`;
-                            } else {
-                                selectionText = `${mainVal} (${subVal})`;
-                            }
+                            selectionText += ` (${subVal}${tertiaryVal ? ` - ${tertiaryVal}` : ''})`;
                         }
                         selections.push(selectionText);
                     }
@@ -487,68 +451,78 @@ function openCharacterGenerator(personality) {
             processContainer('#kinship-container', 'Kinship');
             processContainer('#calling-container', 'Calling');
             processContainer('#spirit-container', 'Spirit');
-            processContainer('#background-container', 'Background');
+            processContainer('#echo-root-container', 'Echo Root');
+            processContainer('#faction-container', 'Faction/Circle');
             return promptText;
-        }
-
+        };
         const getSelectionsForRag = () => {
             const selections = {};
             const processContainer = (containerId, category) => {
-                const selectionValues = [];
+                const values = [];
                 modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
                     const getVal = (type) => {
                         const sel = row.querySelector(`.${type}-select`);
                         if (!sel || sel.disabled) return null;
-                        if (sel.value === 'CUSTOM_ENTRY') {
-                            return row.querySelector(`.${type}-custom-input`).value.trim();
-                        }
+                        if (sel.value === 'CUSTOM_ENTRY') { return row.querySelector(`.${type}-custom-input`).value.trim(); }
                         return sel.value === 'RANDOM' ? null : sel.value;
                     };
                     const mainVal = getVal('main');
-                    if(mainVal) selectionValues.push(mainVal);
+                    if(mainVal) values.push(mainVal);
                     const subVal = getVal('sub');
-                    if(subVal) selectionValues.push(subVal);
+                    if(subVal) values.push(subVal);
                     const tertiaryVal = getVal('tertiary');
-                    if(tertiaryVal) selectionValues.push(tertiaryVal);
+                    if(tertiaryVal) values.push(tertiaryVal);
                 });
-                if (selectionValues.length > 0) {
-                    selections[category] = selectionValues.join(' ');
+                if (values.length > 0) {
+                    selections[category] = values.join(' ');
                 }
             };
             processContainer('#kinship-container', 'Kinship');
             processContainer('#calling-container', 'Calling');
             processContainer('#spirit-container', 'Spirit');
-            processContainer('#background-container', 'Background');
+            processContainer('#echo-root-container', 'Echo Root');
+            processContainer('#faction-container', 'Faction/Circle');
             return selections;
-        }
+        };
 
         const promptSelectionsText = getSelectionsForPrompt();
         const selectionsObject = getSelectionsForRag();
         const notes = modalBody.querySelector('#char-notes').value;
 
-        let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting, using D&D 5e as the ruleset.`;
-        prompt += promptSelectionsText;
+        let fullMechanicalPrompt = `Generate a character concept for the Yurei-tu-Shima campaign setting.`;
+        fullMechanicalPrompt += promptSelectionsText;
         if (notes) {
-            prompt += `\n- Notes: "${notes}"`;
-            selectionsObject['Notes'] = notes;
+            fullMechanicalPrompt += `\n- Notes: "${notes}"`;
         }
-        prompt += `\n\nProvide a character concept including a name, detailed physical and personality descriptions, and a plot hook.`;
+        
+        let transcriptSummary = "Weave a character with the following threads:" + promptSelectionsText;
+        if (notes) {
+            transcriptSummary += `\n- Additional Notes: "${notes}"`;
+        }
 
-        const resultDiv = modalBody.querySelector('.weaver-result');
-        const submitButton = modalBody.querySelector('#generate-char-button');
-        handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton, selectionsObject);
-    });
-    
-    const copyBtn = modalBody.querySelector('.copy-icon-btn');
-    copyBtn.addEventListener('click', e => {
-        const textToCopy = copyBtn.nextElementSibling.innerText;
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            copyBtn.querySelector('.icon-pen').classList.add('hidden');
-            copyBtn.querySelector('.icon-scroll').classList.remove('hidden');
-            setTimeout(() => {
-                copyBtn.querySelector('.icon-pen').classList.remove('hidden');
-                copyBtn.querySelector('.icon-scroll').classList.add('hidden');
-            }, 2000);
+        modalBody.querySelector('#initial-generator-form').classList.add('hidden');
+        const chatInterface = modalBody.querySelector('#chat-interface');
+        chatInterface.classList.remove('hidden');
+
+        const resultElement = chatInterface.querySelector('.weaver-result');
+        const inputElement = chatInterface.querySelector('.weaver-input');
+        const submitButton = chatInterface.querySelector('.weaver-submit-btn');
+
+        const tempInput = { value: fullMechanicalPrompt };
+        handleWeaverRequest(weaverName, tempInput, resultElement, submitButton, selectionsObject, chatHistory, true);
+        
+        const initialRequestDiv = document.createElement('div');
+        initialRequestDiv.className = 'mb-4';
+        initialRequestDiv.innerHTML = `<strong class="text-sky-300">You:</strong><br>${transcriptSummary.replace(/\n/g, '<br>')}`;
+        resultElement.appendChild(initialRequestDiv);
+        
+        const handleTweak = () => handleWeaverRequest(weaverName, inputElement, resultElement, submitButton, null, chatHistory);
+        submitButton.addEventListener('click', handleTweak);
+        inputElement.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleTweak();
+            }
         });
     });
 
@@ -560,39 +534,51 @@ function openCharacterGenerator(personality) {
     newModal.style.display = 'flex';
 }
 
+// Final replacement function in: src/main.js
+// Final replacement function with "unfurling scroll" copy effect in: src/main.js
 // replacement function in: src/main.js
-async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null) {
-    const query = inputElement.value; // This is the full prompt for the LLM
+async function handleWeaverRequest(weaverName, inputElement, resultElement, buttonElement, selections = null, chatHistory = [], isInitialGeneration = false) {
+    const query = inputElement.value;
     if (!query) return;
 
-    resultElement.parentElement.style.display = 'block';
-    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as threads gather...</p>`;
     buttonElement.disabled = true;
+    
+    // This logic now only runs for conversational tweaks, not the initial generation
+    if (!isInitialGeneration) {
+        inputElement.value = '';
+        resultElement.innerHTML += `<div class="mb-4"><strong class="text-sky-300">You:</strong><br>${query.replace(/\n/g, '<br>')}</div>`;
+        resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
+        chatHistory.push({ role: 'User', text: query });
+    }
+
+    const thinkingIndicator = document.createElement('div');
+    thinkingIndicator.innerHTML = `<em class="text-amber-300">The Weaver is thinking...</em>`;
+    resultElement.appendChild(thinkingIndicator);
+    resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
 
     try {
         const personality = aiPersonalities.find(p => p.fields.weaverName === weaverName);
         if (!personality) throw new Error("Could not find AI personality.");
         
         const systemPrompt = personality.fields.systemPrompt || 'You are a helpful assistant.';
-
-        // Determine if a separate search query is needed for the character generator
         let searchQueryOverride = null;
         if (selections) {
             const searchTerms = Object.values(selections).join(' ');
-            if (searchTerms.trim()) {
-                searchQueryOverride = searchTerms.trim();
-            }
+            if (searchTerms.trim()) searchQueryOverride = searchTerms.trim();
         }
         
         const response = await fetch('/api/ask-weaver', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                query,                // The full prompt for generation
+                query,
                 systemPrompt,
-                searchQueryOverride   // The specific keywords for RAG search (or null)
+                searchQueryOverride,
+                chatHistory
             }),
         });
+
+        thinkingIndicator.remove();
 
         if (!response.ok) {
             const errData = await response.json();
@@ -600,17 +586,58 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         }
 
         const { text } = await response.json();
-        resultElement.innerHTML = text.replace(/\n/g, '<br>');
+        chatHistory.push({ role: 'AI', text });
 
+        const responseWrapper = document.createElement('div');
+        responseWrapper.className = 'mb-4 p-4 rounded-lg bg-black/20 relative';
+        
+        const responseText = document.createElement('div');
+        responseText.innerHTML = `<strong class="text-amber-200">${weaverName}:</strong><br>${text.replace(/\n/g, '<br>')}`;
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-icon-btn';
+        copyBtn.title = 'Copy response';
+        const iconPen = document.createElement('div');
+        iconPen.innerHTML = `<svg class="icon-pen" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M13.5,6.5l3,3l-3,3l-3-3L13.5,6.5z M20.4,2c-0.2,0-0.4,0.1-0.6,0.2l-2.4,2.4l3,3l2.4-2.4c0.3-0.3,0.3-0.8,0-1.2l-1.8-1.8 C20.8,2.1,20.6,2,20.4,2z M4,18c-0.6,0.6-0.6,1.5,0,2.1c0.6,0.6,1.5,0.6,2.1,0L18,8.2l-3-3L4,16.1V18z M11.9,14.2l-3,3H8l-4,4 l1.4,1.4l4-4v-0.9l3-3L11.9,14.2z"></path></svg>`;
+        const iconScroll = document.createElement('div');
+        iconScroll.innerHTML = `<svg class="icon-scroll" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px"><path d="M19,2H5C3.9,2,3,2.9,3,4v16c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V4C21,2.9,20.1,2,19,2z M15,8H9C8.4,8,8,7.6,8,7 s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,8,15,8z M15,12H9c-0.6,0-1-0.4-1-1s0.4-1,1-1h6c0.6,0,1,0.4,1,1S15.6,12,15,12z M12,16H9 c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S12.6,16,12,16z"></path></svg>`;
+        iconScroll.classList.add('hidden');
+        copyBtn.appendChild(iconPen);
+        copyBtn.appendChild(iconScroll);
+        
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(text).then(() => {
+                iconPen.classList.add('hidden');
+                iconScroll.classList.remove('hidden');
+                setTimeout(() => {
+                    iconScroll.classList.add('hidden');
+                    iconPen.classList.remove('hidden');
+                }, 2000);
+            }).catch(err => {
+                console.error('Clipboard write failed: ', err);
+            });
+        });
+        
+        responseWrapper.appendChild(responseText);
+        responseWrapper.appendChild(copyBtn);
+        resultElement.appendChild(responseWrapper);
+        
     } catch (error) {
         console.error('Error:', error);
-        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
+        resultElement.innerHTML += `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
     } finally {
         buttonElement.disabled = false;
+        if (!isInitialGeneration) {
+            inputElement.focus();
+        }
+        resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
     }
 }
 
-// Final replacement function in: src/main.js
+
+
+
+
 async function initializeSite() {
     try {
         const isTestBranch = window.location.hostname.includes('--');
@@ -685,4 +712,5 @@ async function initializeSite() {
         document.getElementById('portal-grid').innerHTML = '<p class="text-center text-red-400">Error fetching content.</p>';
     }
 }
-initializeSite();
+
+initializeSite(); 
