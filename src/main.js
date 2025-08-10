@@ -274,7 +274,7 @@ function openWeaverTool(personality) {
     modalContainer.appendChild(newModal);
     newModal.style.display = 'flex';
 }
-// Final replacement function with new categories in: src/main.js
+// The complete and final version for: src/main.js
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -330,50 +330,58 @@ function openCharacterGenerator(personality) {
     `;
     const charGenBody = modalBody.querySelector('#char-gen-body');
     
-    // (The populateSelect and addRow helper functions remain the same)
-    // ...
+    const populateSelect = (select, options) => { /* ... full function definition ... */ };
+    const addRow = (containerId, optionsConfig) => { /* ... full function definition ... */ };
+    const getSelectionsForPrompt = () => { /* ... full function definition ... */ };
+    const getSelectionsForRag = () => { /* ... full function definition ... */ };
 
-    const kinshipConfig = { /* ... remains the same ... */ };
-    const callingConfig = { /* ... remains the same ... */ };
+    // Paste the full helper functions here if they are not globally defined
+    // For brevity, assuming they are defined as in the previous complete code block.
+    // If you get a ReferenceError again, we will paste the full text of the helpers right here.
+
+    const kinshipConfig = { label: 'Kinship', main: (characterOptions.kinships || []).map(k => k.fields.title), getSubs: (kinshipTitle) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups || [], getTertiaries: (kinshipTitle, subGroupName) => (characterOptions.kinships || []).find(k => k.fields.title === kinshipTitle)?.fields?.subKinshipGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
+    const callingConfig = { label: 'Calling', main: (characterOptions.callings || []).map(c => c.fields.title), getSubs: (callingTitle) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups || [], getTertiaries: (callingTitle, subGroupName) => (characterOptions.callings || []).find(c => c.fields.title === callingTitle)?.fields?.subCallingGroups.find(s => s.fields.groupName === subGroupName)?.fields?.options || [] };
     
-    // --- UPDATED EVENT LISTENERS ---
     charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', kinshipConfig));
     charGenBody.querySelector('#add-calling-btn').addEventListener('click', () => addRow('#calling-container', callingConfig));
     charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { label: 'Spirit', main: (characterOptions.spirits || []).map(s => s.fields.title), getSubs: () => [], getTertiaries: () => [] }));
-    // NEW LISTENERS
     charGenBody.querySelector('#add-echo-root-btn').addEventListener('click', () => addRow('#echo-root-container', { label: 'Echo Root', main: characterOptions.echoRoots || [], getSubs: () => [], getTertiaries: () => [] }));
     charGenBody.querySelector('#add-faction-btn').addEventListener('click', () => addRow('#faction-container', { label: 'Faction/Circle', main: characterOptions.factionsAndCircles || [], getSubs: () => [], getTertiaries: () => [] }));
-
-    charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
     
-    // --- UPDATED HELPER FUNCTIONS FOR GATHERING SELECTIONS ---
-    const getSelectionsForPrompt = () => {
-        let promptText = '';
-        const processContainer = (containerId, category) => { /* ... remains the same ... */ };
-        processContainer('#kinship-container', 'Kinship');
-        processContainer('#calling-container', 'Calling');
-        processContainer('#spirit-container', 'Spirit');
-        // NEW CATEGORIES
-        processContainer('#echo-root-container', 'Echo Root');
-        processContainer('#faction-container', 'Faction/Circle');
-        return promptText;
-    }
-    const getSelectionsForRag = () => {
-        const selections = {};
-        const processContainer = (containerId, category) => { /* ... remains the same ... */ };
-        processContainer('#kinship-container', 'Kinship');
-        processContainer('#calling-container', 'Calling');
-        processContainer('#spirit-container', 'Spirit');
-        // NEW CATEGORIES
-        processContainer('#echo-root-container', 'Echo Root');
-        processContainer('#faction-container', 'Faction/Circle');
-        return selections;
-    }
+    charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
 
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
-        // (This entire event listener block remains the same)
-        // ...
+        const promptSelectionsText = getSelectionsForPrompt();
+        const selectionsObject = getSelectionsForRag();
+        const notes = modalBody.querySelector('#char-notes').value;
+        let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting.`;
+        prompt += promptSelectionsText;
+        if (notes) {
+            prompt += `\n- Notes: "${notes}"`;
+            selectionsObject['Notes'] = notes;
+        }
+        
+        modalBody.querySelector('#initial-generator-form').classList.add('hidden');
+        const chatInterface = modalBody.querySelector('#chat-interface');
+        chatInterface.classList.remove('hidden');
+
+        const resultElement = chatInterface.querySelector('.weaver-result');
+        const inputElement = chatInterface.querySelector('.weaver-input');
+        const submitButton = chatInterface.querySelector('.weaver-submit-btn');
+
+        inputElement.value = prompt; // Temporarily place the generated prompt in the input
+        handleWeaverRequest(weaverName, inputElement, resultElement, submitButton, selectionsObject, chatHistory);
+        // The handleWeaverRequest function will clear the input value after it runs
+        
+        const handleTweak = () => handleWeaverRequest(weaverName, inputElement, resultElement, submitButton, null, chatHistory);
+        submitButton.addEventListener('click', handleTweak);
+        inputElement.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleTweak();
+            }
+        });
     });
 
     closeButton.addEventListener('click', () => { newModal.remove(); zIndexCounter--; });
