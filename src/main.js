@@ -453,93 +453,94 @@ function openCharacterGenerator(personality) {
     
     const generateBtn = modalBody.querySelector('#generate-char-button');
     generateBtn.addEventListener('click', () => {
-        const getSelectionsForPrompt = () => {
-            let promptText = '';
-            const processContainer = (containerId, category) => {
-                const selections = [];
-                modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
-                    const getVal = (type) => {
-                        const sel = row.querySelector(`.${type}-select`);
-                        if (!sel || sel.disabled) return null;
-                        if (sel.value === 'CUSTOM_ENTRY') {
-                            return row.querySelector(`.${type}-custom-input`).value.trim();
-                        }
-                        return sel.value === 'RANDOM' ? null : sel.value;
-                    };
-
-                    const mainVal = getVal('main');
-                    if (mainVal) {
-                        const subVal = getVal('sub');
-                        const tertiaryVal = getVal('tertiary');
-                        let selectionText = mainVal;
-                        if (subVal) {
-                            if (tertiaryVal) {
-                                selectionText = `${mainVal} (${subVal} - ${tertiaryVal})`;
-                            } else {
-                                selectionText = `${mainVal} (${subVal})`;
-                            }
-                        }
-                        selections.push(selectionText);
+    const getSelectionsForPrompt = () => {
+        let promptText = '';
+        const processContainer = (containerId, category) => {
+            const selections = [];
+            modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                const getVal = (type) => {
+                    const sel = row.querySelector(`.${type}-select`);
+                    if (!sel || sel.disabled) return null;
+                    if (sel.value === 'CUSTOM_ENTRY') {
+                        return row.querySelector(`.${type}-custom-input`).value.trim();
                     }
-                });
-                if (selections.length > 0) {
-                    promptText += `\n- ${category}: ${selections.join(' and ')}`;
-                }
-            };
-            processContainer('#kinship-container', 'Kinship');
-            processContainer('#calling-container', 'Calling');
-            processContainer('#spirit-container', 'Spirit');
-            processContainer('#background-container', 'Background');
-            return promptText;
-        }
+                    return sel.value === 'RANDOM' ? null : sel.value;
+                };
 
-        const getSelectionsForRag = () => {
-            const selections = {};
-            const processContainer = (containerId, category) => {
-                const selectionValues = [];
-                modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
-                    const getVal = (type) => {
-                        const sel = row.querySelector(`.${type}-select`);
-                        if (!sel || sel.disabled) return null;
-                        if (sel.value === 'CUSTOM_ENTRY') {
-                            return row.querySelector(`.${type}-custom-input`).value.trim();
-                        }
-                        return sel.value === 'RANDOM' ? null : sel.value;
-                    };
-                    const mainVal = getVal('main');
-                    if(mainVal) selectionValues.push(mainVal);
+                const mainVal = getVal('main');
+                if (mainVal) {
                     const subVal = getVal('sub');
-                    if(subVal) selectionValues.push(subVal);
                     const tertiaryVal = getVal('tertiary');
-                    if(tertiaryVal) selectionValues.push(tertiaryVal);
-                });
-                if (selectionValues.length > 0) {
-                    selections[category] = selectionValues.join(' ');
+                    let selectionText = mainVal;
+                    if (subVal) {
+                        if (tertiaryVal) {
+                            selectionText = `${mainVal} (${subVal} - ${tertiaryVal})`;
+                        } else {
+                            selectionText = `${mainVal} (${subVal})`;
+                        }
+                    }
+                    selections.push(selectionText);
                 }
-            };
-            processContainer('#kinship-container', 'Kinship');
-            processContainer('#calling-container', 'Calling');
-            processContainer('#spirit-container', 'Spirit');
-            processContainer('#background-container', 'Background');
-            return selections;
-        }
+            });
+            if (selections.length > 0) {
+                promptText += `\n- ${category}: ${selections.join(' and ')}`;
+            }
+        };
+        processContainer('#kinship-container', 'Kinship');
+        processContainer('#calling-container', 'Calling');
+        processContainer('#spirit-container', 'Spirit');
+        processContainer('#background-container', 'Background');
+        return promptText;
+    }
 
-        const promptSelectionsText = getSelectionsForPrompt();
-        const selectionsObject = getSelectionsForRag();
-        const notes = modalBody.querySelector('#char-notes').value;
+    const getSelectionsForRag = () => {
+        const selections = {};
+        const processContainer = (containerId, category) => {
+            const selectionValues = [];
+            modalBody.querySelectorAll(`${containerId} > div`).forEach(row => {
+                const getVal = (type) => {
+                    const sel = row.querySelector(`.${type}-select`);
+                    if (!sel || sel.disabled) return null;
+                    if (sel.value === 'CUSTOM_ENTRY') {
+                        return row.querySelector(`.${type}-custom-input`).value.trim();
+                    }
+                    return sel.value === 'RANDOM' ? null : sel.value;
+                };
+                const mainVal = getVal('main');
+                if(mainVal) selectionValues.push(mainVal);
+                const subVal = getVal('sub');
+                if(subVal) selectionValues.push(subVal);
+                const tertiaryVal = getVal('tertiary');
+                if(tertiaryVal) selectionValues.push(tertiaryVal);
+            });
+            if (selectionValues.length > 0) {
+                selections[category] = selectionValues.join(' ');
+            }
+        };
+        processContainer('#kinship-container', 'Kinship');
+        processContainer('#calling-container', 'Calling');
+        processContainer('#spirit-container', 'Spirit');
+        processContainer('#background-container', 'Background');
+        return selections;
+    }
+    
+    const promptSelectionsText = getSelectionsForPrompt();
+    const selectionsObject = getSelectionsForRag();
+    const notes = modalBody.querySelector('#char-notes').value;
 
-        let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting, using D&D 5e as the ruleset.`;
-        prompt += promptSelectionsText;
-        if (notes) {
-            prompt += `\n- Notes: "${notes}"`;
-            selectionsObject['Notes'] = notes;
-        }
-        prompt += `\n\nProvide a character concept including a name, detailed physical and personality descriptions, and a plot hook.`;
+    let prompt = `Generate a character concept for the Yurei-tu-Shima campaign setting.`;
+    prompt += promptSelectionsText;
+    if (notes) {
+        prompt += `\n- Notes: "${notes}"`;
+        selectionsObject['Notes'] = notes;
+    }
+    prompt += `\n\nProvide a character concept including a name, detailed physical and personality descriptions, and a plot hook.`;
 
-        const resultDiv = modalBody.querySelector('.weaver-result');
-        const submitButton = modalBody.querySelector('#generate-char-button');
-        handleWeaverRequest(weaverName, { value: prompt }, resultDiv, submitButton, selectionsObject);
-    });
+    const resultDiv = modalBody.querySelector('.weaver-result');
+    
+    // This now calls our new, dedicated function
+    handleCharacterGeneratorRequest(weaverName, prompt, selectionsObject, resultDiv, generateBtn);
+});
     
     const copyBtn = modalBody.querySelector('.copy-icon-btn');
     copyBtn.addEventListener('click', e => {
@@ -669,7 +670,53 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
         resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
     }
 }
+// Add this new function to src/main.js
 
+async function handleCharacterGeneratorRequest(weaverName, prompt, selections, resultElement, buttonElement) {
+    if (!prompt) return;
+
+    resultElement.parentElement.style.display = 'block';
+    resultElement.innerHTML = `<p class="text-amber-300 italic">The loom hums as the breath is woven...</p>`;
+    buttonElement.disabled = true;
+
+    try {
+        const personality = aiPersonalities.find(p => p.fields.weaverName === weaverName);
+        if (!personality) throw new Error("Could not find AI personality.");
+        
+        const systemPrompt = personality.fields.systemPrompt || 'You are a helpful assistant.';
+        
+        let searchQueryOverride = null;
+        if (selections) {
+            const searchTerms = Object.values(selections).join(' ');
+            if (searchTerms.trim()) searchQueryOverride = searchTerms.trim();
+        }
+        
+        const response = await fetch('/api/ask-weaver', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: prompt,
+                systemPrompt,
+                searchQueryOverride,
+                chatHistory: [] // Send an empty history for this single-turn request
+            }),
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || `Request failed with status ${response.status}`);
+        }
+
+        const { text } = await response.json();
+        resultElement.innerHTML = text.replace(/\n/g, '<br>');
+
+    } catch (error) {
+        console.error('Error:', error);
+        resultElement.innerHTML = `<p class="text-red-400">The threads snapped... (Error: ${error.message}).</p>`;
+    } finally {
+        buttonElement.disabled = false;
+    }
+}
 // Final replacement function in: src/main.js
 
 async function initializeSite() {
