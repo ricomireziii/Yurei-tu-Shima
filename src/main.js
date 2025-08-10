@@ -275,6 +275,7 @@ function openWeaverTool(personality) {
     newModal.style.display = 'flex';
 }
 // The complete, final, and unabridged version for: src/main.js
+// The complete, final, and unabridged version for: src/main.js
 function openCharacterGenerator(personality) {
     if (!characterOptions) {
         alert("Character options not loaded. Please ensure they are published in Contentful.");
@@ -415,13 +416,8 @@ function openCharacterGenerator(personality) {
     charGenBody.querySelector('#add-kinship-btn').addEventListener('click', () => addRow('#kinship-container', kinshipConfig));
     charGenBody.querySelector('#add-calling-btn').addEventListener('click', () => addRow('#calling-container', callingConfig));
     charGenBody.querySelector('#add-spirit-btn').addEventListener('click', () => addRow('#spirit-container', { label: 'Spirit', main: (characterOptions.spirits || []).map(s => s.fields.title), getSubs: () => [], getTertiaries: () => [] }));
-
-    charGenBody.querySelector('#add-echo-root-btn').addEventListener('click', () => addRow('#echo-root-container', { label: 'Echo Root', main: (characterOptions.echoRoots || []).map(item => item.fields.title), getSubs: () => [], getTertiaries: () => [] }));
-    charGenBody.querySelector('#add-faction-btn').addEventListener('click', () => addRow('#faction-container', { label: 'Faction/Circle', main: (characterOptions.factionsAndCircles || []).map(item => item.fields.title), getSubs: () => [], getTertiaries: () => [] }));
-
     charGenBody.querySelector('#add-echo-root-btn').addEventListener('click', () => addRow('#echo-root-container', { label: 'Echo Root', main: characterOptions.echoRoots || [], getSubs: () => [], getTertiaries: () => [] }));
     charGenBody.querySelector('#add-faction-btn').addEventListener('click', () => addRow('#faction-container', { label: 'Faction/Circle', main: characterOptions.factionsAndCircles || [], getSubs: () => [], getTertiaries: () => [] }));
- main
     
     charGenBody.addEventListener('click', e => { if (e.target.classList.contains('remove-btn')) { e.target.parentElement.remove(); } });
 
