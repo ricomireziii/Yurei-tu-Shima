@@ -553,7 +553,7 @@ async function handleWeaverRequest(weaverName, inputElement, resultElement, butt
     }
 
     const thinkingIndicator = document.createElement('div');
-    thinkingIndicator.innerHTML = `<em class="text-amber-300">The Weaver is thinking...</em>`;
+    thinkingIndicator.innerHTML = `<em class="text-amber-300">The loom sings its percussive song, a rhythmic dance of wood and thread, as you wait for the weave...</em>`;
     resultElement.appendChild(thinkingIndicator);
     resultElement.parentElement.scrollTop = resultElement.parentElement.scrollHeight;
 
