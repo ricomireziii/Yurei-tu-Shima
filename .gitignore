@@ -29,4 +29,5 @@ scripts/top_down_sorter.py
 scripts/populate_categories.py
 scripts/hierarchy_sorter.py
 scripts/consolidate_files.py
+
 .env
